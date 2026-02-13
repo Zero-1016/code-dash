@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, PlugZap, RotateCcw, Save } from "lucide-react";
 import {
   getApiSettings,
   saveApiSettings,
@@ -77,6 +77,21 @@ export default function SettingsPage() {
   const handleSave = () => {
     saveApiSettings(settings);
     setSavedAt(new Date().toLocaleString());
+  };
+
+  const handleResetApiKey = () => {
+    const nextSettings: ApiSettings = {
+      ...settings,
+      apiKeys: {
+        ...settings.apiKeys,
+        [active]: "",
+      },
+    };
+    setSettings(nextSettings);
+    saveApiSettings(nextSettings);
+    setSavedAt(new Date().toLocaleString());
+    setTestState("idle");
+    setTestMessage("");
   };
 
   const handleTestConnection = async () => {
@@ -171,7 +186,7 @@ export default function SettingsPage() {
                     provider: event.target.value as AIProvider,
                   }))
                 }
-                className="h-11 w-full rounded-[16px] border border-input bg-background px-4 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+                className="h-11 w-full rounded-[16px] border border-input bg-background px-4 pr-10 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
               >
                 {PROVIDERS.map((provider) => (
                   <option key={provider.id} value={provider.id}>
@@ -202,7 +217,7 @@ export default function SettingsPage() {
                         models: { ...prev.models, [active]: event.target.value },
                       }))
                     }
-                    className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+                    className="h-10 w-full rounded-[14px] border border-input bg-background px-3 pr-9 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
                   >
                     {MODEL_OPTIONS[active].map((model) => (
                       <option key={model} value={model}>
@@ -281,6 +296,13 @@ export default function SettingsPage() {
                       {copy.settings.keyHelpFormat}: {PROVIDER_HELP[active].keyHint}
                     </p>
                   </div>
+                  <button
+                    onClick={handleResetApiKey}
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-[12px] border border-border/60 bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    {copy.settings.resetApiKey}
+                  </button>
                 </div>
               </div>
             </div>

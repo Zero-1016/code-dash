@@ -40,6 +40,7 @@ export interface LocaleCopy {
     keyHelpLabel: string;
     keyHelpGetLink: string;
     keyHelpFormat: string;
+    resetApiKey: string;
   };
   problem: {
     back: string;
@@ -111,6 +112,7 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       keyHelpLabel: "API key help",
       keyHelpGetLink: "Get key",
       keyHelpFormat: "Key format",
+      resetApiKey: "Reset API Key",
     },
     problem: {
       back: "Back",
@@ -179,6 +181,7 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       keyHelpLabel: "API key 도움말",
       keyHelpGetLink: "발급 링크",
       keyHelpFormat: "키 형식",
+      resetApiKey: "API Key 초기화",
     },
     problem: {
       back: "뒤로",
