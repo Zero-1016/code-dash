@@ -12,6 +12,18 @@ interface AiTestRequest {
   aiConfig?: Partial<AIConfigPayload>;
 }
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+
+  return "Unknown error";
+}
+
 async function runProviderTest(
   provider: ConcreteAIProvider,
   model: string,
@@ -30,8 +42,12 @@ export async function POST(req: NextRequest) {
   try {
     const body: AiTestRequest = await req.json();
     const config = resolveAIConfig(body.aiConfig);
+    const attemptedProviders: ConcreteAIProvider[] = [];
+    let lastErrorMessage: string | null = null;
+    let lastFailedProvider: ConcreteAIProvider | null = null;
 
     for (const provider of providerCandidates(config)) {
+      attemptedProviders.push(provider);
       const apiKey = config.apiKeys[provider]?.trim();
       if (!apiKey) {
         continue;
@@ -46,16 +62,41 @@ export async function POST(req: NextRequest) {
         );
         return NextResponse.json({ ok: true, provider });
       } catch (error) {
+        lastFailedProvider = provider;
+        lastErrorMessage = getErrorMessage(error);
         console.error(`AI connection test failed for ${provider}:`, error);
       }
     }
 
+    if (lastFailedProvider && lastErrorMessage) {
+      return NextResponse.json(
+        {
+          ok: false,
+          provider: lastFailedProvider,
+          message: `Connection failed for ${lastFailedProvider}.`,
+          detail: lastErrorMessage,
+        },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json(
-      { ok: false, message: "No valid provider/key pair was available." },
+      {
+        ok: false,
+        message: "No API key was provided for the selected provider.",
+        providers: attemptedProviders,
+      },
       { status: 400 }
     );
   } catch (error) {
     console.error("AI connection test error:", error);
-    return NextResponse.json({ ok: false, message: "Connection test failed." }, { status: 500 });
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Connection test failed.",
+        detail: getErrorMessage(error),
+      },
+      { status: 500 }
+    );
   }
 }

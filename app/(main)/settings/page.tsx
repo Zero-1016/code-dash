@@ -106,9 +106,16 @@ export default function SettingsPage() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
+        const payload = (await response.json().catch(() => null)) as {
+          message?: string;
+          detail?: string;
+        } | null;
+        const serverMessage =
+          payload?.detail?.trim() || payload?.message?.trim() || "Unknown error";
         setTestState("error");
-        setTestMessage(`${copy.settings.connectionFailed} (${response.status}): ${errorText.slice(0, 120)}`);
+        setTestMessage(
+          `${copy.settings.connectionFailed} (${response.status}): ${serverMessage.slice(0, 180)}`
+        );
         return;
       }
 
