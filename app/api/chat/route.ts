@@ -82,22 +82,40 @@ function generateFallbackMentorResponse(
   const asksDebug = /(error|실패|버그|디버깅|안돼|틀려|runtime|exception|stack trace|오류)/i.test(
     normalized
   )
-  const asksConfirmation = /(맞나|맞나요|인가요|거요|그건가|이건가|즉|그러면|맞지)/i.test(normalized)
+  const asksConfirmation = /(맞나|맞나요|인가요|거요|그건가|이건가|즉|그러면|맞지|될까요|해도 될까요|괜찮을까요)/i.test(
+    normalized
+  )
   const mentionsDuplicateCase = /(중복|duplicate|같은 숫자|같은 값|2번 들어|two same|same number)/i.test(
     normalized
   )
-  const asksRelationally = /(대답하기 싫|무시하|왜 대답 안|답하기 싫)/i.test(normalized)
+  const mentionsMap = /(map|해시맵|hash map|hashmap)/i.test(normalized)
+  const asksApproach = /(어떻게 풀|어떻게 접근|접근법|방법|전략|어떤 방식|풀이 방향|approach|strategy)/i.test(
+    normalized
+  )
+  const asksRelationally = /(대답하기 싫|무시하|왜 대답 안|답하기 싫|반복해서 답|말을 안듣)/i.test(
+    normalized
+  )
   const shouldUseDebugFlow = hasFailingTests || asksDebug
 
   if (language === "ko") {
     if (asksRelationally) {
-      return `아니야, 네 질문에 맞춰서 제대로 답해주고 싶어.
-지금 궁금한 걸 한 문장으로 다시 적어주면 바로 그 포인트만 짧게 답할게.`
+      return `맞아, 방금은 내가 질문 의도를 제대로 못 잡았어.
+지금부터는 네 마지막 질문에만 바로 답할게. 지금 기준이면 Map으로 중복 체크하는 방향은 좋은 선택이야.`
     }
 
     if (asksConfirmation && mentionsDuplicateCase) {
       return `맞아, 그런 중복 케이스를 먼저 확인하는 게 핵심이야.
 같은 값이 들어왔을 때 네 로직이 true/false 중 어느 쪽으로 가야 하는지만 먼저 정하고 테스트해보자.`
+    }
+
+    if (asksConfirmation && mentionsMap) {
+      return `응, Map으로 검사하는 방향 좋아.
+키를 값으로 두고 이미 있으면 중복으로 처리하면 되고, 없으면 추가하는 흐름으로 가면 깔끔해.`
+    }
+
+    if (asksApproach) {
+      return `좋아, 이 문제는 먼저 기준 조건 하나(중복/빈 입력/경계값)를 정하고 시작하는 게 좋아.
+중복 판단이 핵심이면 Map(Set)으로 "봤던 값인지"를 바로 확인하는 흐름부터 잡아보자.`
     }
 
     const context = hasCode
@@ -151,9 +169,24 @@ function generateFallbackMentorResponse(
     ? "Focus on one concrete condition first (for example: empty input, duplicates, or min/max boundary cases)."
     : "If code is empty, trace one tiny example manually first."
 
+  if (asksRelationally) {
+    return `You're right, I was too repetitive.
+I will answer your latest question directly from now on.`
+  }
+
   if (asksConfirmation && mentionsDuplicateCase) {
     return `Yes, checking duplicate-value cases first is a good move.
 Decide expected behavior for that case, then verify your branch follows it consistently.`
+  }
+
+  if (asksConfirmation && mentionsMap) {
+    return `Yes, using a Map for that check is a good direction.
+Track seen values and decide behavior immediately when a duplicate appears.`
+  }
+
+  if (asksApproach) {
+    return `Good way to start: choose one key condition first (duplicates, empty input, or boundary cases).
+If duplicates are central, use Map/Set to check seen values in one pass.`
   }
 
   if (requestType === "hint") {
