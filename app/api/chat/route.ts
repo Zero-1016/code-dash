@@ -82,9 +82,24 @@ function generateFallbackMentorResponse(
   const asksDebug = /(error|실패|버그|디버깅|안돼|틀려|runtime|exception|stack trace|오류)/i.test(
     normalized
   )
+  const asksConfirmation = /(맞나|맞나요|인가요|거요|그건가|이건가|즉|그러면|맞지)/i.test(normalized)
+  const mentionsDuplicateCase = /(중복|duplicate|같은 숫자|같은 값|2번 들어|two same|same number)/i.test(
+    normalized
+  )
+  const asksRelationally = /(대답하기 싫|무시하|왜 대답 안|답하기 싫)/i.test(normalized)
   const shouldUseDebugFlow = hasFailingTests || asksDebug
 
   if (language === "ko") {
+    if (asksRelationally) {
+      return `아니야, 네 질문에 맞춰서 제대로 답해주고 싶어.
+지금 궁금한 걸 한 문장으로 다시 적어주면 바로 그 포인트만 짧게 답할게.`
+    }
+
+    if (asksConfirmation && mentionsDuplicateCase) {
+      return `맞아, 그런 중복 케이스를 먼저 확인하는 게 핵심이야.
+같은 값이 들어왔을 때 네 로직이 true/false 중 어느 쪽으로 가야 하는지만 먼저 정하고 테스트해보자.`
+    }
+
     const context = hasCode
       ? "지금은 코드 전체보다 문제 조건 1개만 먼저 확인하면 돼. 예를 들면 빈 입력, 중복 값, 최소/최대 경계 같은 조건."
       : "코드가 없으면 예시 입력 1개를 손으로 먼저 추적해보자."
@@ -100,9 +115,8 @@ function generateFallbackMentorResponse(
 원하면 실패 케이스 1개를 보내줘. 그 케이스 기준으로 다음 힌트를 바로 줄게.`
       }
 
-      return `${context}
-먼저 이 문제에서 반드시 유지해야 하는 조건 1개를 정해봐.
-그 조건이 깨지는 반례를 하나 떠올리면 다음 단계 힌트를 이어서 줄게.`
+      return `좋아, 첫 힌트만 바로 줄게.
+먼저 중복/빈 입력/경계값 중 하나를 고르고, 그 경우에 정답이 어떻게 나와야 하는지 기준을 딱 정해봐.`
     }
 
     if (requestType === "review") {
@@ -137,6 +151,11 @@ function generateFallbackMentorResponse(
     ? "Focus on one concrete condition first (for example: empty input, duplicates, or min/max boundary cases)."
     : "If code is empty, trace one tiny example manually first."
 
+  if (asksConfirmation && mentionsDuplicateCase) {
+    return `Yes, checking duplicate-value cases first is a good move.
+Decide expected behavior for that case, then verify your branch follows it consistently.`
+  }
+
   if (requestType === "hint") {
     if (shouldUseDebugFlow) {
       return `${failingContext ?? context}
@@ -144,9 +163,8 @@ Trace one failing case line by line through your branch conditions.
 If you share that single failing case, I can give the next focused hint.`
     }
 
-    return `${context}
-Define one condition your logic must always keep.
-Then find one counterexample that breaks it, and I will guide the next branch.`
+    return `Good starting hint:
+Pick one condition first (duplicates, empty input, or boundary values) and lock expected behavior for it.`
   }
 
   if (requestType === "review") {
