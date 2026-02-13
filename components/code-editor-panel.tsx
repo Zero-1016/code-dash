@@ -130,6 +130,7 @@ export function CodeEditorPanel({
   const [customTestCases, setCustomTestCases] = useState<CustomTestCase[]>([]);
   const [isAddTestModalOpen, setIsAddTestModalOpen] = useState(false);
   const [testPanelHeight, setTestPanelHeight] = useState(220);
+  const [isResizingTestPanel, setIsResizingTestPanel] = useState(false);
   const middleSectionRef = useRef<HTMLDivElement | null>(null);
   const resizeStateRef = useRef<{ startY: number; startHeight: number } | null>(
     null
@@ -319,6 +320,7 @@ export function CodeEditorPanel({
         startY: event.clientY,
         startHeight: testPanelHeight,
       };
+      setIsResizingTestPanel(true);
       document.body.style.cursor = "ns-resize";
       document.body.style.userSelect = "none";
     },
@@ -350,6 +352,7 @@ export function CodeEditorPanel({
         return;
       }
       resizeStateRef.current = null;
+      setIsResizingTestPanel(false);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
@@ -429,13 +432,23 @@ export function CodeEditorPanel({
           <button
             type="button"
             onMouseDown={handleResizeStart}
-            className="flex h-4 w-full cursor-ns-resize items-center justify-center hover:bg-muted/60"
+            className={`group flex h-7 w-full cursor-ns-resize items-center justify-center transition-colors ${
+              isResizingTestPanel
+                ? "bg-[#3182F6]/20"
+                : "hover:bg-muted/70 active:bg-[#3182F6]/15"
+            }`}
             aria-label="Resize test cases panel"
           >
-            <span className="h-1 w-12 rounded-full bg-border/80" />
+            <span
+              className={`rounded-full transition-all ${
+                isResizingTestPanel
+                  ? "h-1.5 w-20 bg-[#3182F6]"
+                  : "h-1.5 w-16 bg-border/90 group-hover:w-20 group-hover:bg-[#3182F6]/70"
+              }`}
+            />
           </button>
 
-          <div className="h-[calc(100%-1rem)] overflow-y-auto p-4">
+          <div className="h-[calc(100%-1.75rem)] overflow-y-auto p-4">
             <div className="mb-3">
               <h3 className="text-xs font-semibold text-muted-foreground">
                 Test Cases (

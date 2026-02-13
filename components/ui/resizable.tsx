@@ -29,14 +29,14 @@ const ResizableHandle = ({
 }) => (
   <ResizablePrimitive.PanelResizeHandle
     className={cn(
-      'relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2 data-[panel-group-direction=vertical]:after:translate-x-0 [&[data-panel-group-direction=vertical]>div]:rotate-90',
+      'group/resize relative flex w-1.5 items-center justify-center bg-border/70 transition-colors duration-150 hover:bg-[#3182F6]/45 active:bg-[#3182F6]/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:inset-y-0 after:left-1/2 after:w-3 after:-translate-x-1/2 data-[panel-group-direction=vertical]:h-1.5 data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-3 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2 data-[panel-group-direction=vertical]:after:translate-x-0 [&[data-panel-group-direction=vertical]>div]:rotate-90 [&[data-resize-handle-active]]:bg-[#3182F6]',
       className,
     )}
     {...props}
   >
     {withHandle && (
-      <div className="z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border">
-        <GripVertical className="h-2.5 w-2.5" />
+      <div className="z-10 flex h-6 w-4 items-center justify-center rounded-md border border-border/70 bg-background/95 shadow-sm transition-all duration-150 group-hover/resize:scale-105 group-hover/resize:border-[#3182F6]/60 group-hover/resize:bg-[#3182F6]/10 group-active/resize:scale-95 group-active/resize:bg-[#3182F6]/25">
+        <GripVertical className="h-3.5 w-3.5 text-muted-foreground group-hover/resize:text-[#3182F6] group-active/resize:text-[#2870d8]" />
       </div>
     )}
   </ResizablePrimitive.PanelResizeHandle>
