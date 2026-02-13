@@ -14,16 +14,13 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 })
 
-function getMetadataBase(): URL | undefined {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  if (!siteUrl) {
-    return undefined
-  }
-
+function getMetadataBase(): URL {
+  const fallback = 'http://localhost:3000'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? fallback
   try {
     return new URL(siteUrl)
   } catch {
-    return undefined
+    return new URL(fallback)
   }
 }
 
