@@ -3,7 +3,12 @@ import type { AppLanguage } from "@/lib/local-progress";
 export const DEFAULT_LANGUAGE: AppLanguage = "en";
 
 export interface LocaleCopy {
-  header: { myPage: string };
+  header: {
+    settings: string;
+    language: string;
+    languageEnglish: string;
+    languageKorean: string;
+  };
   hero: {
     badge: string;
     titleTop: string;
@@ -17,16 +22,12 @@ export interface LocaleCopy {
     challenges: string;
     problems: string;
   };
-    settings: {
-      backHome: string;
-      title: string;
-      description: string;
-      languageTitle: string;
-      languageDescription: string;
-      languageEnglish: string;
-      languageKorean: string;
-      provider: string;
-      model: string;
+  settings: {
+    backHome: string;
+    title: string;
+    description: string;
+    provider: string;
+    model: string;
     maxTokens: string;
     apiKey: string;
     save: string;
@@ -68,7 +69,10 @@ export interface LocaleCopy {
 const localeCopy: Record<AppLanguage, LocaleCopy> = {
   en: {
     header: {
-      myPage: "My Page",
+      settings: "Settings",
+      language: "Language",
+      languageEnglish: "English",
+      languageKorean: "Korean",
     },
     hero: {
       badge: "Today's challenge is live",
@@ -86,12 +90,9 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
     },
     settings: {
       backHome: "Back to Home",
-      title: "My Page",
-      description: "Provider, model, token, and API keys are saved in browser localStorage only.",
-      languageTitle: "Language",
-      languageDescription: "Choose your app language.",
-      languageEnglish: "English",
-      languageKorean: "Korean",
+      title: "Settings",
+      description:
+        "Provider, model, token, and API keys are saved in browser localStorage only.",
       provider: "Provider",
       model: "Model",
       maxTokens: "Max Tokens",
@@ -99,7 +100,8 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       save: "Save",
       testConnection: "Test Connection",
       testingConnection: "Testing connection...",
-      connectionSuccess: "Connected successfully. The selected model is ready to use.",
+      connectionSuccess:
+        "Connected successfully. The selected model is ready to use.",
       lastSaved: "Last saved",
       keyRequired: "Please enter the API key first.",
       connectionFailed: "Connection failed",
@@ -133,13 +135,17 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
   },
   ko: {
     header: {
-      myPage: "마이페이지",
+      settings: "설정",
+      language: "언어",
+      languageEnglish: "영어",
+      languageKorean: "한국어",
     },
     hero: {
       badge: "오늘의 챌린지가 열렸어요",
       titleTop: "환영합니다!",
       titleBottom: "코딩 시작해볼까요?",
-      description: "하루 한 문제씩 알고리즘 실력을 키워보세요. 스트릭을 쌓고 꾸준히 성장해요.",
+      description:
+        "하루 한 문제씩 알고리즘 실력을 키워보세요. 스트릭을 쌓고 꾸준히 성장해요.",
       startSolving: "문제 풀기 시작",
     },
     home: {
@@ -150,12 +156,9 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
     },
     settings: {
       backHome: "홈으로 돌아가기",
-      title: "마이페이지",
-      description: "Provider, model, token, API key 설정은 브라우저 localStorage에만 저장됩니다.",
-      languageTitle: "언어",
-      languageDescription: "앱에서 사용할 언어를 선택하세요.",
-      languageEnglish: "영어",
-      languageKorean: "한국어",
+      title: "설정",
+      description:
+        "Provider, model, token, API key 설정은 브라우저 localStorage에만 저장됩니다.",
       provider: "Provider",
       model: "모델",
       maxTokens: "최대 토큰",

@@ -3,12 +3,17 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Code2, Flame, Settings } from "lucide-react"
-import { getCurrentStreak, subscribeToProgressUpdates } from "@/lib/local-progress"
+import {
+  getCurrentStreak,
+  saveLanguagePreference,
+  subscribeToProgressUpdates,
+  type AppLanguage,
+} from "@/lib/local-progress"
 import { useAppLanguage } from "@/lib/use-app-language"
 
 export function Header() {
   const [streak, setStreak] = useState(0)
-  const { copy } = useAppLanguage()
+  const { language, copy } = useAppLanguage()
 
   useEffect(() => {
     const sync = () => setStreak(getCurrentStreak())
@@ -29,12 +34,29 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-2">
+          <label
+            htmlFor="header-language"
+            className="sr-only"
+          >
+            {copy.header.language}
+          </label>
+          <select
+            id="header-language"
+            value={language}
+            onChange={(event) =>
+              saveLanguagePreference(event.target.value as AppLanguage)
+            }
+            className="h-9 rounded-xl border border-input bg-background px-2 text-xs font-medium text-foreground outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20 sm:px-3 sm:text-sm"
+          >
+            <option value="en">{copy.header.languageEnglish}</option>
+            <option value="ko">{copy.header.languageKorean}</option>
+          </select>
           <Link
             href="/settings"
             className="flex items-center gap-2 rounded-xl bg-muted px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">{copy.header.myPage}</span>
+            <span className="hidden sm:inline">{copy.header.settings}</span>
           </Link>
           <div className="flex items-center gap-1.5 rounded-xl bg-accent px-3 py-1.5">
             <Flame className="h-4 w-4 text-warning" />

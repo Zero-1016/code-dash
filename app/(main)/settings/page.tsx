@@ -6,14 +6,11 @@ import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
 import {
   getApiSettings,
-  getLanguagePreference,
   saveApiSettings,
-  saveLanguagePreference,
   type ApiSettings,
-  type AppLanguage,
 } from "@/lib/local-progress";
 import { getDefaultAIConfig, type AIProvider } from "@/lib/ai-config";
-import { getLocaleCopy } from "@/lib/i18n";
+import { useAppLanguage } from "@/lib/use-app-language";
 import { usePageEntryAnimation } from "@/lib/use-page-entry-animation";
 
 type TestState = "idle" | "loading" | "success" | "error";
@@ -37,15 +34,13 @@ const MODEL_OPTIONS: Record<AIProvider, string[]> = {
 export default function SettingsPage() {
   const shouldAnimateOnMount = usePageEntryAnimation();
   const [settings, setSettings] = useState<ApiSettings>(getDefaultAIConfig());
-  const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>("en");
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [testState, setTestState] = useState<TestState>("idle");
   const [testMessage, setTestMessage] = useState("");
-  const copy = getLocaleCopy(selectedLanguage);
+  const { copy } = useAppLanguage();
 
   useEffect(() => {
     setSettings(getApiSettings());
-    setSelectedLanguage(getLanguagePreference());
   }, []);
 
   const active = useMemo(() => settings.provider, [settings.provider]);
@@ -66,7 +61,6 @@ export default function SettingsPage() {
 
   const handleSave = () => {
     saveApiSettings(settings);
-    saveLanguagePreference(selectedLanguage);
     setSavedAt(new Date().toLocaleString());
   };
 
@@ -142,26 +136,6 @@ export default function SettingsPage() {
           </p>
 
           <div className="mt-6 grid gap-5">
-            <div>
-              <label htmlFor="language" className="mb-2 block text-sm font-semibold text-foreground">
-                {copy.settings.languageTitle}
-              </label>
-              <p className="mb-2 text-xs text-muted-foreground">{copy.settings.languageDescription}</p>
-              <select
-                id="language"
-                value={selectedLanguage}
-                onChange={(event) => {
-                  const nextLanguage = event.target.value as AppLanguage;
-                  setSelectedLanguage(nextLanguage);
-                  saveLanguagePreference(nextLanguage);
-                }}
-                className="h-11 w-full rounded-[16px] border border-input bg-background px-4 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
-              >
-                <option value="en">{copy.settings.languageEnglish}</option>
-                <option value="ko">{copy.settings.languageKorean}</option>
-              </select>
-            </div>
-
             <div>
               <label htmlFor="provider" className="mb-2 block text-sm font-semibold text-foreground">
                 {copy.settings.provider}
