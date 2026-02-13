@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   title: 'CodeDash - Practice Coding, Build Habits',
   description:
     'A modern coding practice platform to sharpen your algorithm skills with daily challenges, streaks, and a beautiful editor experience.',
+  icons: {
+    icon: '/codedash-mark.svg',
+    shortcut: '/codedash-mark.svg',
+    apple: '/codedash-mark.svg',
+  },
 }
 
 export const viewport: Viewport = {
