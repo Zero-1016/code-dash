@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { HeroSection } from "@/components/hero-section"
-import { ProblemCard } from "@/components/problem-card"
+import { VirtualizedProblemList } from "@/components/virtualized-problem-list"
 import { StreakWidget } from "@/components/streak-widget"
 import { StatsWidget } from "@/components/stats-widget"
 import { PageTransition } from "@/components/page-transition"
@@ -147,16 +147,7 @@ export default function HomePage() {
                 </select>
               </div>
             </div>
-            <div className="flex flex-col gap-3">
-              {filteredProblems.map((problem, i) => (
-                <ProblemCard
-                  key={problem.id}
-                  problem={problem}
-                  index={i}
-                  isSolved={solvedIds.has(problem.id)}
-                />
-              ))}
-            </div>
+            <VirtualizedProblemList problems={filteredProblems} solvedIds={solvedIds} />
           </div>
 
           {/* Sidebar Widgets */}

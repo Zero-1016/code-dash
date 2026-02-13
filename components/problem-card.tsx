@@ -55,9 +55,15 @@ interface ProblemCardProps {
   problem: Problem
   index: number
   isSolved?: boolean
+  animate?: boolean
 }
 
-export function ProblemCard({ problem, index, isSolved = false }: ProblemCardProps) {
+export function ProblemCard({
+  problem,
+  index,
+  isSolved = false,
+  animate = true,
+}: ProblemCardProps) {
   const { language, copy } = useAppLanguage()
   const Icon = iconMap[problem.categoryIcon] || Hash
   const diffStyle = difficultyConfig[problem.difficulty]
@@ -65,9 +71,13 @@ export function ProblemCard({ problem, index, isSolved = false }: ProblemCardPro
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={animate ? { opacity: 0, y: 16 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.06, ease: "easeOut" }}
+      transition={{
+        duration: animate ? 0.4 : 0,
+        delay: animate ? Math.min(index, 8) * 0.06 : 0,
+        ease: "easeOut",
+      }}
       className="w-full"
     >
       <Link href={`/problem/${problem.id}`} className="group block">
