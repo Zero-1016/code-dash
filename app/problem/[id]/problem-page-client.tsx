@@ -305,7 +305,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed right-0 top-14 bottom-0 z-50 w-full max-w-[400px] border-l border-border bg-background shadow-2xl flex flex-col"
+                className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-[400px] border-l border-border bg-background shadow-2xl flex flex-col"
               >
                 <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
                   <div className="flex items-center gap-2">
