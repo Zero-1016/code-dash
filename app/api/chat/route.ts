@@ -94,8 +94,15 @@ function generateFallbackMentorResponse(
         : context
 
     if (requestType === "hint") {
-      return `${shouldUseDebugFlow ? failingContext : context}
-정답 코드 대신 깨지는 조건 1개만 정확히 잡자. 실패 케이스 1개를 붙여줘.`
+      if (shouldUseDebugFlow) {
+        return `${failingContext}
+[Level 1: Hint] 실패 케이스에서 입력이 조건문을 통과하는 순서를 한 줄씩 추적해봐.
+원하면 실패 케이스 1개를 보내줘. 그 케이스 기준으로 다음 힌트를 바로 줄게.`
+      }
+
+      return `${context}
+[Level 1: Hint] 먼저 "이 문제에서 반드시 유지해야 하는 조건(invariant)" 1개를 정해봐.
+그 조건이 깨지는 반례를 하나 떠올리면 다음 분기 힌트를 이어서 줄게.`
     }
 
     if (requestType === "review") {
@@ -131,8 +138,15 @@ function generateFallbackMentorResponse(
     : "If code is empty, trace one tiny example manually first."
 
   if (requestType === "hint") {
-    return `${shouldUseDebugFlow ? failingContext ?? context : context}
-Skip full code for now; isolate one failing condition and share that case.`
+    if (shouldUseDebugFlow) {
+      return `${failingContext ?? context}
+[Level 1: Hint] Trace one failing case line by line through your branch conditions.
+If you share that single failing case, I can give the next focused hint.`
+    }
+
+    return `${context}
+[Level 1: Hint] Define one invariant your logic must always keep.
+Then find one counterexample that breaks it, and I will guide the next branch.`
   }
 
   if (requestType === "review") {
@@ -183,6 +197,7 @@ You are mentoring like a senior teammate in pair programming chat.
 
 **Guidelines:**
 - If user asks a conceptual/no-code question, answer directly and clearly first; do not force debugging flow.
+- If user asks for a first hint, provide an actual Level 1 hint immediately (do not ask for failed case first).
 - If tests are failing, focus on root cause from outputs first. Avoid complexity talk at this stage.
 - If tests are passing, brief congrats then suggest one optimization/refactor.
 - Keep replies practical and context-aware.
