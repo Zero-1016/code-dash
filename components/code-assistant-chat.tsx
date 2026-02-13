@@ -159,12 +159,12 @@ export function CodeAssistantChat({
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (rawMessage: string) => {
+    const trimmedMessage = rawMessage.trim();
+    if (!trimmedMessage || isLoading) return;
 
-    const userMessage: Message = { role: "user", content: input.trim() };
+    const userMessage: Message = { role: "user", content: trimmedMessage };
     setMessages((prev) => [...prev, userMessage]);
-    setInput("");
     setIsLoading(true);
 
     try {
@@ -213,14 +213,23 @@ export function CodeAssistantChat({
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      const messageToSend = input;
+      setInput("");
+      void sendMessage(messageToSend);
     }
   };
 
   const quickPrompts = text.quickPrompts;
 
   const handleQuickPrompt = (prompt: string) => {
-    setInput(prompt);
+    setInput("");
+    void sendMessage(prompt);
+  };
+
+  const handleSend = () => {
+    const messageToSend = input;
+    setInput("");
+    void sendMessage(messageToSend);
   };
 
   const handleClearChat = () => {
