@@ -14,6 +14,7 @@ import {
 } from "@/lib/local-progress";
 import { getDefaultAIConfig, type AIProvider } from "@/lib/ai-config";
 import { getLocaleCopy } from "@/lib/i18n";
+import { usePageEntryAnimation } from "@/lib/use-page-entry-animation";
 
 type TestState = "idle" | "loading" | "success" | "error";
 
@@ -34,6 +35,7 @@ const MODEL_OPTIONS: Record<AIProvider, string[]> = {
 };
 
 export default function SettingsPage() {
+  const shouldAnimateOnMount = usePageEntryAnimation();
   const [settings, setSettings] = useState<ApiSettings>(getDefaultAIConfig());
   const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>("en");
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -47,6 +49,20 @@ export default function SettingsPage() {
   }, []);
 
   const active = useMemo(() => settings.provider, [settings.provider]);
+  const backLinkMotion = shouldAnimateOnMount
+    ? {
+        initial: { opacity: 0, y: 12 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.3 },
+      }
+    : {};
+  const sectionMotion = shouldAnimateOnMount
+    ? {
+        initial: { opacity: 0, y: 16 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.35, delay: 0.05 },
+      }
+    : {};
 
   const handleSave = () => {
     saveApiSettings(settings);
@@ -104,9 +120,7 @@ export default function SettingsPage() {
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          {...backLinkMotion}
           className="mb-6"
         >
           <Link
@@ -119,9 +133,7 @@ export default function SettingsPage() {
         </motion.div>
 
         <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.05 }}
+          {...sectionMotion}
           className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm sm:p-8"
         >
           <h1 className="text-2xl font-bold text-foreground">{copy.settings.title}</h1>

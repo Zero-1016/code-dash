@@ -6,6 +6,7 @@ import type { ReactNode } from "react"
 interface PageTransitionProps {
   children: ReactNode
   className?: string
+  animateOnMount?: boolean
 }
 
 const pageVariants = {
@@ -23,7 +24,15 @@ const pageVariants = {
   },
 }
 
-export function PageTransition({ children, className }: PageTransitionProps) {
+export function PageTransition({
+  children,
+  className,
+  animateOnMount = true,
+}: PageTransitionProps) {
+  if (!animateOnMount) {
+    return <div className={className}>{children}</div>
+  }
+
   return (
     <motion.div
       variants={pageVariants}
