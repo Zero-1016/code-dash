@@ -128,8 +128,8 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
     async (seconds: number) => {
       setElapsedSeconds(seconds);
 
-      // Trigger 30-minute strategic hint
-      if (seconds >= 1800 && !hasTriggered30MinHint) {
+      // Trigger 30-minute strategic hint only when mentor is configured.
+      if (seconds >= 1800 && !hasTriggered30MinHint && isMentorConfigured) {
         setHasTriggered30MinHint(true);
         setIsAiGenerating(true);
         setShowHintNotification(true);
@@ -162,7 +162,14 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
         }
       }
     },
-    [hasTriggered30MinHint, localizedProblem.description, localizedProblem.title, code, language]
+    [
+      hasTriggered30MinHint,
+      isMentorConfigured,
+      localizedProblem.description,
+      localizedProblem.title,
+      code,
+      language,
+    ]
   );
 
   return (

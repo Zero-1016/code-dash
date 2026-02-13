@@ -206,6 +206,23 @@ export function CodeAssistantChat({
 
     const userMessage: Message = { role: "user", content: trimmedMessage };
     setMessages((prev) => [...prev, userMessage]);
+    const aiSettings = getApiSettings();
+    const selectedProvider = aiSettings.provider;
+    const hasConfiguredModel = Boolean(aiSettings.models[selectedProvider]?.trim());
+    const hasConfiguredApiKey = Boolean(aiSettings.apiKeys[selectedProvider]?.trim());
+
+    if (!hasConfiguredModel || !hasConfiguredApiKey) {
+      const setupMessage: Message = {
+        role: "assistant",
+        content:
+          language === "ko"
+            ? "AI 멘토를 사용하려면 설정에서 모델과 API Key를 먼저 등록해주세요."
+            : "To use AI mentor, configure both model and API key in Settings first.",
+      };
+      setMessages((prev) => [...prev, setupMessage]);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -222,7 +239,7 @@ export function CodeAssistantChat({
           testResults,
           allTestsPassed: testResults.length > 0 ? testResults.every((result) => result.passed) : undefined,
           language,
-          aiConfig: getApiSettings(),
+          aiConfig: aiSettings,
         }),
       });
 
