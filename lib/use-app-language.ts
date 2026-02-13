@@ -9,9 +9,7 @@ import {
 import { getLocaleCopy } from "@/lib/i18n";
 
 export function useAppLanguage() {
-  const [language, setLanguage] = useState<AppLanguage>(() =>
-    getLanguagePreference()
-  );
+  const [language, setLanguage] = useState<AppLanguage>("en");
 
   useEffect(() => {
     const sync = () => {
@@ -20,6 +18,7 @@ export function useAppLanguage() {
         return prev === next ? prev : next;
       });
     };
+    sync();
     return subscribeToProgressUpdates(sync);
   }, []);
 
