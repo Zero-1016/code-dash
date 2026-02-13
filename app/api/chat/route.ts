@@ -51,6 +51,10 @@ const MENTOR_REPLY_FORMAT_RULES = `Conversational Flow:
 - If recent test context is ALL_PASS:
   - Explicitly acknowledge the current solution is correct, then suggest one optimization/refactor opportunity.`
 
+function resolveResponseTokenLimit(maxOutputTokens: number): number {
+  return Math.max(256, maxOutputTokens)
+}
+
 function finalizeMentorResponse(
   text: string,
   language: MentorLanguage,
@@ -71,10 +75,12 @@ function finalizeMentorResponse(
     /(다만|그리고|또한|하지만|근데|즉|예를 들어|예를들어|우선|먼저|결론적으로)\s*[,，:]?\s*$/u
   const danglingEn =
     /(however|but|and|so|for example|first|next|then)\s*[,:\-]?\s*$/iu
+  const danglingListMarker = /(?:[:\-]\s*|\*\s*|•\s*|\d+\.\s*)$/u
 
   let normalized = trimmed
-  if (danglingKo.test(normalized) || danglingEn.test(normalized)) {
+  if (danglingKo.test(normalized) || danglingEn.test(normalized) || danglingListMarker.test(normalized)) {
     normalized = normalized.replace(danglingKo, "").replace(danglingEn, "").trim()
+    normalized = normalized.replace(danglingListMarker, "").trim()
     const completion =
       language === "ko"
         ? allTestsPassed === false
@@ -369,7 +375,7 @@ async function chatWithClaude(
       role: msg.role,
       content: msg.content,
     })),
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -402,7 +408,7 @@ async function chatWithGPT(
     model: getLanguageModel("gpt", model, apiKey),
     system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${mentorConversationSkillInstruction}\n\n${languageInstruction}`,
     messages,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -435,7 +441,7 @@ async function chatWithGemini(
     model: getLanguageModel("gemini", model, apiKey),
     system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${mentorConversationSkillInstruction}\n\n${languageInstruction}`,
     messages,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text

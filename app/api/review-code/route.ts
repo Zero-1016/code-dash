@@ -38,6 +38,10 @@ const REVIEW_REPLY_FORMAT_RULES = `Reply format:
 - Avoid rhetorical questions and repetitive praise.
 - Keep it to one short acknowledgement + one concrete action point whenever possible.`
 
+function resolveResponseTokenLimit(maxOutputTokens: number): number {
+  return Math.max(256, maxOutputTokens)
+}
+
 function finalizeMentorResponse(
   text: string,
   language: MentorLanguage,
@@ -58,10 +62,12 @@ function finalizeMentorResponse(
     /(다만|그리고|또한|하지만|근데|즉|예를 들어|예를들어|우선|먼저|결론적으로)\s*[,，:]?\s*$/u
   const danglingEn =
     /(however|but|and|so|for example|first|next|then)\s*[,:\-]?\s*$/iu
+  const danglingListMarker = /(?:[:\-]\s*|\*\s*|•\s*|\d+\.\s*)$/u
 
   let normalized = trimmed
-  if (danglingKo.test(normalized) || danglingEn.test(normalized)) {
+  if (danglingKo.test(normalized) || danglingEn.test(normalized) || danglingListMarker.test(normalized)) {
     normalized = normalized.replace(danglingKo, "").replace(danglingEn, "").trim()
+    normalized = normalized.replace(danglingListMarker, "").trim()
     const completion =
       language === "ko"
         ? allTestsPassed
@@ -185,7 +191,7 @@ async function reviewWithClaude(
   const result = await generateText({
     model: getLanguageModel("claude", model, apiKey),
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -216,7 +222,7 @@ async function reviewWithGPT(
     system:
       "You are a helpful coding mentor who provides constructive feedback and guides students to learn.",
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -245,7 +251,7 @@ async function reviewWithGemini(
   const result = await generateText({
     model: getLanguageModel("gemini", model, apiKey),
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text

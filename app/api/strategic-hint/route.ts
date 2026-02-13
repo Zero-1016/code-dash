@@ -30,6 +30,10 @@ const STRATEGIC_HINT_REPLY_RULES = `Reply format:
 - Avoid rhetorical phrasing and filler.
 - Do not provide full solution code.`
 
+function resolveResponseTokenLimit(maxOutputTokens: number): number {
+  return Math.max(256, maxOutputTokens)
+}
+
 function finalizeHintResponse(text: string, language: MentorLanguage): string {
   const trimmed = text.trim()
   if (!trimmed) {
@@ -42,10 +46,12 @@ function finalizeHintResponse(text: string, language: MentorLanguage): string {
     /(다만|그리고|또한|하지만|근데|즉|예를 들어|예를들어|우선|먼저|결론적으로)\s*[,，:]?\s*$/u
   const danglingEn =
     /(however|but|and|so|for example|first|next|then)\s*[,:\-]?\s*$/iu
+  const danglingListMarker = /(?:[:\-]\s*|\*\s*|•\s*|\d+\.\s*)$/u
 
   let normalized = trimmed
-  if (danglingKo.test(normalized) || danglingEn.test(normalized)) {
+  if (danglingKo.test(normalized) || danglingEn.test(normalized) || danglingListMarker.test(normalized)) {
     normalized = normalized.replace(danglingKo, "").replace(danglingEn, "").trim()
+    normalized = normalized.replace(danglingListMarker, "").trim()
     const completion =
       language === "ko"
         ? "다음 단계로 바로 적용할 한 줄 계획을 정해보세요."
@@ -119,7 +125,7 @@ async function generateHintWithClaude(
   const result = await generateText({
     model: getLanguageModel("claude", model, apiKey),
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -148,7 +154,7 @@ async function generateHintWithGPT(
     system:
       "You are a supportive coding mentor who provides strategic hints and guides students to think like developers. You never give away complete solutions.",
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -175,7 +181,7 @@ async function generateHintWithGemini(
   const result = await generateText({
     model: getLanguageModel("gemini", model, apiKey),
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
