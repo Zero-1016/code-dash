@@ -124,7 +124,6 @@ export function CodeEditorPanel({
   const { language } = useAppLanguage();
   const defaultCaseLabel = language === "ko" ? "예시" : "Test Case";
   const customCaseLabel = language === "ko" ? "커스텀 테스트" : "Custom Test";
-  const expectedOutputsLabel = language === "ko" ? "예상 출력값" : "Expected Outputs";
   const router = useRouter();
   const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(null);
   const [analysis, setAnalysis] = useState<CodeAnalysis | null>(null);
@@ -520,15 +519,6 @@ export function CodeEditorPanel({
                       </code>
                     </div>
 
-                    <div className="mb-2">
-                      <div className="text-muted-foreground font-semibold mb-1">
-                        Expected Output:
-                      </div>
-                      <code className="block rounded-[12px] bg-muted px-3 py-2 font-mono text-foreground">
-                        {JSON.stringify(testCase.expected)}
-                      </code>
-                    </div>
-
                     {testResult?.consoleLogs &&
                       testResult.consoleLogs.length > 0 && (
                         <div className="mb-2">
@@ -609,15 +599,6 @@ export function CodeEditorPanel({
                       </code>
                     </div>
 
-                    <div className="mb-2">
-                      <div className="text-muted-foreground font-semibold mb-1">
-                        Expected Output:
-                      </div>
-                      <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-foreground">
-                        {testCase.expected}
-                      </code>
-                    </div>
-
                     {testResult?.consoleLogs && testResult.consoleLogs.length > 0 && (
                       <div className="mb-2">
                         <div className="text-muted-foreground font-semibold mb-1">
@@ -652,32 +633,6 @@ export function CodeEditorPanel({
                   </div>
                 );
               })}
-
-              <div className="rounded-[16px] border border-border/60 bg-background p-4 text-xs">
-                <p className="mb-3 text-sm font-bold text-foreground">{expectedOutputsLabel}</p>
-                <div className="space-y-2">
-                  {problem.testCases.slice(0, 2).map((testCase, index) => (
-                    <div key={`expected-default-${index}`}>
-                      <p className="mb-1 text-muted-foreground">
-                        {defaultCaseLabel} {index + 1}
-                      </p>
-                      <code className="block rounded-[12px] bg-muted px-3 py-2 font-mono text-foreground">
-                        {JSON.stringify(testCase.expected)}
-                      </code>
-                    </div>
-                  ))}
-                  {customTestCases.map((testCase, index) => (
-                    <div key={`expected-custom-${index}`}>
-                      <p className="mb-1 text-muted-foreground">
-                        {customCaseLabel} {index + 1}
-                      </p>
-                      <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-foreground">
-                        {testCase.expected}
-                      </code>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               <button
                 onClick={() => setIsAddTestModalOpen(true)}
