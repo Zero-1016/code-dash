@@ -38,27 +38,92 @@ interface CodeAnalysis {
   detailedFeedback: string
 }
 
-function parseAnalysisJson(content: string): CodeAnalysis {
-  const jsonMatch =
-    content.match(/```json\s*([\s\S]*?)\s*```/i) ||
-    content.match(/\{[\s\S]*\}/)
-  const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content
+function clamp(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) {
+    return min
+  }
+  return Math.min(max, Math.max(min, value))
+}
+
+function extractJsonObject(content: string): string {
+  const fencedJson = content.match(/```json\s*([\s\S]*?)\s*```/i)
+  if (fencedJson?.[1]) {
+    return fencedJson[1]
+  }
+
+  const firstBraceIndex = content.indexOf("{")
+  if (firstBraceIndex === -1) {
+    return content
+  }
+
+  let depth = 0
+  for (let index = firstBraceIndex; index < content.length; index += 1) {
+    const char = content[index]
+    if (char === "{") {
+      depth += 1
+    } else if (char === "}") {
+      depth -= 1
+      if (depth === 0) {
+        return content.slice(firstBraceIndex, index + 1)
+      }
+    }
+  }
+
+  return content.slice(firstBraceIndex)
+}
+
+function toIntInRange(value: unknown, min: number, max: number): number {
+  return Math.round(clamp(Number(value), min, max))
+}
+
+function deriveCorrectnessScore(testResults: AnalyzeRequest["testResults"]): number {
+  if (!testResults.length) {
+    return 0
+  }
+
+  const passedCount = testResults.filter((result) => result.passed).length
+  const passRatio = passedCount / testResults.length
+  return Math.round(passRatio * 60)
+}
+
+function deriveEfficiencyLevel(efficiency: number): CodeAnalysis["efficiencyLevel"] {
+  if (efficiency >= 16) {
+    return "High"
+  }
+  if (efficiency >= 10) {
+    return "Medium"
+  }
+  return "Low"
+}
+
+function parseAnalysisJson(
+  content: string,
+  testResults: AnalyzeRequest["testResults"]
+): CodeAnalysis {
+  const jsonText = extractJsonObject(content)
   const parsed = JSON.parse(jsonText) as Partial<CodeAnalysis>
 
   const efficiencyLevelRaw = String(parsed.efficiencyLevel ?? "").toLowerCase()
-  const efficiencyLevel: CodeAnalysis["efficiencyLevel"] =
+  const modelEfficiencyLevel: CodeAnalysis["efficiencyLevel"] =
     efficiencyLevelRaw === "high"
       ? "High"
       : efficiencyLevelRaw === "medium"
       ? "Medium"
       : "Low"
+  const correctness = deriveCorrectnessScore(testResults)
+  const efficiency = toIntInRange(parsed.efficiency, 0, 20)
+  const readability = toIntInRange(parsed.readability, 0, 20)
+  const totalScore = correctness + efficiency + readability
+  const efficiencyLevel = parsed.efficiencyLevel
+    ? modelEfficiencyLevel
+    : deriveEfficiencyLevel(efficiency)
 
   return {
-    correctness: Number(parsed.correctness ?? 0),
-    efficiency: Number(parsed.efficiency ?? 0),
-    readability: Number(parsed.readability ?? 0),
-    totalScore: Number(parsed.totalScore ?? 0),
-    bigO: String(parsed.bigO ?? "-"),
+    correctness,
+    efficiency,
+    readability,
+    totalScore,
+    bigO: String(parsed.bigO ?? "-").trim() || "-",
     efficiencyLevel,
     suggestion: String(parsed.suggestion ?? ""),
     detailedFeedback: String(parsed.detailedFeedback ?? ""),
@@ -127,7 +192,7 @@ Return ONLY the JSON object, no other text.`
   const content = result.text
 
   try {
-    return parseAnalysisJson(content)
+    return parseAnalysisJson(content, testResults)
   } catch (e) {
     throw new Error(`Failed to parse Claude response: ${content}`)
   }
@@ -196,7 +261,7 @@ Return ONLY the JSON object, no other text.`
   const content = result.text
 
   try {
-    return parseAnalysisJson(content)
+    return parseAnalysisJson(content, testResults)
   } catch (e) {
     throw new Error(`Failed to parse GPT response: ${content}`)
   }
@@ -264,7 +329,7 @@ Return ONLY the JSON object, no other text.`
   const content = result.text
 
   try {
-    return parseAnalysisJson(content)
+    return parseAnalysisJson(content, testResults)
   } catch (e) {
     throw new Error(`Failed to parse Gemini response: ${content}`)
   }
@@ -273,7 +338,10 @@ Return ONLY the JSON object, no other text.`
 export async function POST(req: NextRequest) {
   try {
     const body: AnalyzeRequest = await req.json()
-    const { code, allTestsPassed, passedRatio, problemTitle, testResults } = body
+    const { code, allTestsPassed, problemTitle, testResults } = body
+    const passedRatio = testResults.length
+      ? testResults.filter((result) => result.passed).length / testResults.length
+      : 0
     const language = resolveMentorLanguage(body.language)
 
     // Determine which AI provider to use based on available API keys
