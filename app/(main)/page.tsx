@@ -45,9 +45,9 @@ export default function HomePage() {
   const allDifficultyLabel = language === "ko" ? "전체 난이도" : "All Difficulty"
   const sortByLabel = language === "ko" ? "정렬" : "Sort by"
   const sortDifficultyAscLabel =
-    language === "ko" ? "난이도순 (쉬움 -> 어려움)" : "Difficulty (Easy -> Hard)"
+    language === "ko" ? "난이도 오름차순" : "Difficulty Ascending"
   const sortDifficultyDescLabel =
-    language === "ko" ? "난이도순 (어려움 -> 쉬움)" : "Difficulty (Hard -> Easy)"
+    language === "ko" ? "난이도 내림차순" : "Difficulty Descending"
 
   const difficultyRank: Record<Difficulty, number> = {
     Easy: 0,
