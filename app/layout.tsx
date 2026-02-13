@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { JetBrains_Mono } from 'next/font/google'
+import { getSiteUrl } from '@/lib/site-url'
 
 import './globals.css'
 
@@ -31,18 +32,8 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 })
 
-function getMetadataBase(): URL {
-  const fallback = 'http://localhost:3000'
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? fallback
-  try {
-    return new URL(siteUrl)
-  } catch {
-    return new URL(fallback)
-  }
-}
-
 export const metadata: Metadata = {
-  metadataBase: getMetadataBase(),
+  metadataBase: getSiteUrl(),
   title: {
     default: 'CodeDash | Practice Coding, Build Habits',
     template: '%s | CodeDash',
@@ -106,11 +97,31 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'CodeDash',
+    url: getSiteUrl().toString(),
+    inLanguage: ['en', 'ko'],
+  }
+
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+      </head>
       <body
         className={`${pretendard.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
+        <a
+          href="#main-content"
+          className="sr-only absolute left-3 top-3 z-[120] rounded-md bg-background px-3 py-2 text-sm font-medium text-foreground shadow focus:not-sr-only focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          Skip to content
+        </a>
         {children}
       </body>
     </html>

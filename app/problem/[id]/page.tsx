@@ -75,5 +75,9 @@ export default async function ProblemPage({
     notFound()
   }
 
-  return <ProblemPageClient problem={problem} />
+  return (
+    <main id="main-content">
+      <ProblemPageClient problem={problem} />
+    </main>
+  )
 }

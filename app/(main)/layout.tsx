@@ -8,7 +8,7 @@ export default function MainLayout({
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      {children}
+      <main id="main-content">{children}</main>
     </div>
   );
 }
