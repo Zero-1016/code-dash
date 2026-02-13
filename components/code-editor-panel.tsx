@@ -519,6 +519,15 @@ export function CodeEditorPanel({
                       </code>
                     </div>
 
+                    <div className="mb-2">
+                      <div className="text-muted-foreground font-semibold mb-1">
+                        Expected Output:
+                      </div>
+                      <code className="block rounded-[12px] bg-muted px-3 py-2 font-mono text-foreground">
+                        {JSON.stringify(testCase.expected)}
+                      </code>
+                    </div>
+
                     {testResult?.consoleLogs &&
                       testResult.consoleLogs.length > 0 && (
                         <div className="mb-2">
@@ -596,6 +605,15 @@ export function CodeEditorPanel({
                       </div>
                       <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-foreground">
                         {testCase.input}
+                      </code>
+                    </div>
+
+                    <div className="mb-2">
+                      <div className="text-muted-foreground font-semibold mb-1">
+                        Expected Output:
+                      </div>
+                      <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-foreground">
+                        {testCase.expected}
                       </code>
                     </div>
 
