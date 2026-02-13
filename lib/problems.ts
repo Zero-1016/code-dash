@@ -341,44 +341,258 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
-function createVariantProblem(seed: Problem, variantNumber: number): Problem {
-  const variantFunctionName = `${seed.functionName}V${variantNumber}`
+function maxSubArrayValue(nums: number[]): number {
+  let best = nums[0]
+  let current = nums[0]
+  for (let i = 1; i < nums.length; i += 1) {
+    current = Math.max(nums[i], current + nums[i])
+    best = Math.max(best, current)
+  }
+  return best
+}
+
+function mergeIntervalsValue(intervals: number[][]): number[][] {
+  const sorted = intervals
+    .map((it) => [it[0], it[1]])
+    .sort((a, b) => a[0] - b[0])
+  const merged: number[][] = []
+  for (const interval of sorted) {
+    if (merged.length === 0 || merged[merged.length - 1][1] < interval[0]) {
+      merged.push(interval)
+      continue
+    }
+    merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], interval[1])
+  }
+  return merged
+}
+
+function longestUniqueSubstringValue(s: string): number {
+  const map = new Map<string, number>()
+  let left = 0
+  let best = 0
+  for (let right = 0; right < s.length; right += 1) {
+    const ch = s[right]
+    if (map.has(ch) && (map.get(ch) ?? -1) >= left) {
+      left = (map.get(ch) ?? 0) + 1
+    }
+    map.set(ch, right)
+    best = Math.max(best, right - left + 1)
+  }
+  return best
+}
+
+function levelOrderFromArray(root: Array<number | null>): number[][] {
+  if (root.length === 0 || root[0] === null) {
+    return []
+  }
+  const levels: number[][] = []
+  let level = 0
+  while (true) {
+    const start = 2 ** level - 1
+    if (start >= root.length) {
+      break
+    }
+    const end = Math.min(root.length, 2 ** (level + 1) - 1)
+    const values: number[] = []
+    for (let i = start; i < end; i += 1) {
+      const value = root[i]
+      if (value !== null && value !== undefined) {
+        values.push(value)
+      }
+    }
+    if (values.length > 0) {
+      levels.push(values)
+    }
+    level += 1
+  }
+  return levels
+}
+
+function trapRainWaterValue(height: number[]): number {
+  let left = 0
+  let right = height.length - 1
+  let leftMax = 0
+  let rightMax = 0
+  let water = 0
+
+  while (left < right) {
+    if (height[left] < height[right]) {
+      leftMax = Math.max(leftMax, height[left])
+      water += leftMax - height[left]
+      left += 1
+    } else {
+      rightMax = Math.max(rightMax, height[right])
+      water += rightMax - height[right]
+      right -= 1
+    }
+  }
+
+  return water
+}
+
+function buildTestCases(seedId: Problem["id"], index: number): TestCase[] {
+  const n = index + 2
+  switch (seedId) {
+    case "two-sum": {
+      const numsA = [n, n + 5, n + 11, n + 2, n + 20]
+      const numsB = [n + 3, n * 2, n + 8, n * 3, n + 9]
+      const numsC = [n + 10, n + 1, n + 7, n + 14, n + 4]
+      return [
+        { input: [numsA, numsA[0] + numsA[3]], expected: [0, 3] },
+        { input: [numsB, numsB[1] + numsB[2]], expected: [1, 2] },
+        { input: [numsC, numsC[0] + numsC[1]], expected: [0, 1] },
+      ]
+    }
+    case "valid-parentheses": {
+      const samples = [
+        ["([]{})", true],
+        ["([{}])", true],
+        ["([)]", false],
+        ["(((())))", true],
+        ["{[}]", false],
+        ["(()", false],
+      ] as const
+      const a = samples[index % samples.length]
+      const b = samples[(index + 2) % samples.length]
+      const c = samples[(index + 4) % samples.length]
+      return [
+        { input: [a[0]], expected: a[1] },
+        { input: [b[0]], expected: b[1] },
+        { input: [c[0]], expected: c[1] },
+      ]
+    }
+    case "reverse-linked-list": {
+      const listA = Array.from({ length: 3 + (index % 4) }, (_, i) => n + i)
+      const listB = Array.from({ length: 2 + (index % 3) }, (_, i) => n * 2 + i)
+      return [
+        { input: [listA], expected: [...listA].reverse() },
+        { input: [listB], expected: [...listB].reverse() },
+      ]
+    }
+    case "maximum-subarray": {
+      const numsA = [-2, n, -1, n + 1, -3, n + 2]
+      const numsB = [n, -1, -2, n + 4, -1, 2]
+      const numsC = [-n, -2, -1, -3]
+      return [
+        { input: [numsA], expected: maxSubArrayValue(numsA) },
+        { input: [numsB], expected: maxSubArrayValue(numsB) },
+        { input: [numsC], expected: maxSubArrayValue(numsC) },
+      ]
+    }
+    case "merge-intervals": {
+      const intervalsA = [[1, 2 + (index % 3)], [2, 5 + (index % 2)], [8, 10], [9, 12]]
+      const intervalsB = [[0, 1], [1, 3], [4, 6], [5, 7 + (index % 2)]]
+      return [
+        { input: [intervalsA], expected: mergeIntervalsValue(intervalsA) },
+        { input: [intervalsB], expected: mergeIntervalsValue(intervalsB) },
+      ]
+    }
+    case "longest-substring": {
+      const samples = ["abcdeafgh", "pwwkewxyz", "abba", "dvdf", "tmmzuxt", "anviaj"]
+      const a = samples[index % samples.length]
+      const b = samples[(index + 3) % samples.length]
+      return [
+        { input: [a], expected: longestUniqueSubstringValue(a) },
+        { input: [b], expected: longestUniqueSubstringValue(b) },
+      ]
+    }
+    case "binary-tree-level-order": {
+      const rootA: Array<number | null> = [n, n + 1, n + 2, null, n + 3, n + 4, null]
+      const rootB: Array<number | null> = [n + 10, n + 11, n + 12, n + 13, null, null, n + 14]
+      return [
+        { input: [rootA], expected: levelOrderFromArray(rootA) },
+        { input: [rootB], expected: levelOrderFromArray(rootB) },
+      ]
+    }
+    case "trapping-rain-water": {
+      const heightsA = [0, 2 + (index % 3), 1, 3 + (index % 2), 0, 1, 2]
+      const heightsB = [4, 1 + (index % 2), 0, 2, 3, 0, 2]
+      return [
+        { input: [heightsA], expected: trapRainWaterValue(heightsA) },
+        { input: [heightsB], expected: trapRainWaterValue(heightsB) },
+      ]
+    }
+    default:
+      return []
+  }
+}
+
+function buildExamples(testCases: TestCase[]): Problem["examples"] {
+  return testCases.slice(0, 2).map((testCase) => ({
+    input: testCase.input
+      .map((value, idx) => `arg${idx + 1} = ${JSON.stringify(value)}`)
+      .join(", "),
+    output: JSON.stringify(testCase.expected),
+  }))
+}
+
+function buildGeneratedTitle(category: string, index: number): string {
+  const descriptors = [
+    "Sprint",
+    "Quest",
+    "Workshop",
+    "Challenge",
+    "Lab",
+    "Pattern",
+    "Checkpoint",
+    "Mission",
+    "Practice",
+    "Arena",
+  ]
+  const themes = [
+    "Alpha",
+    "Bravo",
+    "Charlie",
+    "Delta",
+    "Echo",
+    "Foxtrot",
+    "Gamma",
+    "Helix",
+    "Ion",
+    "Jade",
+    "Kilo",
+    "Lumen",
+    "Matrix",
+    "Nova",
+    "Orbit",
+    "Pulse",
+    "Quartz",
+    "Rift",
+    "Sigma",
+    "Titan",
+  ]
+  return `${category} ${descriptors[index % descriptors.length]} ${themes[index % themes.length]}`
+}
+
+function createGeneratedProblem(seed: Problem, index: number): Problem {
+  const sequence = index + 2
+  const generatedId = `${seed.id}-set-${sequence}`
+  const generatedTitle = buildGeneratedTitle(seed.category, index)
+  const generatedFunctionName = `${seed.functionName}Set${sequence}`
   const functionNameRegex = new RegExp(`\\b${escapeRegExp(seed.functionName)}\\b`)
-  const successRateDelta = (variantNumber % 7) * 2
+  const testCases = buildTestCases(seed.id, index)
 
   return {
     ...seed,
-    id: `${seed.id}-v${variantNumber}`,
-    title: `${seed.title} Variant ${variantNumber}`,
-    successRate: Math.max(20, Math.min(95, seed.successRate - successRateDelta)),
-    description: `${seed.description}\n\nPractice variant #${variantNumber}.`,
-    starterCode: seed.starterCode.replace(functionNameRegex, variantFunctionName),
-    functionName: variantFunctionName,
+    id: generatedId,
+    title: generatedTitle,
+    successRate: Math.max(20, seed.successRate - ((index * 3) % 20)),
+    description: `${seed.description}\n\nThis is an original practice set focused on the same ${seed.category.toLowerCase()} pattern.`,
+    starterCode: seed.starterCode.replace(functionNameRegex, generatedFunctionName),
+    functionName: generatedFunctionName,
+    testCases,
+    examples: buildExamples(testCases),
   }
 }
 
 export const problems: Problem[] = (() => {
-  const categoryMap = new Map<string, Problem[]>()
-  for (const problem of baseProblems) {
-    const group = categoryMap.get(problem.category) ?? []
-    group.push(problem)
-    categoryMap.set(problem.category, group)
-  }
-
-  const expanded: Problem[] = []
-  for (const seeds of categoryMap.values()) {
-    const categoryProblems = [...seeds]
-    let variantNumber = 1
-    let seedIndex = 0
-    while (categoryProblems.length < TARGET_PROBLEMS_PER_CATEGORY) {
-      const seed = seeds[seedIndex % seeds.length]
-      categoryProblems.push(createVariantProblem(seed, variantNumber))
-      variantNumber += 1
-      seedIndex += 1
+  const expanded: Problem[] = [...baseProblems]
+  for (const seed of baseProblems) {
+    const sameCategoryCount = expanded.filter((problem) => problem.category === seed.category).length
+    for (let i = sameCategoryCount; i < TARGET_PROBLEMS_PER_CATEGORY; i += 1) {
+      expanded.push(createGeneratedProblem(seed, i - 1))
     }
-    expanded.push(...categoryProblems)
   }
-
   return expanded
 })()
 
