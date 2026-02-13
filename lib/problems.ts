@@ -345,6 +345,7 @@ const ADDITIONAL_PROBLEMS_PER_CATEGORY: Record<Problem["id"], number> = {
   "binary-tree-level-order": 6,
   "trapping-rain-water": 5,
 }
+const BASE_PROBLEMS_PER_CATEGORY = 20
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
@@ -1122,8 +1123,26 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
   return buildExamplesForSeed(seed, testCases)
 }
 
+function buildGeneratedTitleByIndex(seedId: Problem["id"], index: number): string {
+  const pool = generatedTitlePool[seedId]
+  const base = pool[index % pool.length]
+  if (index < pool.length) {
+    return base
+  }
+  return `${base} ${index + 1}`
+}
+
+function buildGeneratedTitleByIndexKo(seedId: Problem["id"], index: number): string {
+  const pool = generatedTitlePoolKo[seedId]
+  const base = pool[index % pool.length]
+  if (index < pool.length) {
+    return base
+  }
+  return `${base} ${index + 1}`
+}
+
 function createGeneratedProblem(seed: Problem, index: number): Problem {
-  const generatedTitle = generatedTitlePool[seed.id][index % generatedTitlePool[seed.id].length]
+  const generatedTitle = buildGeneratedTitleByIndex(seed.id, index)
   const generatedId = `${toKebabCase(generatedTitle)}-${index + 2}`
   const generatedFunctionName = `${seed.functionName}Set${index + 2}`
   const functionNameRegex = new RegExp(`\\b${escapeRegExp(seed.functionName)}\\b`)
@@ -1167,8 +1186,7 @@ function buildAutoKoreanText(problem: Problem): ProblemTextBundle | null {
     return null
   }
   const index = getGeneratedIndex(problem)
-  const titlePool = generatedTitlePoolKo[seedId]
-  const title = titlePool[index % titlePool.length] ?? problem.title
+  const title = buildGeneratedTitleByIndexKo(seedId, index)
   return {
     title,
     category: localizeCategory(problem.category, "ko"),
@@ -1180,7 +1198,7 @@ function buildAutoKoreanText(problem: Problem): ProblemTextBundle | null {
 
 export const problems: Problem[] = (() => {
   const grouped = baseProblems.map((seed) => {
-    const count = ADDITIONAL_PROBLEMS_PER_CATEGORY[seed.id]
+    const count = BASE_PROBLEMS_PER_CATEGORY - 1 + ADDITIONAL_PROBLEMS_PER_CATEGORY[seed.id]
     const list: Problem[] = [seed]
     for (let i = 0; i < count; i += 1) {
       list.push(createGeneratedProblem(seed, i))
