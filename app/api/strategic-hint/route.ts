@@ -57,21 +57,7 @@ function finalizeHintResponse(text: string, language: MentorLanguage): string {
     normalized = `${normalized}.`
   }
 
-  if (normalized.length <= 120) {
-    return normalized
-  }
-
-  const sentenceBreak = Math.max(
-    normalized.lastIndexOf(".", 120),
-    normalized.lastIndexOf("!", 120),
-    normalized.lastIndexOf("?", 120),
-    normalized.lastIndexOf("。", 120)
-  )
-  if (sentenceBreak >= 40) {
-    return normalized.slice(0, sentenceBreak + 1).trim()
-  }
-
-  return normalized.slice(0, 120).trim()
+  return normalized
 }
 
 function buildStrategicHintPrompt(
