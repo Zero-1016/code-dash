@@ -517,58 +517,334 @@ function buildTestCases(seedId: Problem["id"], index: number): TestCase[] {
   }
 }
 
-function buildExamples(testCases: TestCase[]): Problem["examples"] {
-  return testCases.slice(0, 2).map((testCase) => ({
-    input: testCase.input
-      .map((value, idx) => `arg${idx + 1} = ${JSON.stringify(value)}`)
-      .join(", "),
-    output: JSON.stringify(testCase.expected),
-  }))
+function toKebabCase(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
 }
 
-function buildGeneratedTitle(category: string, index: number): string {
-  const descriptors = [
-    "Sprint",
-    "Quest",
-    "Workshop",
-    "Challenge",
-    "Lab",
-    "Pattern",
-    "Checkpoint",
-    "Mission",
-    "Practice",
-    "Arena",
-  ]
-  const themes = [
-    "Alpha",
-    "Bravo",
-    "Charlie",
-    "Delta",
-    "Echo",
-    "Foxtrot",
-    "Gamma",
-    "Helix",
-    "Ion",
-    "Jade",
-    "Kilo",
-    "Lumen",
-    "Matrix",
-    "Nova",
-    "Orbit",
-    "Pulse",
-    "Quartz",
-    "Rift",
-    "Sigma",
-    "Titan",
-  ]
-  return `${category} ${descriptors[index % descriptors.length]} ${themes[index % themes.length]}`
+const generatedTitlePool: Record<Problem["id"], string[]> = {
+  "two-sum": [
+    "Coupon Pair Match",
+    "Delivery Budget Pair",
+    "Two Prices, One Receipt",
+    "Rally Score Pair",
+    "Battery Cell Match",
+    "Gift Card Exact Pair",
+    "Promotion Bundle Pair",
+    "Inventory Sum Check",
+    "Auction Target Pair",
+    "Transit Fare Pair",
+    "Expense Pair Finder",
+    "Round Score Pair",
+    "Coin Box Pair",
+    "Order Pair Validator",
+    "Discount Pair Index",
+    "Warehouse Pair Search",
+    "Meeting Time Pair",
+    "Peak Load Pair",
+    "Route Cost Pair",
+    "Session Token Pair",
+  ],
+  "valid-parentheses": [
+    "Bracket Stream Validator",
+    "Template Tag Balance",
+    "Macro Parenthesis Check",
+    "Expression Safety Filter",
+    "Block Scope Validator",
+    "Formula Bracket Audit",
+    "Config Wrapper Check",
+    "Nested Token Validator",
+    "Script Delimiter Guard",
+    "Query Grouping Validation",
+    "Text Parser Brackets",
+    "Snippet Pair Verifier",
+    "Stack Input Sanity",
+    "Bracket Order Review",
+    "Command Wrapper Check",
+    "Code Fence Validator",
+    "Math Input Balance",
+    "Log Delimiter Check",
+    "Syntax Pair Detector",
+    "Program Block Verify",
+  ],
+  "reverse-linked-list": [
+    "Undo Recent Events",
+    "Reverse Task Queue",
+    "Backtrack Navigation Chain",
+    "Reverse Playlist Nodes",
+    "Message Chain Flip",
+    "Shipment Route Reversal",
+    "Access History Reverse",
+    "Rollback Commit Chain",
+    "Reverse Sensor Stream",
+    "Flip Service Linked Path",
+    "Call Log Rewind",
+    "Node Direction Swap",
+    "Emergency Route Reverse",
+    "Reverse Job Pipeline",
+    "Backorder Chain Flip",
+    "Reverse Ticket Chain",
+    "Customer Path Reversal",
+    "Reverse Audit Trail",
+    "Inbound Link Reversal",
+    "Node Rewind Operation",
+  ],
+  "maximum-subarray": [
+    "Best Sales Streak",
+    "Peak Energy Window",
+    "Maximum Profit Span",
+    "Campaign Gain Segment",
+    "Signal Strength Burst",
+    "Top Momentum Slice",
+    "Revenue Boost Interval",
+    "Player Combo Maximum",
+    "Heatmap High Segment",
+    "Best Growth Range",
+    "Market Surge Sequence",
+    "Maximum Lift Interval",
+    "Season Score Streak",
+    "Prime Window Gain",
+    "Cost Benefit Segment",
+    "Pulse Peak Subarray",
+    "Ad Trend Maximum",
+    "Traffic Spike Span",
+    "Value Run Optimizer",
+    "Top Segment Finder",
+  ],
+  "merge-intervals": [
+    "Meeting Room Merge",
+    "Reservation Time Consolidation",
+    "Maintenance Window Merge",
+    "Delivery Slot Merge",
+    "Sensor Active Range Merge",
+    "Schedule Overlap Compression",
+    "Campaign Time Merge",
+    "Service Downtime Merge",
+    "Clinic Appointment Merge",
+    "Shift Interval Consolidation",
+    "Broadcast Window Merge",
+    "Route Closure Merge",
+    "Booking Interval Cleanup",
+    "Trip Segment Merge",
+    "Training Session Merge",
+    "Alert Time Merge",
+    "Office Access Merge",
+    "Ticketing Window Merge",
+    "Machine Runtime Merge",
+    "Classroom Block Merge",
+  ],
+  "longest-substring": [
+    "Unique Chat Window",
+    "Longest Unique Access Key",
+    "No-Duplicate Signal Span",
+    "Password Segment Scanner",
+    "Distinct Character Window",
+    "Longest Clean Token Span",
+    "Unique Event Burst",
+    "Distinct Input Detector",
+    "Key Stream Unique Range",
+    "Unique Session Slice",
+    "Longest Marker Sequence",
+    "Distinct Path Segment",
+    "No-Repeat Window Size",
+    "Unique Word Stream",
+    "Packet ID Window",
+    "Distinct Tag Tracker",
+    "Unique Cursor Span",
+    "Longest Fresh Segment",
+    "Message Diversity Window",
+    "Unique Fragment Search",
+  ],
+  "binary-tree-level-order": [
+    "Organization Level Walk",
+    "Server Rack Level Scan",
+    "Family Tree Layer Output",
+    "Route Tree Breadth Read",
+    "Menu Tree Level Listing",
+    "Cluster Node Level Trace",
+    "Decision Tree Layer Walk",
+    "Branch Depth Snapshot",
+    "Site Map Level Order",
+    "Hierarchy Level Collect",
+    "Binary Layer Collector",
+    "Breadth Queue Traversal",
+    "Level Grouping of Nodes",
+    "Tree Floor Enumeration",
+    "Wavefront Tree Scan",
+    "Node Level Aggregation",
+    "Layered Branch Output",
+    "Team Hierarchy Traversal",
+    "Grid Command Tree Levels",
+    "System Tree Breadth Pass",
+  ],
+  "trapping-rain-water": [
+    "Rooftop Water Capture",
+    "Street Basin Calculator",
+    "Terrain Pool Estimator",
+    "Flood Pocket Counter",
+    "Rain Bucket Layout",
+    "City Drainage Estimator",
+    "Barrier Water Volume",
+    "Canal Wall Water Count",
+    "Stormwater Retention",
+    "Valley Fill Measurement",
+    "Blocked Drain Accumulation",
+    "Water Between Towers",
+    "Dam Segment Capacity",
+    "Urban Rain Catchment",
+    "Pit Volume Finder",
+    "Rainfall Hold Calculator",
+    "Gutter Water Counter",
+    "Reservoir Gap Estimator",
+    "Platform Water Storage",
+    "Puddle Capacity Scan",
+  ],
+}
+
+function buildGeneratedDescription(seed: Problem["id"], title: string): string {
+  switch (seed) {
+    case "two-sum":
+      return `In "${title}", you are given a list of integer values and a target total. Find the two different positions whose values add up to the target.
+
+Return the two indices in any order. You may assume there is exactly one valid answer.`
+    case "valid-parentheses":
+      return `In "${title}", you receive a string containing only bracket characters.
+
+Determine whether every opening bracket is closed by the correct type and in the correct order.`
+    case "reverse-linked-list":
+      return `In "${title}", a singly linked sequence is represented as an array in input order.
+
+Return the sequence in reversed order as if the linked list pointers were fully reversed.`
+    case "maximum-subarray":
+      return `In "${title}", each integer represents gain or loss at each time step.
+
+Find the maximum possible sum of a contiguous non-empty segment.`
+    case "merge-intervals":
+      return `In "${title}", each entry is a time interval \`[start, end]\`.
+
+Merge every overlapping interval and return the minimal list of non-overlapping intervals.`
+    case "longest-substring":
+      return `In "${title}", given a string \`s\`, find the maximum length of a contiguous substring with all unique characters.`
+    case "binary-tree-level-order":
+      return `In "${title}", the binary tree is provided in array form (level-order with \`null\` gaps).
+
+Return node values grouped by depth from top to bottom and left to right.`
+    case "trapping-rain-water":
+      return `In "${title}", each number is the height of a wall with width 1.
+
+Compute how many total units of rainwater are trapped after rainfall.`
+    default:
+      return "Solve the problem using an efficient algorithm."
+  }
+}
+
+function buildGeneratedConstraints(seed: Problem["id"]): string[] {
+  switch (seed) {
+    case "two-sum":
+      return [
+        "2 <= nums.length <= 10^4",
+        "-10^9 <= nums[i] <= 10^9",
+        "-10^9 <= target <= 10^9",
+        "Exactly one valid pair exists.",
+      ]
+    case "valid-parentheses":
+      return [
+        "1 <= s.length <= 10^4",
+        "s contains only ()[]{} characters.",
+      ]
+    case "reverse-linked-list":
+      return [
+        "0 <= head.length <= 5000",
+        "-5000 <= head[i] <= 5000",
+      ]
+    case "maximum-subarray":
+      return [
+        "1 <= nums.length <= 10^5",
+        "-10^4 <= nums[i] <= 10^4",
+      ]
+    case "merge-intervals":
+      return [
+        "1 <= intervals.length <= 10^4",
+        "intervals[i].length == 2",
+        "0 <= start <= end <= 10^5",
+      ]
+    case "longest-substring":
+      return [
+        "0 <= s.length <= 5 * 10^4",
+        "s may contain letters, digits, symbols, and spaces.",
+      ]
+    case "binary-tree-level-order":
+      return [
+        "0 <= number of nodes <= 2000",
+        "-1000 <= Node.val <= 1000",
+      ]
+    case "trapping-rain-water":
+      return [
+        "1 <= height.length <= 2 * 10^4",
+        "0 <= height[i] <= 10^5",
+      ]
+    default:
+      return []
+  }
+}
+
+function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Problem["examples"] {
+  return testCases.slice(0, 2).map((testCase) => {
+    if (seed === "two-sum") {
+      return {
+        input: `nums = ${JSON.stringify(testCase.input[0])}, target = ${JSON.stringify(testCase.input[1])}`,
+        output: JSON.stringify(testCase.expected),
+      }
+    }
+    if (seed === "valid-parentheses") {
+      return {
+        input: `s = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+      }
+    }
+    if (seed === "reverse-linked-list") {
+      return {
+        input: `head = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+      }
+    }
+    if (seed === "maximum-subarray") {
+      return {
+        input: `nums = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+      }
+    }
+    if (seed === "merge-intervals") {
+      return {
+        input: `intervals = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+      }
+    }
+    if (seed === "longest-substring") {
+      return {
+        input: `s = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+      }
+    }
+    if (seed === "binary-tree-level-order") {
+      return {
+        input: `root = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+      }
+    }
+    return {
+      input: `height = ${JSON.stringify(testCase.input[0])}`,
+      output: JSON.stringify(testCase.expected),
+    }
+  })
 }
 
 function createGeneratedProblem(seed: Problem, index: number): Problem {
-  const sequence = index + 2
-  const generatedId = `${seed.id}-set-${sequence}`
-  const generatedTitle = buildGeneratedTitle(seed.category, index)
-  const generatedFunctionName = `${seed.functionName}Set${sequence}`
+  const generatedTitle = generatedTitlePool[seed.id][index % generatedTitlePool[seed.id].length]
+  const generatedId = `${toKebabCase(generatedTitle)}-${index + 2}`
+  const generatedFunctionName = `${seed.functionName}Set${index + 2}`
   const functionNameRegex = new RegExp(`\\b${escapeRegExp(seed.functionName)}\\b`)
   const testCases = buildTestCases(seed.id, index)
 
@@ -577,11 +853,12 @@ function createGeneratedProblem(seed: Problem, index: number): Problem {
     id: generatedId,
     title: generatedTitle,
     successRate: Math.max(20, seed.successRate - ((index * 3) % 20)),
-    description: `${seed.description}\n\nThis is an original practice set focused on the same ${seed.category.toLowerCase()} pattern.`,
+    description: buildGeneratedDescription(seed.id, generatedTitle),
+    constraints: buildGeneratedConstraints(seed.id),
     starterCode: seed.starterCode.replace(functionNameRegex, generatedFunctionName),
     functionName: generatedFunctionName,
     testCases,
-    examples: buildExamples(testCases),
+    examples: buildExamplesForSeed(seed.id, testCases),
   }
 }
 
