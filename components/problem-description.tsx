@@ -3,8 +3,9 @@
 import { motion } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { Problem } from "@/lib/problems"
+import { getLocalizedProblemText, type Problem } from "@/lib/problems"
 import { cn } from "@/lib/utils"
+import { useAppLanguage } from "@/lib/use-app-language"
 
 const difficultyConfig: Record<string, { bg: string; text: string }> = {
   Easy: {
@@ -23,6 +24,24 @@ const difficultyConfig: Record<string, { bg: string; text: string }> = {
 
 interface ProblemDescriptionProps {
   problem: Problem
+}
+
+function renderExponentText(text: string, keyPrefix: string) {
+  const parts = text.split(/(\^-?\d+)/g)
+  return parts.map((part, i) => {
+    if (!part) return null
+    if (part.startsWith("^") && /^-?\d+$/.test(part.slice(1))) {
+      return (
+        <sup
+          key={`${keyPrefix}-sup-${i}`}
+          className="relative -top-[0.3em] text-[0.72em] leading-none align-baseline"
+        >
+          {part.slice(1)}
+        </sup>
+      )
+    }
+    return <span key={`${keyPrefix}-txt-${i}`}>{part}</span>
+  })
 }
 
 function renderMarkdown(text: string) {
@@ -46,12 +65,14 @@ function renderMarkdown(text: string) {
         </strong>
       )
     }
-    return <span key={i}>{part}</span>
+    return <span key={i}>{renderExponentText(part, `md-${i}`)}</span>
   })
 }
 
 export function ProblemDescription({ problem }: ProblemDescriptionProps) {
+  const { language, copy } = useAppLanguage()
   const diffStyle = difficultyConfig[problem.difficulty]
+  const localized = getLocalizedProblemText(problem, language)
 
   return (
     <ScrollArea className="h-full">
@@ -63,8 +84,16 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
         >
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-foreground lg:text-2xl">
-              {problem.title}
+              {localized.text.title}
             </h1>
+            {localized.isFallback && (
+              <Badge
+                variant="secondary"
+                className="border-0 text-xs font-semibold bg-[#eef4ff] text-[#2f66d0]"
+              >
+                {copy.problem.fallbackEnglish}
+              </Badge>
+            )}
             <Badge
               variant="secondary"
               className={cn(
@@ -78,7 +107,7 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
           </div>
 
           <p className="mt-1 text-xs text-muted-foreground">
-            {problem.category}
+            {localized.text.category}
           </p>
         </motion.div>
 
@@ -88,7 +117,7 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
           transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
           className="mt-6"
         >
-          {problem.description.split("\n\n").map((paragraph, i) => {
+          {localized.text.description.split("\n\n").map((paragraph, i) => {
             if (paragraph.startsWith("1.") || paragraph.startsWith("2.") || paragraph.startsWith("3.")) {
               const items = paragraph.split("\n")
               return (
@@ -116,18 +145,18 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
           transition={{ duration: 0.4, delay: 0.25, ease: "easeOut" }}
           className="mt-8 flex flex-col gap-4"
         >
-          {problem.examples.map((example, i) => (
+          {localized.text.examples.map((example, i) => (
             <div
               key={i}
               className="rounded-2xl border border-border/60 bg-muted/50 p-4"
             >
               <p className="text-xs font-semibold text-muted-foreground">
-                Example {i + 1}
+                {copy.problem.examples} {i + 1}
               </p>
               <div className="mt-2 flex flex-col gap-1.5">
                 <div className="flex items-start gap-2">
                   <span className="flex-shrink-0 text-xs font-medium text-muted-foreground">
-                    Input:
+                    {copy.problem.input}:
                   </span>
                   <code className="font-mono text-xs text-foreground">
                     {example.input}
@@ -135,7 +164,7 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="flex-shrink-0 text-xs font-medium text-muted-foreground">
-                    Output:
+                    {copy.problem.output}:
                   </span>
                   <code className="font-mono text-xs text-primary">
                     {example.output}
@@ -157,12 +186,12 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
           transition={{ duration: 0.4, delay: 0.35, ease: "easeOut" }}
           className="mt-8"
         >
-          <h3 className="text-sm font-semibold text-foreground">Constraints</h3>
+          <h3 className="text-sm font-semibold text-foreground">{copy.problem.constraints}</h3>
           <ul className="mt-2 flex flex-col gap-1">
-            {problem.constraints.map((constraint, i) => (
+            {localized.text.constraints.map((constraint, i) => (
               <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-primary/40" />
-                <code className="font-mono">{constraint}</code>
+                <code className="font-mono">{renderExponentText(constraint, `constraint-${i}`)}</code>
               </li>
             ))}
           </ul>

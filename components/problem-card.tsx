@@ -17,7 +17,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import {
   getLocalizedProblemText,
-  getAvailableProblemLanguages,
   type Problem,
 } from "@/lib/problems"
 import { cn } from "@/lib/utils"
@@ -63,8 +62,6 @@ export function ProblemCard({ problem, index, isSolved = false }: ProblemCardPro
   const Icon = iconMap[problem.categoryIcon] || Hash
   const diffStyle = difficultyConfig[problem.difficulty]
   const localized = getLocalizedProblemText(problem, language)
-  const availableLanguages = getAvailableProblemLanguages(problem)
-  const isMultilingual = availableLanguages.length > 1
 
   return (
     <motion.div
@@ -84,16 +81,14 @@ export function ProblemCard({ problem, index, isSolved = false }: ProblemCardPro
               <h3 className="truncate text-sm font-semibold text-foreground lg:text-base">
                 {localized.text.title}
               </h3>
-              <Badge
-                variant="secondary"
-                className="border-0 text-[10px] font-semibold bg-[#eef4ff] text-[#2f66d0]"
-              >
-                {isMultilingual
-                  ? copy.problem.translationReady
-                  : localized.isFallback
-                  ? copy.problem.fallbackEnglish
-                  : "EN"}
-              </Badge>
+              {localized.isFallback && (
+                <Badge
+                  variant="secondary"
+                  className="border-0 text-[10px] font-semibold bg-[#eef4ff] text-[#2f66d0]"
+                >
+                  {copy.problem.fallbackEnglish}
+                </Badge>
+              )}
               {isSolved && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(145,65%,93%)] px-2 py-0.5 text-[10px] font-semibold text-[hsl(145,65%,32%)]">
                   <CheckCircle2 className="h-3 w-3" />
