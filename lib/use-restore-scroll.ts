@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useState } from "react"
 
 interface StoredScrollState<T> {
   state: T
@@ -99,11 +99,12 @@ export function useRestoreScroll<T>({
     }
   }, [persistState, state])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!initialStoredState || typeof window === "undefined") {
       return
     }
 
+    // Restore after one animation frame so list layout/virtual rows are mounted.
     const frame = window.requestAnimationFrame(() => {
       window.scrollTo({ top: initialStoredState.scrollY, behavior: "auto" })
     })
