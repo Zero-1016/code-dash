@@ -12,6 +12,7 @@ import {
   GitBranch,
   Droplets,
   ArrowRight,
+  CheckCircle2,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -50,9 +51,10 @@ const difficultyConfig: Record<
 interface ProblemCardProps {
   problem: Problem
   index: number
+  isSolved?: boolean
 }
 
-export function ProblemCard({ problem, index }: ProblemCardProps) {
+export function ProblemCard({ problem, index, isSolved = false }: ProblemCardProps) {
   const Icon = iconMap[problem.categoryIcon] || Hash
   const diffStyle = difficultyConfig[problem.difficulty]
 
@@ -74,6 +76,12 @@ export function ProblemCard({ problem, index }: ProblemCardProps) {
               <h3 className="truncate text-sm font-semibold text-foreground lg:text-base">
                 {problem.title}
               </h3>
+              {isSolved && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(145,65%,93%)] px-2 py-0.5 text-[10px] font-semibold text-[hsl(145,65%,32%)]">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Solved
+                </span>
+              )}
               <Badge
                 variant="secondary"
                 className={cn(

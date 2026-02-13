@@ -38,6 +38,12 @@ interface CodeEditorPanelProps {
   setIsAiGenerating?: (value: boolean) => void;
   setPendingReview?: (review: string | null) => void;
   setIsAssistantOpen?: (value: boolean) => void;
+  onSubmissionComplete?: (result: {
+    success: boolean;
+    passed: number;
+    total: number;
+  }) => void;
+  onRunTests?: () => void;
 }
 
 function judgeCode(code: string, problem: Problem): JudgeResult {
@@ -108,6 +114,8 @@ export function CodeEditorPanel({
   setIsAiGenerating,
   setPendingReview,
   setIsAssistantOpen,
+  onSubmissionComplete,
+  onRunTests,
 }: CodeEditorPanelProps) {
   const router = useRouter();
   const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(null);
@@ -131,6 +139,14 @@ export function CodeEditorPanel({
     const totalCount = result.results.length;
     const passedRatio = totalCount > 0 ? passedCount / totalCount : 0;
 
+    if (onSubmissionComplete) {
+      onSubmissionComplete({
+        success: result.success,
+        passed: passedCount,
+        total: totalCount,
+      });
+    }
+
     // Call AI API for analysis
     const codeAnalysis = await analyzeCodeWithAI(
       code,
@@ -144,7 +160,7 @@ export function CodeEditorPanel({
     setAnalysis(codeAnalysis);
     setIsJudging(false);
     setShowResult(true);
-  }, [code, problem]);
+  }, [code, onSubmissionComplete, problem]);
 
   const handleReset = useCallback(() => {
     setCode(problem.starterCode);
@@ -155,6 +171,10 @@ export function CodeEditorPanel({
   }, [problem.starterCode, setCode]);
 
   const handleRunTests = useCallback(async () => {
+    if (onRunTests) {
+      onRunTests();
+    }
+
     setIsRunningTests(true);
     setTestResults([]);
 
@@ -256,7 +276,15 @@ export function CodeEditorPanel({
         setIsAiGenerating(false);
       }
     }
-  }, [code, problem, customTestCases, setIsAiGenerating, setPendingReview, setIsAssistantOpen]);
+  }, [
+    code,
+    problem,
+    customTestCases,
+    setIsAiGenerating,
+    setPendingReview,
+    setIsAssistantOpen,
+    onRunTests,
+  ]);
 
   const handleAddCustomTest = useCallback((testCase: CustomTestCase) => {
     setCustomTestCases((prev) => [...prev, testCase]);
