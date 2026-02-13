@@ -650,6 +650,28 @@ export function CodeEditorPanel({
                 );
               })}
 
+              <div className="rounded-[16px] border border-border/60 bg-background p-4 text-xs">
+                <p className="mb-3 text-sm font-bold text-foreground">Expected Outputs</p>
+                <div className="space-y-2">
+                  {problem.testCases.slice(0, 2).map((testCase, index) => (
+                    <div key={`expected-default-${index}`}>
+                      <p className="mb-1 text-muted-foreground">Test Case {index + 1}</p>
+                      <code className="block rounded-[12px] bg-muted px-3 py-2 font-mono text-foreground">
+                        {JSON.stringify(testCase.expected)}
+                      </code>
+                    </div>
+                  ))}
+                  {customTestCases.map((testCase, index) => (
+                    <div key={`expected-custom-${index}`}>
+                      <p className="mb-1 text-muted-foreground">Custom Test {index + 1}</p>
+                      <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-foreground">
+                        {testCase.expected}
+                      </code>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <button
                 onClick={() => setIsAddTestModalOpen(true)}
                 className="w-full rounded-[16px] border-2 border-dashed border-border bg-muted/30 p-3 text-xs font-semibold text-muted-foreground transition-all hover:border-[#3182F6] hover:bg-[#3182F6]/5 hover:text-[#3182F6]"
