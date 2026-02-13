@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { ChevronDown } from "lucide-react"
 import { HeroSection } from "@/components/hero-section"
 import { VirtualizedProblemList } from "@/components/virtualized-problem-list"
 import { StreakWidget } from "@/components/streak-widget"
@@ -137,14 +138,17 @@ export default function HomePage() {
               ))}
               <div className="ml-auto flex items-center gap-2">
                 <span className="text-xs font-semibold text-muted-foreground">{sortByLabel}</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "difficulty-asc" | "difficulty-desc")}
-                  className="h-8 rounded-md border border-border bg-card px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[#3182F6]"
-                >
-                  <option value="difficulty-asc">{sortDifficultyAscLabel}</option>
-                  <option value="difficulty-desc">{sortDifficultyDescLabel}</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as "difficulty-asc" | "difficulty-desc")}
+                    className="h-8 appearance-none rounded-md border border-border bg-card pl-2 pr-8 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[#3182F6]"
+                  >
+                    <option value="difficulty-asc">{sortDifficultyAscLabel}</option>
+                    <option value="difficulty-desc">{sortDifficultyDescLabel}</option>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                </div>
               </div>
             </div>
             <VirtualizedProblemList problems={filteredProblems} solvedIds={solvedIds} />
