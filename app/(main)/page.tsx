@@ -21,7 +21,7 @@ export default function HomePage() {
   const shouldAnimateOnMount = usePageEntryAnimation()
   const [selectedCategory, setSelectedCategory] = useState("ALL")
   const [selectedDifficulty, setSelectedDifficulty] = useState<"ALL" | Difficulty>("ALL")
-  const [sortBy, setSortBy] = useState<"default" | "difficulty-asc" | "difficulty-desc">("default")
+  const [sortBy, setSortBy] = useState<"difficulty-asc" | "difficulty-desc">("difficulty-asc")
   const [solvedIds, setSolvedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -44,7 +44,6 @@ export default function HomePage() {
   const difficultyOptions: Array<"ALL" | Difficulty> = ["ALL", "Easy", "Medium", "Hard"]
   const allDifficultyLabel = language === "ko" ? "전체 난이도" : "All Difficulty"
   const sortByLabel = language === "ko" ? "정렬" : "Sort by"
-  const sortDefaultLabel = language === "ko" ? "기본순" : "Default"
   const sortDifficultyAscLabel =
     language === "ko" ? "난이도순 (쉬움 -> 어려움)" : "Difficulty (Easy -> Hard)"
   const sortDifficultyDescLabel =
@@ -66,12 +65,12 @@ export default function HomePage() {
       : byCategory.filter((problem) => problem.difficulty === selectedDifficulty)
 
     const sorted = [...byDifficulty]
-    if (sortBy === "difficulty-asc") {
-      sorted.sort((a, b) => difficultyRank[a.difficulty] - difficultyRank[b.difficulty])
-      return sorted
-    }
     if (sortBy === "difficulty-desc") {
       sorted.sort((a, b) => difficultyRank[b.difficulty] - difficultyRank[a.difficulty])
+      return sorted
+    }
+    if (sortBy === "difficulty-asc") {
+      sorted.sort((a, b) => difficultyRank[a.difficulty] - difficultyRank[b.difficulty])
       return sorted
     }
     return sorted
@@ -140,10 +139,9 @@ export default function HomePage() {
                 <span className="text-xs font-semibold text-muted-foreground">{sortByLabel}</span>
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "default" | "difficulty-asc" | "difficulty-desc")}
+                  onChange={(e) => setSortBy(e.target.value as "difficulty-asc" | "difficulty-desc")}
                   className="h-8 rounded-md border border-border bg-card px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[#3182F6]"
                 >
-                  <option value="default">{sortDefaultLabel}</option>
                   <option value="difficulty-asc">{sortDifficultyAscLabel}</option>
                   <option value="difficulty-desc">{sortDifficultyDescLabel}</option>
                 </select>
