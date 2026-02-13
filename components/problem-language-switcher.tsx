@@ -1,10 +1,21 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { LanguageSwitcher } from "@/components/language-switcher"
 
 export function ProblemLanguageSwitcher() {
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null
+  }
+
   const isProblemPage = pathname.startsWith("/problem/")
 
   if (!isProblemPage) {
