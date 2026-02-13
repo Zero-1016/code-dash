@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,7 +14,7 @@ import { ProblemDescription } from "@/components/problem-description";
 import { CodeEditorPanel } from "@/components/code-editor-panel";
 import { CodeAssistantChat } from "@/components/code-assistant-chat";
 import { ChallengeTimer } from "@/components/challenge-timer";
-import type { Problem } from "@/lib/problems";
+import { getLocalizedProblemText, type Problem } from "@/lib/problems";
 import {
   deleteDraft,
   getDraft,
@@ -23,12 +23,33 @@ import {
   saveDraft,
   saveSolveRecord,
 } from "@/lib/local-progress";
+import { useAppLanguage } from "@/lib/use-app-language";
 
 interface ProblemPageClientProps {
   problem: Problem;
 }
 
+interface MentorTestResult {
+  passed: boolean;
+  input: string;
+  expected: string;
+  actual: string;
+}
+
 export function ProblemPageClient({ problem }: ProblemPageClientProps) {
+  const { language, copy } = useAppLanguage();
+  const localized = getLocalizedProblemText(problem, language);
+  const localizedProblem = useMemo(
+    () => ({
+      ...problem,
+      title: localized.text.title,
+      category: localized.text.category,
+      description: localized.text.description,
+      examples: localized.text.examples,
+      constraints: localized.text.constraints,
+    }),
+    [localized.text, problem]
+  );
   const [code, setCode] = useState(problem.starterCode);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -37,6 +58,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [hasTriggered30MinHint, setHasTriggered30MinHint] = useState(false);
   const [showHintNotification, setShowHintNotification] = useState(false);
+  const [latestTestResults, setLatestTestResults] = useState<MentorTestResult[]>([]);
 
   useEffect(() => {
     const draft = getDraft(problem.id);
@@ -91,10 +113,11 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              problemTitle: problem.title,
-              problemDescription: problem.description,
+              problemTitle: localizedProblem.title,
+              problemDescription: localizedProblem.description,
               code,
               elapsedMinutes: 30,
+              language,
               aiConfig: getApiSettings(),
             }),
           });
@@ -111,7 +134,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
         }
       }
     },
-    [hasTriggered30MinHint, problem, code]
+    [hasTriggered30MinHint, localizedProblem.description, localizedProblem.title, code, language]
   );
 
   return (
@@ -128,7 +151,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
             className="flex items-center gap-2 rounded-[20px] px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">{copy.problem.back}</span>
           </Link>
           <div className="h-4 w-px bg-border" />
           <div className="flex items-center gap-2">
@@ -150,7 +173,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
           <ChallengeTimer timeLimit={3600} onTimeUpdate={handleTimeUpdate} />
           <div className="h-4 w-px bg-border" />
           <p className="text-sm font-medium text-muted-foreground">
-            {problem.title}
+            {localizedProblem.title}
           </p>
           <div className="relative">
             <button
@@ -161,7 +184,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               className="flex items-center gap-2 rounded-[20px] bg-[#3182F6] px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#2870d8]"
             >
               <MessageCircle className="h-4 w-4" />
-              AI Mentor
+              {copy.problem.aiMentor}
             </button>
             <AnimatePresence>
               {showHintNotification && !isAssistantOpen && (
@@ -200,14 +223,14 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
       >
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={45} minSize={30}>
-            <ProblemDescription problem={problem} />
+            <ProblemDescription problem={localizedProblem} />
           </ResizablePanel>
 
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={55} minSize={35}>
             <CodeEditorPanel
-              problem={problem}
+              problem={localizedProblem}
               code={code}
               setCode={setCode}
               setIsAiGenerating={setIsAiGenerating}
@@ -215,6 +238,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               setIsAssistantOpen={setIsAssistantOpen}
               onSubmissionComplete={handleSubmissionComplete}
               onRunTests={recordActivity}
+              onTestResultsUpdate={setLatestTestResults}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -244,7 +268,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
                   <div className="flex items-center gap-2">
                     <MessageCircle className="h-5 w-5 text-[#3182F6]" />
                     <h2 className="text-base font-bold text-foreground">
-                      AI Mentor
+                      {copy.problem.aiMentor}
                     </h2>
                   </div>
                   <button
@@ -258,8 +282,9 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
                 <div className="flex-1 overflow-hidden">
                   <CodeAssistantChat
                     code={code}
-                    problemTitle={problem.title}
-                    problemDescription={problem.description}
+                    problemTitle={localizedProblem.title}
+                    problemDescription={localizedProblem.description}
+                    testResults={latestTestResults}
                     isAiGenerating={isAiGenerating}
                     pendingReview={pendingReview}
                     strategicHint={strategicHint}

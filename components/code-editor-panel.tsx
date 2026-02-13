@@ -46,6 +46,7 @@ interface CodeEditorPanelProps {
     total: number;
   }) => void;
   onRunTests?: () => void;
+  onTestResultsUpdate?: (results: TestResult[]) => void;
 }
 
 function judgeCode(code: string, problem: Problem): JudgeResult {
@@ -118,6 +119,7 @@ export function CodeEditorPanel({
   setIsAssistantOpen,
   onSubmissionComplete,
   onRunTests,
+  onTestResultsUpdate,
 }: CodeEditorPanelProps) {
   const { language } = useAppLanguage();
   const router = useRouter();
@@ -177,7 +179,10 @@ export function CodeEditorPanel({
     setAnalysis(null);
     setShowResult(false);
     setTestResults([]);
-  }, [problem.starterCode, setCode]);
+    if (onTestResultsUpdate) {
+      onTestResultsUpdate([]);
+    }
+  }, [onTestResultsUpdate, problem.starterCode, setCode]);
 
   const handleRunTests = useCallback(async () => {
     if (onRunTests) {
@@ -249,6 +254,9 @@ export function CodeEditorPanel({
 
     const allResults = [...defaultResults, ...customResults];
     setTestResults(allResults);
+    if (onTestResultsUpdate) {
+      onTestResultsUpdate(allResults);
+    }
     setIsRunningTests(false);
 
     // Trigger AI code review
@@ -296,6 +304,7 @@ export function CodeEditorPanel({
     setIsAssistantOpen,
     onRunTests,
     language,
+    onTestResultsUpdate,
   ]);
 
   const handleAddCustomTest = useCallback((testCase: CustomTestCase) => {

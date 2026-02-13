@@ -18,19 +18,45 @@ interface ChatMessage {
   content: string
 }
 
+interface ChatTestResult {
+  passed: boolean
+  input: string
+  expected: string
+  actual: string
+}
+
 interface ChatRequest {
   messages: ChatMessage[]
   code: string
   problemTitle: string
   problemDescription: string
+  testResults?: ChatTestResult[]
+  allTestsPassed?: boolean
   language?: MentorLanguage
   aiConfig?: Partial<AIConfigPayload>
+}
+
+function buildTestResultsContext(testResults: ChatTestResult[] = [], allTestsPassed?: boolean): string {
+  if (!testResults.length) {
+    return "No recent test output context was provided."
+  }
+
+  const lines = testResults.map(
+    (result, index) =>
+      `Test ${index + 1}: ${result.passed ? "PASS" : "FAIL"} | input=${result.input} | expected=${result.expected} | actual=${result.actual}`
+  )
+
+  return `Recent test outputs:
+${lines.join("\n")}
+Overall: ${allTestsPassed ? "ALL_PASS" : "HAS_FAIL"}`
 }
 
 function generateFallbackMentorResponse(
   language: MentorLanguage,
   code: string,
-  messages: ChatMessage[]
+  messages: ChatMessage[],
+  testResults: ChatTestResult[] = [],
+  allTestsPassed?: boolean
 ): string {
   const latestUserMessage = [...messages].reverse().find((msg) => msg.role === "user")?.content.trim() ?? ""
   const hasCode = code.trim().length > 0
@@ -50,9 +76,13 @@ function generateFallbackMentorResponse(
       : "아직 코드가 없다면 예시 입력 하나를 손으로 추적하면서 시작하자."
 
     if (requestType === "hint") {
+      const debugLead =
+        testResults.length > 0 && allTestsPassed === false
+          ? `최근 테스트 출력 기준으로 먼저 실패 원인부터 잡자. (현재 ${testResults.filter((r) => r.passed).length}/${testResults.length} 통과)`
+          : context
       return `${lead}
 
-${context}
+${debugLead}
 [Level 1: Hint]
 정답 코드를 바로 주기보다, 지금 깨지는 조건 하나를 정확히 찾는 게 먼저야.
 실패한 케이스 1개만 가져오면 거기서 바로 다음 단서를 이어줄게.
@@ -88,9 +118,13 @@ ${context}
     : "If code is empty, start by tracing one tiny example manually."
 
   if (requestType === "hint") {
+    const debugLead =
+      testResults.length > 0 && allTestsPassed === false
+        ? `Let us start from the failing output first. (${testResults.filter((r) => r.passed).length}/${testResults.length} passing)`
+        : context
     return `${lead}
 
-${context}
+${debugLead}
 Instead of giving the final code, we should isolate the first failing condition.
 Share one failing case and I will give you the next targeted hint from there.`
   }
@@ -124,6 +158,7 @@ async function chatWithClaude(
   code: string,
   problemTitle: string,
   problemDescription: string,
+  testOutputContext: string,
   language: MentorLanguage,
   apiKey: string,
   model: string,
@@ -139,20 +174,19 @@ ${problemDescription}
 ${code}
 \`\`\`
 
+**Recent Test Output Context:**
+${testOutputContext}
+
 **Your Role:**
-You're here to guide the student to **think like a developer** and build problem-solving confidence. Your goal is to help them discover solutions, not hand them over.
+You're mentoring like a senior teammate in chat. Keep it natural and human, not robotic.
 
 **Guidelines:**
-- Be warm, encouraging, and patient
-- Celebrate their effort and progress
-- Ask thoughtful questions that guide them toward insights ("What happens when...?" "Have you considered...?")
-- Provide hints that reveal thinking patterns, not code
-- Explain concepts clearly with real-world analogies when helpful
-- Point out errors or issues if they're stuck
-- Keep responses conversational and brief (2-4 sentences ideal)
-- If they ask for hints, give progressively helpful clues
-- **Never** write complete solution code unless they explicitly ask for it
-- Help build their debugging and analytical skills
+- If tests are failing, focus on debugging root cause from output first. Avoid complexity talk at this stage.
+- If tests are passing, congratulate briefly then suggest optimization and naming/refactor improvements.
+- Use natural pair-programming tone like Slack/KakaoTalk.
+- Keep answers concise, practical, and context-aware from recent outputs.
+- Do not use rigid section headers.
+- Do not paste full solution code unless explicitly requested.
 
 Remember: Your job is to make them better developers, not just solve this one problem for them.`
 
@@ -178,6 +212,7 @@ async function chatWithGPT(
   code: string,
   problemTitle: string,
   problemDescription: string,
+  testOutputContext: string,
   language: MentorLanguage,
   apiKey: string,
   model: string,
@@ -193,20 +228,19 @@ ${problemDescription}
 ${code}
 \`\`\`
 
+**Recent Test Output Context:**
+${testOutputContext}
+
 **Your Role:**
-You're here to guide the student to **think like a developer** and build problem-solving confidence. Your goal is to help them discover solutions, not hand them over.
+You're mentoring like a senior teammate in chat. Keep it natural and human, not robotic.
 
 **Guidelines:**
-- Be warm, encouraging, and patient
-- Celebrate their effort and progress
-- Ask thoughtful questions that guide them toward insights ("What happens when...?" "Have you considered...?")
-- Provide hints that reveal thinking patterns, not code
-- Explain concepts clearly with real-world analogies when helpful
-- Point out errors or issues if they're stuck
-- Keep responses conversational and brief (2-4 sentences ideal)
-- If they ask for hints, give progressively helpful clues
-- **Never** write complete solution code unless they explicitly ask for it
-- Help build their debugging and analytical skills
+- If tests are failing, focus on debugging root cause from output first. Avoid complexity talk at this stage.
+- If tests are passing, congratulate briefly then suggest optimization and naming/refactor improvements.
+- Use natural pair-programming tone like Slack/KakaoTalk.
+- Keep answers concise, practical, and context-aware from recent outputs.
+- Do not use rigid section headers.
+- Do not paste full solution code unless explicitly requested.
 
 Remember: Your job is to make them better developers, not just solve this one problem for them.`
 
@@ -229,6 +263,7 @@ async function chatWithGemini(
   code: string,
   problemTitle: string,
   problemDescription: string,
+  testOutputContext: string,
   language: MentorLanguage,
   apiKey: string,
   model: string,
@@ -244,20 +279,19 @@ ${problemDescription}
 ${code}
 \`\`\`
 
+**Recent Test Output Context:**
+${testOutputContext}
+
 **Your Role:**
-You're here to guide the student to **think like a developer** and build problem-solving confidence. Your goal is to help them discover solutions, not hand them over.
+You're mentoring like a senior teammate in chat. Keep it natural and human, not robotic.
 
 **Guidelines:**
-- Be warm, encouraging, and patient
-- Celebrate their effort and progress
-- Ask thoughtful questions that guide them toward insights ("What happens when...?" "Have you considered...?")
-- Provide hints that reveal thinking patterns, not code
-- Explain concepts clearly with real-world analogies when helpful
-- Point out errors or issues if they're stuck
-- Keep responses conversational and brief (2-4 sentences ideal)
-- If they ask for hints, give progressively helpful clues
-- **Never** write complete solution code unless they explicitly ask for it
-- Help build their debugging and analytical skills
+- If tests are failing, focus on debugging root cause from output first. Avoid complexity talk at this stage.
+- If tests are passing, congratulate briefly then suggest optimization and naming/refactor improvements.
+- Use natural pair-programming tone like Slack/KakaoTalk.
+- Keep answers concise, practical, and context-aware from recent outputs.
+- Do not use rigid section headers.
+- Do not paste full solution code unless explicitly requested.
 
 Remember: Your job is to make them better developers, not just solve this one problem for them.`
 
@@ -278,6 +312,7 @@ export async function POST(req: NextRequest) {
   try {
     const body: ChatRequest = await req.json()
     const { messages, code, problemTitle, problemDescription } = body
+    const testOutputContext = buildTestResultsContext(body.testResults ?? [], body.allTestsPassed)
     const learnerMessages = messages
       .filter((msg) => msg.role === "user")
       .map((msg) => msg.content)
@@ -307,6 +342,7 @@ export async function POST(req: NextRequest) {
               code,
               problemTitle,
               problemDescription,
+              testOutputContext,
               language,
               apiKey,
               config.models.claude,
@@ -321,6 +357,7 @@ export async function POST(req: NextRequest) {
               code,
               problemTitle,
               problemDescription,
+              testOutputContext,
               language,
               apiKey,
               config.models.gpt,
@@ -334,6 +371,7 @@ export async function POST(req: NextRequest) {
             code,
             problemTitle,
             problemDescription,
+            testOutputContext,
             language,
             apiKey,
             config.models.gemini,
@@ -351,7 +389,9 @@ export async function POST(req: NextRequest) {
         responseText = generateFallbackMentorResponse(
           language,
           code,
-          messages
+          messages,
+          body.testResults ?? [],
+          body.allTestsPassed
         )
       }
     } catch (error) {
@@ -359,7 +399,9 @@ export async function POST(req: NextRequest) {
       responseText = generateFallbackMentorResponse(
         language,
         code,
-        messages
+        messages,
+        body.testResults ?? [],
+        body.allTestsPassed
       )
     }
 

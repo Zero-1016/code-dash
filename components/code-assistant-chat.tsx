@@ -4,16 +4,25 @@ import { useState, useRef, useEffect } from "react";
 import { MessageCircle, Send, Loader2, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { getApiSettings } from "@/lib/local-progress";
+import { useAppLanguage } from "@/lib/use-app-language";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
+interface TestResultSummary {
+  passed: boolean;
+  input: string;
+  expected: string;
+  actual: string;
+}
+
 interface CodeAssistantChatProps {
   code: string;
   problemTitle: string;
   problemDescription: string;
+  testResults?: TestResultSummary[];
   isAiGenerating?: boolean;
   pendingReview?: string | null;
   strategicHint?: string | null;
@@ -24,11 +33,49 @@ export function CodeAssistantChat({
   code,
   problemTitle,
   problemDescription,
+  testResults = [],
   isAiGenerating = false,
   pendingReview = null,
   strategicHint = null,
   elapsedMinutes = 0,
 }: CodeAssistantChatProps) {
+  const { language } = useAppLanguage();
+  const text =
+    language === "ko"
+      ? {
+          quickPrompts: [
+            "힌트 하나만 주세요",
+            "제 접근이 맞나요?",
+            "문제 설명해줘",
+            "내 코드 리뷰해줘",
+            "최적 접근은 뭐야?",
+          ],
+          strategicTitle: `전략 힌트가 열렸어요! (${elapsedMinutes}분)`,
+          strategicDesc: "막힌 지점을 뚫을 핵심 인사이트를 준비했어요",
+          dismiss: "닫기",
+          emptyTitle: "AI 멘토가 기다리고 있어요!",
+          emptyDesc: "힌트, 설명, 코드 리뷰를 요청해보세요",
+          loading: "AI가 코드를 분석 중이에요...",
+          clearChat: "채팅 지우기",
+          placeholder: "힌트, 설명, 코드 리뷰를 요청해보세요...",
+        }
+      : {
+          quickPrompts: [
+            "Give me a hint",
+            "Is my approach correct?",
+            "Explain the problem",
+            "Review my code",
+            "What's the optimal approach?",
+          ],
+          strategicTitle: `Strategic Hint Unlocked! (${elapsedMinutes} min)`,
+          strategicDesc: "Your AI Mentor has a key insight to help you break through",
+          dismiss: "Dismiss",
+          emptyTitle: "Your AI Mentor is here!",
+          emptyDesc: "Get hints, explanations, or code review",
+          loading: "AI is analyzing your code...",
+          clearChat: "Clear chat",
+          placeholder: "Ask for hints, explanations, or code review...",
+        };
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -131,6 +178,9 @@ export function CodeAssistantChat({
           code,
           problemTitle,
           problemDescription,
+          testResults,
+          allTestsPassed: testResults.length > 0 ? testResults.every((result) => result.passed) : undefined,
+          language,
           aiConfig: getApiSettings(),
         }),
       });
@@ -149,7 +199,10 @@ export function CodeAssistantChat({
       console.error("Chat error:", error);
       const errorMessage: Message = {
         role: "assistant",
-        content: "Sorry, I couldn't process your request. Please try again.",
+        content:
+          language === "ko"
+            ? "요청을 처리하지 못했습니다. 다시 시도해주세요."
+            : "Sorry, I couldn't process your request. Please try again.",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -164,13 +217,7 @@ export function CodeAssistantChat({
     }
   };
 
-  const quickPrompts = [
-    "Give me a hint",
-    "Is my approach correct?",
-    "Explain the problem",
-    "Review my code",
-    "What's the optimal approach?",
-  ];
+  const quickPrompts = text.quickPrompts;
 
   const handleQuickPrompt = (prompt: string) => {
     setInput(prompt);
@@ -207,10 +254,10 @@ export function CodeAssistantChat({
 
                 <div className="mb-3">
                   <h3 className="text-sm font-bold text-[#3182F6]">
-                    Strategic Hint Unlocked! ({elapsedMinutes} min)
+                    {text.strategicTitle}
                   </h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Your AI Mentor has a key insight to help you break through
+                    {text.strategicDesc}
                   </p>
                 </div>
 
@@ -224,7 +271,7 @@ export function CodeAssistantChat({
                   onClick={() => setShowStrategicHint(false)}
                   className="mt-4 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Dismiss
+                  {text.dismiss}
                 </button>
               </div>
             </motion.div>
@@ -236,10 +283,10 @@ export function CodeAssistantChat({
             <MessageCircle className="h-16 w-16 text-muted-foreground/50" />
             <div className="text-center">
               <p className="text-base font-medium text-muted-foreground">
-                Your AI Mentor is here!
+                {text.emptyTitle}
               </p>
               <p className="mt-1 text-sm text-muted-foreground/70">
-                Get hints, explanations, or code review
+                {text.emptyDesc}
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-2">
@@ -300,7 +347,7 @@ export function CodeAssistantChat({
                       transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
                     />
                   </div>
-                  <span>AI is analyzing your code...</span>
+                  <span>{text.loading}</span>
                 </div>
               </div>
             )}
@@ -318,7 +365,7 @@ export function CodeAssistantChat({
               className="flex items-center gap-1 rounded-[12px] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <X className="h-3 w-3" />
-              Clear chat
+              {text.clearChat}
             </button>
           </div>
         )}
@@ -327,7 +374,7 @@ export function CodeAssistantChat({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask for hints, explanations, or code review..."
+            placeholder={text.placeholder}
             rows={2}
             className="flex-1 resize-none rounded-[16px] border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-[#3182F6] focus:outline-none focus:ring-2 focus:ring-[#3182F6]/20"
           />
