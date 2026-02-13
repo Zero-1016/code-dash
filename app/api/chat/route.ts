@@ -82,10 +82,10 @@ function generateFallbackMentorResponse(
   const asksDebug = /(error|실패|버그|디버깅|안돼|틀려|runtime|exception|stack trace|오류)/i.test(
     normalized
   )
-  const asksConfirmation = /(맞나|맞나요|인가요|거요|그건가|이건가|즉|그러면|맞지|될까요|해도 될까요|괜찮을까요)/i.test(
+  const asksConfirmation = /(맞나|맞나요|인가요|거요|그건가|이건가|즉|그러면|맞지|될까요|해도 될까요|괜찮을까요|되지 않을까요|아닐까요)/i.test(
     normalized
   )
-  const mentionsDuplicateCase = /(중복|duplicate|같은 숫자|같은 값|2번 들어|two same|same number)/i.test(
+  const mentionsDuplicateCase = /(중복|duplicate|같은 숫자|같은 값|2번 들어|two same|same number|중복 검사)/i.test(
     normalized
   )
   const mentionsMap = /(map|해시맵|hash map|hashmap)/i.test(normalized)
@@ -106,6 +106,11 @@ function generateFallbackMentorResponse(
     if (asksConfirmation && mentionsDuplicateCase) {
       return `맞아, 그런 중복 케이스를 먼저 확인하는 게 핵심이야.
 같은 값이 들어왔을 때 네 로직이 true/false 중 어느 쪽으로 가야 하는지만 먼저 정하고 테스트해보자.`
+    }
+
+    if (mentionsDuplicateCase && !asksDebug) {
+      return `좋아, 중복 검사부터 시작하는 방향 맞아.
+Set/Map으로 이미 본 값인지 확인하고, 중복을 만났을 때 바로 어떻게 처리할지 기준만 먼저 고정해보자.`
     }
 
     if (asksConfirmation && mentionsMap) {
@@ -177,6 +182,11 @@ I will answer your latest question directly from now on.`
   if (asksConfirmation && mentionsDuplicateCase) {
     return `Yes, checking duplicate-value cases first is a good move.
 Decide expected behavior for that case, then verify your branch follows it consistently.`
+  }
+
+  if (mentionsDuplicateCase && !asksDebug) {
+    return `Good start. Focusing on duplicate checks first makes sense.
+Use Set/Map to track seen values, then fix one clear rule for what to do when a duplicate appears.`
   }
 
   if (asksConfirmation && mentionsMap) {
