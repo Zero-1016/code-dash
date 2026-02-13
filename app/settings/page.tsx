@@ -5,8 +5,16 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
 import { Header } from "@/components/header";
-import { getApiSettings, saveApiSettings, type ApiSettings } from "@/lib/local-progress";
+import {
+  getApiSettings,
+  getLanguagePreference,
+  saveApiSettings,
+  saveLanguagePreference,
+  type ApiSettings,
+  type AppLanguage,
+} from "@/lib/local-progress";
 import { getDefaultAIConfig, type AIProvider } from "@/lib/ai-config";
+import { getLocaleCopy } from "@/lib/i18n";
 
 type TestState = "idle" | "loading" | "success" | "error";
 
@@ -16,20 +24,34 @@ const PROVIDERS: Array<{ id: AIProvider; label: string }> = [
   { id: "gemini", label: "Google Gemini" },
 ];
 
+const MODEL_OPTIONS: Record<AIProvider, string[]> = {
+  claude: [
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-haiku-20241022",
+    "claude-3-opus-20240229",
+  ],
+  gpt: ["gpt-4o", "gpt-4o-mini", "gpt-4.1-mini"],
+  gemini: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"],
+};
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<ApiSettings>(getDefaultAIConfig());
+  const [selectedLanguage, setSelectedLanguage] = useState<AppLanguage>("en");
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [testState, setTestState] = useState<TestState>("idle");
   const [testMessage, setTestMessage] = useState("");
+  const copy = getLocaleCopy(selectedLanguage);
 
   useEffect(() => {
     setSettings(getApiSettings());
+    setSelectedLanguage(getLanguagePreference());
   }, []);
 
   const active = useMemo(() => settings.provider, [settings.provider]);
 
   const handleSave = () => {
     saveApiSettings(settings);
+    saveLanguagePreference(selectedLanguage);
     setSavedAt(new Date().toLocaleString());
   };
 
@@ -37,12 +59,12 @@ export default function SettingsPage() {
     const key = settings.apiKeys[active]?.trim();
     if (!key) {
       setTestState("error");
-      setTestMessage(`${active.toUpperCase()} API Key를 먼저 입력해주세요.`);
+      setTestMessage(`${active.toUpperCase()} ${copy.settings.keyRequired}`);
       return;
     }
 
     setTestState("loading");
-    setTestMessage("연결 테스트 중...");
+    setTestMessage(copy.settings.testingConnection);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
@@ -62,15 +84,19 @@ export default function SettingsPage() {
       if (!response.ok) {
         const errorText = await response.text();
         setTestState("error");
-        setTestMessage(`연결 실패 (${response.status}): ${errorText.slice(0, 120)}`);
+        setTestMessage(`${copy.settings.connectionFailed} (${response.status}): ${errorText.slice(0, 120)}`);
         return;
       }
 
       setTestState("success");
-      setTestMessage("연결 성공. 현재 선택한 모델로 사용할 수 있습니다.");
+      setTestMessage(copy.settings.connectionSuccess);
     } catch (error) {
       setTestState("error");
-      setTestMessage(error instanceof Error ? `연결 실패: ${error.message}` : "연결 실패");
+      setTestMessage(
+        error instanceof Error
+          ? `${copy.settings.connectionFailed}: ${error.message}`
+          : copy.settings.connectionFailed
+      );
     } finally {
       clearTimeout(timeout);
     }
@@ -91,7 +117,7 @@ export default function SettingsPage() {
             className="inline-flex items-center gap-2 rounded-[16px] px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Home
+            {copy.settings.backHome}
           </Link>
         </motion.div>
 
@@ -101,15 +127,35 @@ export default function SettingsPage() {
           transition={{ duration: 0.35, delay: 0.05 }}
           className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm sm:p-8"
         >
-          <h1 className="text-2xl font-bold text-foreground">My Page</h1>
+          <h1 className="text-2xl font-bold text-foreground">{copy.settings.title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Provider, model, token, API key는 브라우저 localStorage에만 저장됩니다.
+            {copy.settings.description}
           </p>
 
           <div className="mt-6 grid gap-5">
             <div>
+              <label htmlFor="language" className="mb-2 block text-sm font-semibold text-foreground">
+                {copy.settings.languageTitle}
+              </label>
+              <p className="mb-2 text-xs text-muted-foreground">{copy.settings.languageDescription}</p>
+              <select
+                id="language"
+                value={selectedLanguage}
+                onChange={(event) => {
+                  const nextLanguage = event.target.value as AppLanguage;
+                  setSelectedLanguage(nextLanguage);
+                  saveLanguagePreference(nextLanguage);
+                }}
+                className="h-11 w-full rounded-[16px] border border-input bg-background px-4 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+              >
+                <option value="en">{copy.settings.languageEnglish}</option>
+                <option value="ko">{copy.settings.languageKorean}</option>
+              </select>
+            </div>
+
+            <div>
               <label htmlFor="provider" className="mb-2 block text-sm font-semibold text-foreground">
-                Active Provider
+                {copy.settings.provider}
               </label>
               <select
                 id="provider"
@@ -130,101 +176,92 @@ export default function SettingsPage() {
               </select>
             </div>
 
-            {PROVIDERS.map((provider) => {
-              const isActive = provider.id === active;
-              return (
-                <div
-                  key={provider.id}
-                  className={`rounded-[20px] border p-4 ${
-                    isActive ? "border-[#3182F6]/40 bg-[#3182F6]/5" : "border-border/60 bg-background"
-                  }`}
-                >
-                  <h3 className="mb-3 text-sm font-bold text-foreground">{provider.label}</h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
-                      <label
-                        htmlFor={`model-${provider.id}`}
-                        className="mb-1 block text-xs font-semibold text-muted-foreground"
-                      >
-                        Model
-                      </label>
-                      <input
-                        id={`model-${provider.id}`}
-                        value={settings.models[provider.id]}
-                        onChange={(event) =>
-                          setSettings((prev) => ({
-                            ...prev,
-                            models: { ...prev.models, [provider.id]: event.target.value },
-                          }))
-                        }
-                        placeholder={
-                          provider.id === "claude"
-                            ? "claude-3-5-sonnet-20241022"
-                            : provider.id === "gpt"
-                            ? "gpt-4o"
-                            : "gemini-pro"
-                        }
-                        className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor={`tokens-${provider.id}`}
-                        className="mb-1 block text-xs font-semibold text-muted-foreground"
-                      >
-                        Max Tokens
-                      </label>
-                      <input
-                        id={`tokens-${provider.id}`}
-                        type="number"
-                        min={1}
-                        max={16000}
-                        value={settings.maxTokens[provider.id]}
-                        onChange={(event) =>
-                          setSettings((prev) => ({
-                            ...prev,
-                            maxTokens: {
-                              ...prev.maxTokens,
-                              [provider.id]: Math.max(1, Number(event.target.value) || 1),
-                            },
-                          }))
-                        }
-                        className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor={`api-key-${provider.id}`}
-                        className="mb-1 block text-xs font-semibold text-muted-foreground"
-                      >
-                        API Key
-                      </label>
-                      <input
-                        id={`api-key-${provider.id}`}
-                        type="password"
-                        value={settings.apiKeys[provider.id]}
-                        onChange={(event) =>
-                          setSettings((prev) => ({
-                            ...prev,
-                            apiKeys: { ...prev.apiKeys, [provider.id]: event.target.value },
-                          }))
-                        }
-                        placeholder={
-                          provider.id === "claude"
-                            ? "sk-ant-..."
-                            : provider.id === "gpt"
-                            ? "sk-..."
-                            : "AIza..."
-                        }
-                        className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
-                      />
-                    </div>
-                  </div>
+            <div className="rounded-[20px] border border-[#3182F6]/40 bg-[#3182F6]/5 p-4">
+              <h3 className="mb-3 text-sm font-bold text-foreground">
+                {PROVIDERS.find((provider) => provider.id === active)?.label}
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor={`model-${active}`}
+                    className="mb-1 block text-xs font-semibold text-muted-foreground"
+                  >
+                    {copy.settings.model}
+                  </label>
+                  <select
+                    id={`model-${active}`}
+                    value={settings.models[active]}
+                    onChange={(event) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        models: { ...prev.models, [active]: event.target.value },
+                      }))
+                    }
+                    className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+                  >
+                    {MODEL_OPTIONS[active].map((model) => (
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              );
-            })}
+
+                <div>
+                  <label
+                    htmlFor={`tokens-${active}`}
+                    className="mb-1 block text-xs font-semibold text-muted-foreground"
+                  >
+                    {copy.settings.maxTokens}
+                  </label>
+                  <input
+                    id={`tokens-${active}`}
+                    type="number"
+                    min={1}
+                    max={16000}
+                    value={settings.maxTokens[active]}
+                    onChange={(event) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        maxTokens: {
+                          ...prev.maxTokens,
+                          [active]: Math.max(1, Number(event.target.value) || 1),
+                        },
+                      }))
+                    }
+                    className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor={`api-key-${active}`}
+                    className="mb-1 block text-xs font-semibold text-muted-foreground"
+                  >
+                    {copy.settings.apiKey}
+                  </label>
+                  <input
+                    id={`api-key-${active}`}
+                    type="password"
+                    value={settings.apiKeys[active]}
+                    onChange={(event) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        apiKeys: { ...prev.apiKeys, [active]: event.target.value },
+                      }))
+                    }
+                    placeholder={
+                      active === "claude"
+                        ? "sk-ant-..."
+                        : active === "gpt"
+                        ? "sk-..."
+                        : "AIza..."
+                    }
+                    className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="mt-7 flex flex-wrap gap-3">
@@ -233,7 +270,7 @@ export default function SettingsPage() {
               className="inline-flex items-center gap-2 rounded-[18px] bg-[#3182F6] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#3182F6]/20 transition-all hover:bg-[#2870d8]"
             >
               <Save className="h-4 w-4" />
-              Save
+              {copy.settings.save}
             </button>
 
             <button
@@ -246,11 +283,15 @@ export default function SettingsPage() {
               ) : (
                 <PlugZap className="h-4 w-4" />
               )}
-              Test Connection
+              {copy.settings.testConnection}
             </button>
           </div>
 
-          {savedAt && <p className="mt-4 text-xs text-muted-foreground">마지막 저장: {savedAt}</p>}
+          {savedAt && (
+            <p className="mt-4 text-xs text-muted-foreground">
+              {copy.settings.lastSaved}: {savedAt}
+            </p>
+          )}
 
           {testState !== "idle" && (
             <div
@@ -273,4 +314,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

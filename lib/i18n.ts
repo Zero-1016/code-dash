@@ -2,7 +2,70 @@ import type { AppLanguage } from "@/lib/local-progress";
 
 export const DEFAULT_LANGUAGE: AppLanguage = "en";
 
-const localeCopy = {
+export interface LocaleCopy {
+  header: { myPage: string };
+  hero: {
+    badge: string;
+    titleTop: string;
+    titleBottom: string;
+    description: string;
+    startSolving: string;
+  };
+  home: {
+    allCategory: string;
+    allChallenges: string;
+    challenges: string;
+    problems: string;
+  };
+    settings: {
+      backHome: string;
+      title: string;
+      description: string;
+      languageTitle: string;
+      languageDescription: string;
+      languageEnglish: string;
+      languageKorean: string;
+      provider: string;
+      model: string;
+    maxTokens: string;
+    apiKey: string;
+    save: string;
+    testConnection: string;
+    testingConnection: string;
+    connectionSuccess: string;
+    lastSaved: string;
+    keyRequired: string;
+    connectionFailed: string;
+  };
+  problem: {
+    back: string;
+    aiMentor: string;
+    examples: string;
+    input: string;
+    output: string;
+    constraints: string;
+    translationReady: string;
+    fallbackEnglish: string;
+  };
+  problemCard: {
+    solved: string;
+  };
+  streak: {
+    title: string;
+    subtitle: string;
+    last12Weeks: string;
+    activityUnit: string;
+    weekdays: string[];
+  };
+  stats: {
+    title: string;
+    solved: string;
+    speedAvg: string;
+    completion: string;
+  };
+}
+
+const localeCopy: Record<AppLanguage, LocaleCopy> = {
   en: {
     header: {
       myPage: "My Page",
@@ -29,7 +92,7 @@ const localeCopy = {
       languageDescription: "Choose your app language.",
       languageEnglish: "English",
       languageKorean: "Korean",
-      activeProvider: "Active Provider",
+      provider: "Provider",
       model: "Model",
       maxTokens: "Max Tokens",
       apiKey: "API Key",
@@ -44,6 +107,12 @@ const localeCopy = {
     problem: {
       back: "Back",
       aiMentor: "AI Mentor",
+      examples: "Example",
+      input: "Input",
+      output: "Output",
+      constraints: "Constraints",
+      translationReady: "EN + KO",
+      fallbackEnglish: "English (fallback)",
     },
     problemCard: {
       solved: "Solved",
@@ -87,7 +156,7 @@ const localeCopy = {
       languageDescription: "앱에서 사용할 언어를 선택하세요.",
       languageEnglish: "영어",
       languageKorean: "한국어",
-      activeProvider: "활성 Provider",
+      provider: "Provider",
       model: "모델",
       maxTokens: "최대 토큰",
       apiKey: "API Key",
@@ -102,6 +171,12 @@ const localeCopy = {
     problem: {
       back: "뒤로",
       aiMentor: "AI 멘토",
+      examples: "예시",
+      input: "입력",
+      output: "출력",
+      constraints: "제약사항",
+      translationReady: "영어 + 한국어",
+      fallbackEnglish: "영어 기본값 (fallback)",
     },
     problemCard: {
       solved: "해결됨",
@@ -120,9 +195,7 @@ const localeCopy = {
       completion: "완료율",
     },
   },
-} as const;
-
-export type LocaleCopy = (typeof localeCopy)["en"];
+};
 
 export function getLocaleCopy(language: AppLanguage): LocaleCopy {
   return localeCopy[language] ?? localeCopy[DEFAULT_LANGUAGE];
