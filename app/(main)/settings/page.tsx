@@ -296,13 +296,6 @@ export default function SettingsPage() {
                       {copy.settings.keyHelpFormat}: {PROVIDER_HELP[active].keyHint}
                     </p>
                   </div>
-                  <button
-                    onClick={handleResetApiKey}
-                    className="mt-2 inline-flex items-center gap-1.5 rounded-[12px] border border-border/60 bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    {copy.settings.resetApiKey}
-                  </button>
                 </div>
               </div>
             </div>
@@ -328,6 +321,14 @@ export default function SettingsPage() {
                 <PlugZap className="h-4 w-4" />
               )}
               {copy.settings.testConnection}
+            </button>
+
+            <button
+              onClick={handleResetApiKey}
+              className="inline-flex items-center gap-2 rounded-[18px] border border-border/60 bg-background px-5 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <RotateCcw className="h-4 w-4" />
+              {copy.settings.resetApiKey}
             </button>
           </div>
 
