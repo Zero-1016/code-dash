@@ -86,7 +86,7 @@ function generateFallbackMentorResponse(
 
   if (language === "ko") {
     const context = hasCode
-      ? "지금 코드는 핵심 분기 한 군데만 먼저 확인하면 돼."
+      ? "지금은 코드 전체보다 문제 조건 1개만 먼저 확인하면 돼. 예를 들면 빈 입력, 중복 값, 최소/최대 경계 같은 조건."
       : "코드가 없으면 예시 입력 1개를 손으로 먼저 추적해보자."
     const failingContext =
       hasFailingTests
@@ -102,7 +102,7 @@ function generateFallbackMentorResponse(
 
       return `${context}
 먼저 이 문제에서 반드시 유지해야 하는 조건 1개를 정해봐.
-그 조건이 깨지는 반례를 하나 떠올리면 다음 분기 힌트를 이어서 줄게.`
+그 조건이 깨지는 반례를 하나 떠올리면 다음 단계 힌트를 이어서 줄게.`
     }
 
     if (requestType === "review") {
@@ -134,7 +134,7 @@ function generateFallbackMentorResponse(
       ? `Start from one failing case first. (${testResults.filter((r) => r.passed).length}/${testResults.length} passing)`
       : null
   const context = hasCode
-    ? "Your current code likely has one critical branch to fix first."
+    ? "Focus on one concrete condition first (for example: empty input, duplicates, or min/max boundary cases)."
     : "If code is empty, trace one tiny example manually first."
 
   if (requestType === "hint") {
