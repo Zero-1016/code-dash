@@ -95,7 +95,7 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       backHome: "Back to Home",
       title: "Settings",
       description:
-        "Provider, model, token, and API keys are saved in browser localStorage only.",
+        "Provider, model, token, and API keys are saved in this browser only.",
       provider: "Provider",
       model: "Model",
       maxTokens: "Max Tokens",
@@ -164,7 +164,7 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       backHome: "홈으로 돌아가기",
       title: "설정",
       description:
-        "Provider, model, token, API key 설정은 브라우저 localStorage에만 저장됩니다.",
+        "Provider, model, token, API key 설정은 이 브라우저에만 저장됩니다.",
       provider: "Provider",
       model: "모델",
       maxTokens: "최대 토큰",
