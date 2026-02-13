@@ -37,12 +37,16 @@ interface ChatRequest {
   aiConfig?: Partial<AIConfigPayload>
 }
 
-const MENTOR_REPLY_FORMAT_RULES = `Reply format:
-- Default: 1-2 short lines.
-- Max: 4 short lines only if absolutely needed.
-- No greetings, emojis, long intros, or "quick diagnostic questions".
-- No markdown headings/bullets unless user explicitly asks for structured format.
-- End with one concrete next step.`
+const MENTOR_REPLY_FORMAT_RULES = `Conversational Flow:
+- Start from the user's latest intent and answer it directly.
+- Keep replies concise but natural (usually 2-4 short lines) and end with one practical next step.
+- Use a supportive teammate tone, not a formal report tone.
+- If recent test context is HAS_FAIL:
+  - Prioritize emotional support + debugging clarity first ("you're close", "let's isolate one failing path").
+  - Focus on root-cause tracing from failing input/output.
+  - Defer optimization/complexity discussions until the failing case is stabilized.
+- If recent test context is ALL_PASS:
+  - Briefly acknowledge progress, then suggest one optimization/refactor opportunity.`
 
 function buildTestResultsContext(testResults: ChatTestResult[] = [], allTestsPassed?: boolean): string {
   if (!testResults.length) {
