@@ -39,6 +39,7 @@ interface ChatRequest {
 
 const MENTOR_REPLY_FORMAT_RULES = `Conversational Flow:
 - Start from the user's latest intent and answer it directly.
+- Write like a real KakaoTalk/Slack teammate chat message: natural and appropriately sized for context.
 - Keep replies concise and natural; no hard line or character limits.
 - Prefer one compact paragraph unless structure is truly needed.
 - Use a supportive teammate tone, not a formal report tone.

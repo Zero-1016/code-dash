@@ -23,6 +23,7 @@ interface StrategicHintRequest {
 }
 
 const STRATEGIC_HINT_REPLY_RULES = `Reply format:
+- Write like a real KakaoTalk/Slack teammate chat message: natural and appropriately sized for context.
 - Keep it concise by default, but do not enforce hard line or character limits.
 - No greetings, emojis, markdown headings, or long paragraphs.
 - Give one decisive algorithm insight and one immediate next step.

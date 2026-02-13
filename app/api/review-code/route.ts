@@ -31,6 +31,7 @@ interface ReviewRequest {
 }
 
 const REVIEW_REPLY_FORMAT_RULES = `Reply format:
+- Write like a real KakaoTalk/Slack teammate chat message: natural and appropriately sized for context.
 - Keep it concise by default, but use as many lines as needed for clarity.
 - No greetings, emojis, formal report sections, or long checklists.
 - Focus on the single highest-impact point first.
