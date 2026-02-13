@@ -1698,7 +1698,7 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
       category: "해시",
       description: `정수 배열 \`nums\`와 정수 \`target\`이 주어질 때, 두 수의 합이 \`target\`이 되는 인덱스를 반환하세요.
 
-각 입력에는 **정확히 하나의 정답**이 있으며, 같은 원소를 두 번 사용할 수 없습니다.
+각 입력에는 정확히 하나의 정답이 있으며, 같은 원소를 두 번 사용할 수 없습니다.
 
 정답의 순서는 상관없습니다.`,
       examples: [
