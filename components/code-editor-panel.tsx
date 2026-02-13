@@ -49,6 +49,45 @@ interface CodeEditorPanelProps {
   onTestResultsUpdate?: (results: TestResult[]) => void;
 }
 
+function isValidTwoSumAnswer(actual: unknown, input: unknown[]): boolean {
+  if (!Array.isArray(actual) || actual.length !== 2) {
+    return false;
+  }
+
+  if (!Array.isArray(input) || input.length < 2) {
+    return false;
+  }
+
+  const nums = input[0];
+  const target = input[1];
+  if (!Array.isArray(nums) || typeof target !== "number") {
+    return false;
+  }
+
+  const [a, b] = actual;
+  if (
+    typeof a !== "number" ||
+    typeof b !== "number" ||
+    !Number.isInteger(a) ||
+    !Number.isInteger(b)
+  ) {
+    return false;
+  }
+
+  if (a === b || a < 0 || b < 0 || a >= nums.length || b >= nums.length) {
+    return false;
+  }
+
+  return typeof nums[a] === "number" && typeof nums[b] === "number" && nums[a] + nums[b] === target;
+}
+
+function isOutputMatch(problem: Problem, actual: unknown, expected: unknown, input: unknown[]): boolean {
+  if (problem.id === "two-sum") {
+    return isValidTwoSumAnswer(actual, input);
+  }
+  return JSON.stringify(actual) === JSON.stringify(expected);
+}
+
 function judgeCode(code: string, problem: Problem): JudgeResult {
   const results: TestResult[] = [];
 
@@ -76,8 +115,7 @@ function judgeCode(code: string, problem: Problem): JudgeResult {
           `${code}\nreturn ${problem.functionName};`
         )(mockConsole);
         const actual = fn(...structuredClone(testCase.input));
-        const passed =
-          JSON.stringify(actual) === JSON.stringify(testCase.expected);
+        const passed = isOutputMatch(problem, actual, testCase.expected, testCase.input);
 
         results.push({
           passed,
@@ -247,8 +285,7 @@ export function CodeEditorPanel({
           `${code}\nreturn ${problem.functionName};`
         )(mockConsole);
         const actual = fn(...parsedInput);
-        const passed =
-          JSON.stringify(actual) === JSON.stringify(parsedExpected);
+        const passed = isOutputMatch(problem, actual, parsedExpected, parsedInput);
 
         return {
           passed,
