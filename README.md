@@ -16,6 +16,7 @@
 - **Interactive Code Editor**: Built-in Monaco Editor with JavaScript support
 - **Algorithm Challenges**: Curated collection of problems covering various data structures and algorithms
 - **Real-time Code Execution**: Test your solutions instantly with predefined test cases
+  - Test case cards show **Expected Output first**, then Input, even before running tests
 - **AI Assistant Chat**: Get help while coding with an interactive AI mentor
   - Ask for hints without spoiling the solution
   - Get code review and suggestions
@@ -28,6 +29,11 @@
   - Optimization Suggestions
 - **Progress Tracking**: Monitor your streak and statistics
 - **Beautiful UI**: Modern, responsive design with smooth animations
+
+### Stats Calculation
+
+- **Completion**: `(# of uniquely solved problems / total problems) * 100`
+- **Average Speed**: Mean solve time (minutes) from successful submissions with recorded elapsed time
 
 ### Tech Stack
 
@@ -188,6 +194,7 @@ MIT License - feel free to use this project for learning and personal use.
 - **인터랙티브 코드 에디터**: JavaScript를 지원하는 Monaco Editor 내장
 - **알고리즘 챌린지**: 다양한 자료구조와 알고리즘을 다루는 엄선된 문제 모음
 - **실시간 코드 실행**: 미리 정의된 테스트 케이스로 솔루션을 즉시 테스트
+  - 테스트 실행 전에도 테스트 카드에서 **Output(기대값)을 먼저**, 그다음 Input을 표시
 - **AI 어시스턴트 채팅**: 코딩 중 대화형 AI 멘토의 도움 받기
   - 솔루션을 직접 알려주지 않는 힌트 제공
   - 코드 리뷰 및 개선 제안
@@ -200,6 +207,11 @@ MIT License - feel free to use this project for learning and personal use.
   - 최적화 제안
 - **진행 상황 추적**: 일일 기록과 통계 모니터링
 - **아름다운 UI**: 부드러운 애니메이션이 적용된 현대적이고 반응형 디자인
+
+### 통계 계산 기준
+
+- **완료율**: `(고유하게 푼 문제 수 / 전체 문제 수) * 100`
+- **평균 속도**: 성공 제출 중 풀이 시간(`elapsed time`)이 기록된 항목의 평균(분)
 
 ### 기술 스택
 
