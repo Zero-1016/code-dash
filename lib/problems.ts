@@ -1098,37 +1098,39 @@ Compute how many total units of rainwater are trapped after rainfall.`
 function buildGeneratedDescriptionKo(seed: Problem["id"], title: string): string {
   switch (seed) {
     case "two-sum":
-      return `"${title}" 문제에서는 정수 배열과 목표값이 주어집니다. 합이 목표값이 되는 서로 다른 두 인덱스를 찾으세요.
+      return `"${title}" 문제입니다. 정수 배열과 목표값 \`target\`이 주어집니다.
 
-정답은 정확히 하나 존재하며, 인덱스 순서는 자유입니다.`
+배열에서 서로 다른 두 수를 골라 합이 \`target\`이 되도록 하는 두 인덱스를 반환하세요.
+정답은 정확히 하나이며, 인덱스 순서는 자유입니다.`
     case "valid-parentheses":
-      return `"${title}" 문제에서는 괄호 문자로 이루어진 문자열이 입력됩니다.
+      return `"${title}" 문제입니다. 괄호 문자만으로 이루어진 문자열이 입력됩니다.
 
-열린 괄호가 올바른 종류로 닫히고, 닫히는 순서도 올바른지 판별하세요.`
+모든 열린 괄호가 올바른 종류의 닫는 괄호로 짝지어지고, 순서도 올바른지 \`true/false\`로 판별하세요.`
     case "reverse-linked-list":
-      return `"${title}" 문제에서는 단일 연결 리스트를 배열 형태로 전달합니다.
+      return `"${title}" 문제입니다. 단일 연결 리스트가 배열 형태(\`head\`)로 주어집니다.
 
-연결 방향을 뒤집은 결과를 배열로 반환하세요.`
+연결 방향을 완전히 뒤집었다고 가정했을 때의 결과를 배열로 반환하세요.
+예: \`head = [19,20,21,22]\` 이면 \`[22,21,20,19]\` 입니다.`
     case "maximum-subarray":
-      return `"${title}" 문제에서는 각 위치의 값이 손익을 의미합니다.
+      return `"${title}" 문제입니다. 배열의 각 값은 해당 위치의 손익(또는 점수 변화)을 의미합니다.
 
-연속된 구간 중 합이 최대가 되는 부분배열의 합을 구하세요.`
+비어 있지 않은 연속 부분배열 중 합이 최대가 되는 값(최대 부분합)을 구하세요.`
     case "merge-intervals":
-      return `"${title}" 문제에서는 \`[start, end]\` 형태의 구간 목록이 주어집니다.
+      return `"${title}" 문제입니다. \`[start, end]\` 형태의 구간 목록이 주어집니다.
 
-겹치는 구간을 모두 병합해 최소 개수의 비겹침 구간으로 반환하세요.`
+겹치는 구간을 모두 합쳐, 겹치지 않는 구간들만 남도록 병합 결과를 반환하세요.`
     case "longest-substring":
-      return `"${title}" 문제에서는 문자열 \`s\`가 주어집니다.
+      return `"${title}" 문제입니다. 문자열 \`s\`가 주어집니다.
 
-중복 문자가 없는 연속 부분 문자열의 최대 길이를 구하세요.`
+중복 문자가 하나도 없는 연속 부분 문자열 중, 가능한 최대 길이를 구하세요.`
     case "binary-tree-level-order":
-      return `"${title}" 문제에서는 이진 트리가 레벨 순서 배열(빈 노드는 \`null\`)로 주어집니다.
+      return `"${title}" 문제입니다. 이진 트리가 레벨 순서 배열(없는 노드는 \`null\`)로 주어집니다.
 
-루트부터 깊이별로 노드 값을 묶어 반환하세요.`
+루트부터 아래로 내려가며, 같은 깊이의 노드 값끼리 묶어 2차원 배열로 반환하세요.`
     case "trapping-rain-water":
-      return `"${title}" 문제에서는 막대 높이 배열이 주어집니다.
+      return `"${title}" 문제입니다. 각 칸의 막대 높이를 나타내는 배열이 주어집니다.
 
-비가 온 뒤 막대 사이에 고이는 빗물의 총량을 계산하세요.`
+비가 온 뒤 막대 사이에 고일 수 있는 빗물의 총량을 계산해 반환하세요.`
     default:
       return "효율적인 알고리즘으로 문제를 해결하세요."
   }
