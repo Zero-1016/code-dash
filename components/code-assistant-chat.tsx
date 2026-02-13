@@ -55,7 +55,6 @@ export function CodeAssistantChat({
           dismiss: "닫기",
           emptyTitle: "AI 멘토가 기다리고 있어요!",
           emptyDesc: "힌트, 설명, 코드 리뷰를 요청해보세요",
-          loading: "AI가 코드를 분석 중이에요...",
           clearChat: "채팅 지우기",
           placeholder: "힌트, 설명, 코드 리뷰를 요청해보세요...",
         }
@@ -72,7 +71,6 @@ export function CodeAssistantChat({
           dismiss: "Dismiss",
           emptyTitle: "Your AI Mentor is here!",
           emptyDesc: "Get hints, explanations, or code review",
-          loading: "AI is analyzing your code...",
           clearChat: "Clear chat",
           placeholder: "Ask for hints, explanations, or code review...",
         };
@@ -400,7 +398,7 @@ export function CodeAssistantChat({
             ))}
             {(isLoading || isAiGenerating) && (
               <div className="flex justify-start">
-                <div className="flex items-center gap-3 rounded-[20px] bg-[#3182F6]/10 px-5 py-3 text-sm text-[#3182F6] font-medium">
+                <div className="flex items-center rounded-[20px] bg-[#3182F6]/10 px-5 py-3">
                   <div className="flex gap-1">
                     <motion.div
                       className="h-2 w-2 rounded-full bg-[#3182F6]"
@@ -418,7 +416,6 @@ export function CodeAssistantChat({
                       transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
                     />
                   </div>
-                  <span>{text.loading}</span>
                 </div>
               </div>
             )}
