@@ -37,6 +37,9 @@ export interface LocaleCopy {
     lastSaved: string;
     keyRequired: string;
     connectionFailed: string;
+    keyHelpLabel: string;
+    keyHelpGetLink: string;
+    keyHelpFormat: string;
   };
   problem: {
     back: string;
@@ -105,6 +108,9 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       lastSaved: "Last saved",
       keyRequired: "Please enter the API key first.",
       connectionFailed: "Connection failed",
+      keyHelpLabel: "API key help",
+      keyHelpGetLink: "Get key",
+      keyHelpFormat: "Key format",
     },
     problem: {
       back: "Back",
@@ -170,6 +176,9 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       lastSaved: "마지막 저장",
       keyRequired: "API Key를 먼저 입력해주세요.",
       connectionFailed: "연결 실패",
+      keyHelpLabel: "API key 도움말",
+      keyHelpGetLink: "발급 링크",
+      keyHelpFormat: "키 형식",
     },
     problem: {
       back: "뒤로",

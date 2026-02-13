@@ -31,6 +31,21 @@ const MODEL_OPTIONS: Record<AIProvider, string[]> = {
   gemini: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"],
 };
 
+const PROVIDER_HELP: Record<AIProvider, { url: string; keyHint: string }> = {
+  claude: {
+    url: "https://console.anthropic.com/settings/keys",
+    keyHint: "sk-ant-...",
+  },
+  gpt: {
+    url: "https://platform.openai.com/api-keys",
+    keyHint: "sk-...",
+  },
+  gemini: {
+    url: "https://aistudio.google.com/app/apikey",
+    keyHint: "AIza...",
+  },
+};
+
 export default function SettingsPage() {
   const shouldAnimateOnMount = usePageEntryAnimation();
   const [settings, setSettings] = useState<ApiSettings>(getDefaultAIConfig());
@@ -242,6 +257,23 @@ export default function SettingsPage() {
                     }
                     className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
                   />
+                  <div className="mt-2 rounded-[12px] border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                    <p className="font-semibold text-foreground">{copy.settings.keyHelpLabel}</p>
+                    <p className="mt-1">
+                      {copy.settings.keyHelpGetLink}:{" "}
+                      <a
+                        href={PROVIDER_HELP[active].url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[#3182F6] underline underline-offset-2 hover:text-[#2870d8]"
+                      >
+                        {PROVIDER_HELP[active].url}
+                      </a>
+                    </p>
+                    <p className="mt-1">
+                      {copy.settings.keyHelpFormat}: {PROVIDER_HELP[active].keyHint}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
