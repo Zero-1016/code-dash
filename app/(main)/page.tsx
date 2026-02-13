@@ -8,6 +8,7 @@ import { StatsWidget } from "@/components/stats-widget"
 import { PageTransition } from "@/components/page-transition"
 import { problems } from "@/lib/problems"
 import { localizeCategory } from "@/lib/problems"
+import type { Difficulty, Problem } from "@/lib/problems"
 import {
   getSolvedProblemIds,
   subscribeToProgressUpdates,
@@ -19,6 +20,8 @@ export default function HomePage() {
   const { language, copy } = useAppLanguage()
   const shouldAnimateOnMount = usePageEntryAnimation()
   const [selectedCategory, setSelectedCategory] = useState("ALL")
+  const [selectedDifficulty, setSelectedDifficulty] = useState<"ALL" | Difficulty>("ALL")
+  const [sortBy, setSortBy] = useState<"default" | "difficulty-asc" | "difficulty-desc">("default")
   const [solvedIds, setSolvedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -38,12 +41,51 @@ export default function HomePage() {
     ]
   }, [])
 
+  const difficultyOptions: Array<"ALL" | Difficulty> = ["ALL", "Easy", "Medium", "Hard"]
+  const allDifficultyLabel = language === "ko" ? "전체 난이도" : "All Difficulty"
+  const sortByLabel = language === "ko" ? "정렬" : "Sort by"
+  const sortDefaultLabel = language === "ko" ? "기본순" : "Default"
+  const sortDifficultyAscLabel =
+    language === "ko" ? "난이도순 (쉬움 -> 어려움)" : "Difficulty (Easy -> Hard)"
+  const sortDifficultyDescLabel =
+    language === "ko" ? "난이도순 (어려움 -> 쉬움)" : "Difficulty (Hard -> Easy)"
+
+  const difficultyRank: Record<Difficulty, number> = {
+    Easy: 0,
+    Medium: 1,
+    Hard: 2,
+  }
+
   const filteredProblems = useMemo(() => {
-    if (selectedCategory === "ALL") {
-      return problems
+    const byCategory = selectedCategory === "ALL"
+      ? problems
+      : problems.filter((problem) => problem.category === selectedCategory)
+
+    const byDifficulty = selectedDifficulty === "ALL"
+      ? byCategory
+      : byCategory.filter((problem) => problem.difficulty === selectedDifficulty)
+
+    const sorted = [...byDifficulty]
+    if (sortBy === "difficulty-asc") {
+      sorted.sort((a, b) => difficultyRank[a.difficulty] - difficultyRank[b.difficulty])
+      return sorted
     }
-    return problems.filter((problem) => problem.category === selectedCategory)
-  }, [selectedCategory])
+    if (sortBy === "difficulty-desc") {
+      sorted.sort((a, b) => difficultyRank[b.difficulty] - difficultyRank[a.difficulty])
+      return sorted
+    }
+    return sorted
+  }, [selectedCategory, selectedDifficulty, sortBy, difficultyRank])
+
+  const getDifficultyCount = (difficulty: "ALL" | Difficulty) => {
+    const source: Problem[] = selectedCategory === "ALL"
+      ? problems
+      : problems.filter((problem) => problem.category === selectedCategory)
+    if (difficulty === "ALL") {
+      return source.length
+    }
+    return source.filter((problem) => problem.difficulty === difficulty).length
+  }
 
   return (
     <PageTransition animateOnMount={shouldAnimateOnMount}>
@@ -79,6 +121,33 @@ export default function HomePage() {
                   ({category.count})
                 </button>
               ))}
+            </div>
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              {difficultyOptions.map((difficulty) => (
+                <button
+                  key={difficulty}
+                  onClick={() => setSelectedDifficulty(difficulty)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    difficulty === selectedDifficulty
+                      ? "bg-[#3182F6] text-white"
+                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  {difficulty === "ALL" ? allDifficultyLabel : difficulty} ({getDifficultyCount(difficulty)})
+                </button>
+              ))}
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-xs font-semibold text-muted-foreground">{sortByLabel}</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as "default" | "difficulty-asc" | "difficulty-desc")}
+                  className="h-8 rounded-md border border-border bg-card px-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[#3182F6]"
+                >
+                  <option value="default">{sortDefaultLabel}</option>
+                  <option value="difficulty-asc">{sortDifficultyAscLabel}</option>
+                  <option value="difficulty-desc">{sortDifficultyDescLabel}</option>
+                </select>
+              </div>
             </div>
             <div className="flex flex-col gap-3">
               {filteredProblems.map((problem, i) => (
