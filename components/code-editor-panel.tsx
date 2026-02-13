@@ -122,6 +122,9 @@ export function CodeEditorPanel({
   onTestResultsUpdate,
 }: CodeEditorPanelProps) {
   const { language } = useAppLanguage();
+  const defaultCaseLabel = language === "ko" ? "예시" : "Test Case";
+  const customCaseLabel = language === "ko" ? "커스텀 테스트" : "Custom Test";
+  const expectedOutputsLabel = language === "ko" ? "예상 출력값" : "Expected Outputs";
   const router = useRouter();
   const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(null);
   const [analysis, setAnalysis] = useState<CodeAnalysis | null>(null);
@@ -491,7 +494,7 @@ export function CodeEditorPanel({
                   >
                     <div className="flex items-center justify-between mb-3">
                       <span className="font-bold text-sm text-foreground">
-                        Test Case {index + 1}
+                        {defaultCaseLabel} {index + 1}
                       </span>
                       {testResult && (
                         <span
@@ -575,7 +578,7 @@ export function CodeEditorPanel({
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sm text-foreground">
-                          Custom Test {index + 1}
+                          {customCaseLabel} {index + 1}
                         </span>
                         <button
                           onClick={() => handleRemoveCustomTest(index)}
@@ -651,11 +654,13 @@ export function CodeEditorPanel({
               })}
 
               <div className="rounded-[16px] border border-border/60 bg-background p-4 text-xs">
-                <p className="mb-3 text-sm font-bold text-foreground">Expected Outputs</p>
+                <p className="mb-3 text-sm font-bold text-foreground">{expectedOutputsLabel}</p>
                 <div className="space-y-2">
                   {problem.testCases.slice(0, 2).map((testCase, index) => (
                     <div key={`expected-default-${index}`}>
-                      <p className="mb-1 text-muted-foreground">Test Case {index + 1}</p>
+                      <p className="mb-1 text-muted-foreground">
+                        {defaultCaseLabel} {index + 1}
+                      </p>
                       <code className="block rounded-[12px] bg-muted px-3 py-2 font-mono text-foreground">
                         {JSON.stringify(testCase.expected)}
                       </code>
@@ -663,7 +668,9 @@ export function CodeEditorPanel({
                   ))}
                   {customTestCases.map((testCase, index) => (
                     <div key={`expected-custom-${index}`}>
-                      <p className="mb-1 text-muted-foreground">Custom Test {index + 1}</p>
+                      <p className="mb-1 text-muted-foreground">
+                        {customCaseLabel} {index + 1}
+                      </p>
                       <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-foreground">
                         {testCase.expected}
                       </code>
