@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import { MessageCircle, Send, Loader2, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { getApiSettings } from "@/lib/local-progress";
@@ -108,19 +108,54 @@ export function CodeAssistantChat({
 
   // Format markdown-style text for display
   const formatMessage = (text: string) => {
-    // Simple markdown formatting
     const lines = text.split("\n");
-    return lines.map((line, i) => {
-      // Bold text **text**
+    const elements: ReactNode[] = [];
+    let inCodeBlock = false;
+    let codeBlockLanguage = "";
+    let codeBuffer: string[] = [];
+
+    const flushCodeBlock = (key: number) => {
+      elements.push(
+        <div key={key} className="my-2 overflow-x-auto rounded-[12px] bg-zinc-950/95 p-3">
+          {codeBlockLanguage ? (
+            <div className="mb-2 text-[10px] uppercase tracking-wide text-zinc-400">
+              {codeBlockLanguage}
+            </div>
+          ) : null}
+          <pre className="text-xs text-zinc-100">
+            <code>{codeBuffer.join("\n")}</code>
+          </pre>
+        </div>
+      );
+      codeBuffer = [];
+      codeBlockLanguage = "";
+    };
+
+    lines.forEach((line, i) => {
+      if (line.trim().startsWith("```")) {
+        if (!inCodeBlock) {
+          inCodeBlock = true;
+          codeBlockLanguage = line.trim().slice(3).trim();
+        } else {
+          flushCodeBlock(i);
+          inCodeBlock = false;
+        }
+        return;
+      }
+
+      if (inCodeBlock) {
+        codeBuffer.push(line);
+        return;
+      }
+
       let formatted = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-      // Code blocks `code`
       formatted = formatted.replace(
         /`([^`]+)`/g,
         '<code class="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">$1</code>'
       );
 
       if (line.startsWith("# ")) {
-        return (
+        elements.push(
           <div
             key={i}
             className="text-base font-bold mt-3 mb-1"
@@ -128,7 +163,7 @@ export function CodeAssistantChat({
           />
         );
       } else if (line.startsWith("## ")) {
-        return (
+        elements.push(
           <div
             key={i}
             className="text-sm font-bold mt-2 mb-1"
@@ -136,7 +171,7 @@ export function CodeAssistantChat({
           />
         );
       } else if (line.startsWith("- ")) {
-        return (
+        elements.push(
           <div
             key={i}
             className="ml-4 mb-1"
@@ -144,11 +179,17 @@ export function CodeAssistantChat({
           />
         );
       } else if (line.trim() === "") {
-        return <div key={i} className="h-2" />;
+        elements.push(<div key={i} className="h-2" />);
       } else {
-        return <div key={i} dangerouslySetInnerHTML={{ __html: formatted }} />;
+        elements.push(<div key={i} dangerouslySetInnerHTML={{ __html: formatted }} />);
       }
     });
+
+    if (inCodeBlock && codeBuffer.length > 0) {
+      flushCodeBlock(lines.length + 1);
+    }
+
+    return elements;
   };
 
   const scrollToBottom = () => {
