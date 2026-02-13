@@ -1,10 +1,9 @@
 "use client";
 
-export interface ApiSettings {
-  provider: "openai";
-  model: string;
-  apiKey: string;
-}
+import { getDefaultAIConfig, type AIConfigPayload } from "@/lib/ai-config";
+import { problems } from "@/lib/problems";
+
+export interface ApiSettings extends AIConfigPayload {}
 
 export interface SolveRecord {
   problemId: string;
@@ -12,6 +11,7 @@ export interface SolveRecord {
   passed: number;
   total: number;
   success: boolean;
+  elapsedSeconds?: number;
 }
 
 interface DraftRecord {
@@ -24,16 +24,14 @@ type ActivityMap = Record<string, number>;
 
 const STORAGE_KEYS = {
   settings: "codedash.settings.v1",
+  sessionApiKeys: "codedash.session.api-keys.v1",
+  language: "codedash.language.v1",
   drafts: "codedash.drafts.v1",
   solves: "codedash.solves.v1",
   activity: "codedash.activity.v1",
 } as const;
 
-const DEFAULT_SETTINGS: ApiSettings = {
-  provider: "openai",
-  model: "gpt-4o-mini",
-  apiKey: "",
-};
+const DEFAULT_SETTINGS: ApiSettings = getDefaultAIConfig();
 
 const STORAGE_EVENT = "codedash:storage-updated";
 
@@ -41,13 +39,26 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
-function safeRead<T>(key: string, fallback: T): T {
+type StorageScope = "local" | "session";
+
+function getStorage(scope: StorageScope): Storage | null {
+  if (!isBrowser()) {
+    return null;
+  }
+  return scope === "session" ? window.sessionStorage : window.localStorage;
+}
+
+function safeRead<T>(key: string, fallback: T, scope: StorageScope = "local"): T {
   if (!isBrowser()) {
     return fallback;
   }
 
   try {
-    const raw = window.localStorage.getItem(key);
+    const storage = getStorage(scope);
+    if (!storage) {
+      return fallback;
+    }
+    const raw = storage.getItem(key);
     if (!raw) {
       return fallback;
     }
@@ -57,13 +68,17 @@ function safeRead<T>(key: string, fallback: T): T {
   }
 }
 
-function safeWrite<T>(key: string, value: T) {
+function safeWrite<T>(key: string, value: T, scope: StorageScope = "local") {
   if (!isBrowser()) {
     return;
   }
 
   try {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    const storage = getStorage(scope);
+    if (!storage) {
+      return;
+    }
+    storage.setItem(key, JSON.stringify(value));
     window.dispatchEvent(new Event(STORAGE_EVENT));
   } catch {
     // noop
@@ -85,14 +100,94 @@ export function subscribeToProgressUpdates(listener: () => void) {
 }
 
 export function getApiSettings(): ApiSettings {
-  return {
-    ...DEFAULT_SETTINGS,
-    ...safeRead<ApiSettings>(STORAGE_KEYS.settings, DEFAULT_SETTINGS),
-  };
+  const raw = safeRead<unknown>(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
+  const sessionApiKeys = safeRead<ApiSettings["apiKeys"]>(
+    STORAGE_KEYS.sessionApiKeys,
+    DEFAULT_SETTINGS.apiKeys,
+    "session"
+  );
+
+  if (raw && typeof raw === "object") {
+    const candidate = raw as Partial<ApiSettings> & {
+      model?: string;
+      apiKey?: string;
+      provider?: string;
+    };
+
+    // Backward compatibility for old settings shape.
+    if (typeof candidate.model === "string" || typeof candidate.apiKey === "string") {
+      return {
+        ...DEFAULT_SETTINGS,
+        provider:
+          candidate.provider === "claude" ||
+          candidate.provider === "gpt" ||
+          candidate.provider === "gemini"
+            ? candidate.provider
+            : "gpt",
+        models: {
+          ...DEFAULT_SETTINGS.models,
+          gpt: candidate.model || DEFAULT_SETTINGS.models.gpt,
+        },
+        apiKeys: {
+          ...DEFAULT_SETTINGS.apiKeys,
+          ...sessionApiKeys,
+        },
+        maxTokens: {
+          ...DEFAULT_SETTINGS.maxTokens,
+        },
+      };
+    }
+
+    return {
+      ...DEFAULT_SETTINGS,
+      provider:
+        candidate.provider === "claude" ||
+        candidate.provider === "gpt" ||
+        candidate.provider === "gemini"
+          ? candidate.provider
+          : DEFAULT_SETTINGS.provider,
+      models: {
+        ...DEFAULT_SETTINGS.models,
+        ...(candidate.models || {}),
+      },
+      apiKeys: {
+        ...DEFAULT_SETTINGS.apiKeys,
+        ...sessionApiKeys,
+      },
+      maxTokens: {
+        ...DEFAULT_SETTINGS.maxTokens,
+        ...(candidate.maxTokens || {}),
+      },
+    };
+  }
+
+  return DEFAULT_SETTINGS;
 }
 
 export function saveApiSettings(settings: ApiSettings) {
-  safeWrite(STORAGE_KEYS.settings, settings);
+  safeWrite(STORAGE_KEYS.settings, {
+    provider: settings.provider,
+    models: settings.models,
+    maxTokens: settings.maxTokens,
+  });
+  safeWrite(STORAGE_KEYS.sessionApiKeys, settings.apiKeys, "session");
+}
+
+export type AppLanguage = "en" | "ko";
+
+const DEFAULT_LANGUAGE: AppLanguage = "en";
+
+function isAppLanguage(value: unknown): value is AppLanguage {
+  return value === "en" || value === "ko";
+}
+
+export function getLanguagePreference(): AppLanguage {
+  const language = safeRead<unknown>(STORAGE_KEYS.language, DEFAULT_LANGUAGE);
+  return isAppLanguage(language) ? language : DEFAULT_LANGUAGE;
+}
+
+export function saveLanguagePreference(language: AppLanguage) {
+  safeWrite(STORAGE_KEYS.language, language);
 }
 
 export function getDraft(problemId: string): DraftRecord | null {
@@ -194,30 +289,24 @@ export function getDashboardStats() {
   const solvedSet = getSolvedProblemIds();
   const solvedCount = solvedSet.size;
   const successEntries = solves.filter((entry) => entry.success);
-  const completion = solves.length
-    ? Math.round((successEntries.length / solves.length) * 100)
+  const completion = problems.length
+    ? Math.round((solvedCount / problems.length) * 100)
     : 0;
 
   const avgMinutes = (() => {
-    const sorted = [...successEntries].sort((a, b) =>
-      a.solvedAt.localeCompare(b.solvedAt)
-    );
-    if (sorted.length < 2) {
+    const elapsedTimes = successEntries
+      .map((entry) => entry.elapsedSeconds)
+      .filter((value): value is number => typeof value === "number" && value > 0);
+
+    if (!elapsedTimes.length) {
       return null;
     }
 
-    const intervals: number[] = [];
-    for (let i = 1; i < sorted.length; i += 1) {
-      const prev = new Date(sorted[i - 1].solvedAt).getTime();
-      const next = new Date(sorted[i].solvedAt).getTime();
-      const diffMinutes = Math.max(1, Math.round((next - prev) / 60000));
-      intervals.push(diffMinutes);
-    }
+    const averageSeconds =
+      elapsedTimes.reduce((sum, seconds) => sum + seconds, 0) / elapsedTimes.length;
+    const roundedMinutes = Math.max(1, Math.round(averageSeconds / 60));
 
-    if (!intervals.length) {
-      return null;
-    }
-    return Math.round(intervals.reduce((sum, val) => sum + val, 0) / intervals.length);
+    return roundedMinutes;
   })();
 
   return {
@@ -226,4 +315,3 @@ export function getDashboardStats() {
     avgMinutes,
   };
 }
-

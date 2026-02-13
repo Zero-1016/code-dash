@@ -1,32 +1,68 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Code2, MessageCircle, X } from "lucide-react";
+import { ArrowLeft, MessageCircle, X } from "lucide-react";
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ProblemDescription } from "@/components/problem-description";
 import { CodeEditorPanel } from "@/components/code-editor-panel";
 import { CodeAssistantChat } from "@/components/code-assistant-chat";
 import { ChallengeTimer } from "@/components/challenge-timer";
-import type { Problem } from "@/lib/problems";
+import { getLocalizedProblemText, type Problem } from "@/lib/problems";
 import {
   deleteDraft,
   getDraft,
+  getApiSettings,
   recordActivity,
   saveDraft,
   saveSolveRecord,
+  subscribeToProgressUpdates,
 } from "@/lib/local-progress";
+import { useAppLanguage } from "@/lib/use-app-language";
 
 interface ProblemPageClientProps {
   problem: Problem;
 }
 
+interface MentorTestResult {
+  passed: boolean;
+  input: string;
+  expected: string;
+  actual: string;
+}
+
 export function ProblemPageClient({ problem }: ProblemPageClientProps) {
+  const router = useRouter();
+  const { language, copy } = useAppLanguage();
+  const localized = getLocalizedProblemText(problem, language);
+  const localizedProblem = useMemo(
+    () => ({
+      ...problem,
+      title: localized.text.title,
+      category: localized.text.category,
+      description: localized.text.description,
+      examples: localized.text.examples,
+      constraints: localized.text.constraints,
+    }),
+    [localized.text, problem]
+  );
   const [code, setCode] = useState(problem.starterCode);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -35,6 +71,21 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [hasTriggered30MinHint, setHasTriggered30MinHint] = useState(false);
   const [showHintNotification, setShowHintNotification] = useState(false);
+  const [latestTestResults, setLatestTestResults] = useState<MentorTestResult[]>([]);
+  const [isMentorConfigured, setIsMentorConfigured] = useState(false);
+  const [isMentorAlertOpen, setIsMentorAlertOpen] = useState(false);
+
+  useEffect(() => {
+    const sync = () => {
+      const settings = getApiSettings();
+      const provider = settings.provider;
+      const hasModel = Boolean(settings.models[provider]?.trim());
+      const hasApiKey = Boolean(settings.apiKeys[provider]?.trim());
+      setIsMentorConfigured(hasModel && hasApiKey);
+    };
+    sync();
+    return subscribeToProgressUpdates(sync);
+  }, []);
 
   useEffect(() => {
     const draft = getDraft(problem.id);
@@ -63,13 +114,14 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
         passed: result.passed,
         total: result.total,
         success: result.success,
+        elapsedSeconds: result.success ? elapsedSeconds : undefined,
       });
 
       if (result.success) {
         deleteDraft(problem.id);
       }
     },
-    [problem.id]
+    [elapsedSeconds, problem.id]
   );
 
   const handleTimeUpdate = useCallback(
@@ -89,10 +141,12 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              problemTitle: problem.title,
-              problemDescription: problem.description,
+              problemTitle: localizedProblem.title,
+              problemDescription: localizedProblem.description,
               code,
               elapsedMinutes: 30,
+              language,
+              aiConfig: getApiSettings(),
             }),
           });
 
@@ -108,7 +162,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
         }
       }
     },
-    [hasTriggered30MinHint, problem, code]
+    [hasTriggered30MinHint, localizedProblem.description, localizedProblem.title, code, language]
   );
 
   return (
@@ -125,13 +179,18 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
             className="flex items-center gap-2 rounded-[20px] px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">{copy.problem.back}</span>
           </Link>
           <div className="h-4 w-px bg-border" />
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-[12px] bg-[#3182F6]">
-              <Code2 className="h-3.5 w-3.5 text-white" />
-            </div>
+            <Image
+              src="/codedash-mark.svg"
+              alt="CodeDash logo"
+              width={28}
+              height={28}
+              className="h-7 w-7 rounded-[8px]"
+              priority
+            />
             <span className="text-sm font-semibold text-foreground">
               CodeDash
             </span>
@@ -142,21 +201,29 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
           <ChallengeTimer timeLimit={3600} onTimeUpdate={handleTimeUpdate} />
           <div className="h-4 w-px bg-border" />
           <p className="text-sm font-medium text-muted-foreground">
-            {problem.title}
+            {localizedProblem.title}
           </p>
           <div className="relative">
             <button
               onClick={() => {
+                if (!isMentorConfigured) {
+                  setIsMentorAlertOpen(true);
+                  return;
+                }
                 setIsAssistantOpen(!isAssistantOpen);
                 setShowHintNotification(false);
               }}
-              className="flex items-center gap-2 rounded-[20px] bg-[#3182F6] px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:bg-[#2870d8]"
+              className={`flex items-center gap-2 rounded-[20px] px-4 py-2 text-sm font-semibold transition-all ${
+                isMentorConfigured
+                  ? "bg-[#3182F6] text-white shadow-lg hover:bg-[#2870d8]"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
             >
               <MessageCircle className="h-4 w-4" />
-              AI Mentor
+              {copy.problem.aiMentor}
             </button>
             <AnimatePresence>
-              {showHintNotification && !isAssistantOpen && (
+              {showHintNotification && !isAssistantOpen && isMentorConfigured && (
                 <>
                   {/* Pulse ring */}
                   <motion.div
@@ -192,14 +259,14 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
       >
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={45} minSize={30}>
-            <ProblemDescription problem={problem} />
+            <ProblemDescription problem={localizedProblem} />
           </ResizablePanel>
 
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize={55} minSize={35}>
             <CodeEditorPanel
-              problem={problem}
+              problem={localizedProblem}
               code={code}
               setCode={setCode}
               setIsAiGenerating={setIsAiGenerating}
@@ -207,6 +274,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               setIsAssistantOpen={setIsAssistantOpen}
               onSubmissionComplete={handleSubmissionComplete}
               onRunTests={recordActivity}
+              onTestResultsUpdate={setLatestTestResults}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -221,7 +289,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsAssistantOpen(false)}
-                className="absolute inset-0 bg-black/20 backdrop-blur-sm z-40"
+                className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
               />
 
               {/* Sidebar */}
@@ -230,13 +298,13 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="absolute right-0 top-0 bottom-0 w-[400px] bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+                className="fixed right-0 top-14 bottom-0 z-50 w-full max-w-[400px] border-l border-border bg-background shadow-2xl flex flex-col"
               >
                 <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
                   <div className="flex items-center gap-2">
                     <MessageCircle className="h-5 w-5 text-[#3182F6]" />
                     <h2 className="text-base font-bold text-foreground">
-                      AI Mentor
+                      {copy.problem.aiMentor}
                     </h2>
                   </div>
                   <button
@@ -250,8 +318,9 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
                 <div className="flex-1 overflow-hidden">
                   <CodeAssistantChat
                     code={code}
-                    problemTitle={problem.title}
-                    problemDescription={problem.description}
+                    problemTitle={localizedProblem.title}
+                    problemDescription={localizedProblem.description}
+                    testResults={latestTestResults}
                     isAiGenerating={isAiGenerating}
                     pendingReview={pendingReview}
                     strategicHint={strategicHint}
@@ -263,6 +332,22 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
           )}
         </AnimatePresence>
       </motion.div>
+      <AlertDialog open={isMentorAlertOpen} onOpenChange={setIsMentorAlertOpen}>
+        <AlertDialogContent overlayClassName="bg-black/45">
+          <AlertDialogHeader>
+            <AlertDialogTitle>AI 멘토 설정 필요</AlertDialogTitle>
+            <AlertDialogDescription>
+              모델을 등록해야만 정확한 피드백이 가능합니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.push("/settings")}>
+              설정 페이지로 이동
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

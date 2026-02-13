@@ -1,14 +1,23 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { Sparkles, ArrowRight } from "lucide-react";
+import { useAppLanguage } from "@/lib/use-app-language";
+import { problems } from "@/lib/problems";
 
 export function HeroSection() {
+  const { copy } = useAppLanguage();
+  const router = useRouter();
+
   const handleStartSolving = () => {
-    const problemsSection = document.getElementById("problems");
-    if (problemsSection) {
-      problemsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (problems.length === 0) {
+      return;
     }
+
+    const randomIndex = Math.floor(Math.random() * problems.length);
+    const randomProblem = problems[randomIndex];
+    router.push(`/problem/${randomProblem.id}`);
   };
 
   return (
@@ -27,7 +36,7 @@ export function HeroSection() {
           >
             <Sparkles className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-accent-foreground">
-              {"Today's challenge is live"}
+              {copy.hero.badge}
             </span>
           </motion.div>
 
@@ -37,9 +46,9 @@ export function HeroSection() {
             transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
             className="max-w-2xl text-balance text-4xl font-bold tracking-tight text-foreground lg:text-5xl"
           >
-            Welcome!
+            {copy.hero.titleTop}
             <br />
-            <span className="text-primary">Ready to code?</span>
+            <span className="text-primary">{copy.hero.titleBottom}</span>
           </motion.h1>
 
           <motion.p
@@ -48,8 +57,7 @@ export function HeroSection() {
             transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
             className="mt-4 max-w-lg text-pretty text-base leading-relaxed text-muted-foreground lg:text-lg"
           >
-            Sharpen your algorithms one challenge at a time. Build your streak
-            and become unstoppable.
+            {copy.hero.description}
           </motion.p>
 
           <motion.div
@@ -64,7 +72,7 @@ export function HeroSection() {
               whileTap={{ scale: 0.98 }}
               className="group inline-flex items-center gap-2 rounded-[20px] bg-[#3182F6] px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#3182F6]/30 transition-all hover:bg-[#2870d8] hover:shadow-xl hover:shadow-[#3182F6]/40"
             >
-              Start Solving
+              {copy.hero.startSolving}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </motion.button>
           </motion.div>

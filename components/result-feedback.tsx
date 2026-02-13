@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { ScoreGauge } from "@/components/score-gauge";
 import type { CodeAnalysis } from "@/lib/analyze-code";
+import { useAppLanguage } from "@/lib/use-app-language";
 
 interface TestResult {
   passed: boolean;
@@ -78,7 +79,13 @@ function AnimatedCounter({
   );
 }
 
-function EfficiencyBadge({ level }: { level: "High" | "Medium" | "Low" }) {
+function EfficiencyBadge({
+  level,
+  language,
+}: {
+  level: "High" | "Medium" | "Low";
+  language: "en" | "ko";
+}) {
   const config = {
     High: {
       bg: "bg-[hsl(145,65%,93%)]",
@@ -105,7 +112,9 @@ function EfficiencyBadge({ level }: { level: "High" | "Medium" | "Low" }) {
       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${c.bg} ${c.text}`}
     >
       <Icon className="h-3 w-3" />
-      {level} Efficiency
+      {language === "ko"
+        ? `${level === "High" ? "높음" : level === "Medium" ? "보통" : "낮음"} 효율성`
+        : `${level} Efficiency`}
     </span>
   );
 }
@@ -116,6 +125,67 @@ export function ResultFeedback({
   onClose,
   onNextChallenge,
 }: ResultFeedbackProps) {
+  const { language } = useAppLanguage();
+  const text =
+    language === "ko"
+      ? {
+          closeResults: "결과 닫기",
+          compilationError: "컴파일 오류",
+          fixAndRetry: "오류를 수정하고 다시 시도해보세요",
+          testCasesPassed: "테스트 케이스 통과",
+          scoreBreakdown: "점수 구성",
+          correctness: "정확성",
+          efficiency: "효율성",
+          readability: "가독성",
+          howToImprove: "어떻게 개선할까?",
+          complexityAnalysis: "복잡도 분석",
+          complexitySentence: "현재 풀이의 시간 복잡도는",
+          recommendation: "추천",
+          testCases: "테스트 케이스",
+          input: "입력",
+          output: "출력",
+          consoleOutput: "콘솔 출력",
+          status: "상태",
+          expectedButGot: "예상값",
+          butGot: "실제값",
+          difficultyQuestion: "체감 난이도는 어땠나요?",
+          easy: "쉬움",
+          fair: "보통",
+          hard: "어려움",
+          thanks: "피드백 고마워요!",
+          nextChallenge: "다음 문제",
+          passed: "통과했습니다",
+          failed: "실패",
+        }
+      : {
+          closeResults: "Close results",
+          compilationError: "Compilation Error",
+          fixAndRetry: "Fix the error and try again",
+          testCasesPassed: "test cases passed",
+          scoreBreakdown: "Score Breakdown",
+          correctness: "Correctness",
+          efficiency: "Efficiency",
+          readability: "Readability",
+          howToImprove: "How to improve?",
+          complexityAnalysis: "Complexity Analysis",
+          complexitySentence: "Your solution runs in",
+          recommendation: "Recommendation",
+          testCases: "Test Cases",
+          input: "Input",
+          output: "Output",
+          consoleOutput: "Console Output",
+          status: "Status",
+          expectedButGot: "Expected",
+          butGot: "but got",
+          difficultyQuestion: "How difficult was this for you?",
+          easy: "Easy",
+          fair: "Fair",
+          hard: "Hard",
+          thanks: "Thanks for your feedback!",
+          nextChallenge: "Next Challenge",
+          passed: "Passed",
+          failed: "Failed",
+        };
   const [selectedDifficulty, setSelectedDifficulty] =
     useState<DifficultyFeedback>(null);
   const [showThankYou, setShowThankYou] = useState(false);
@@ -183,6 +253,12 @@ export function ResultFeedback({
     },
   ];
 
+  const localizedLabel = (label: string) => {
+    if (label === "Correctness") return text.correctness;
+    if (label === "Efficiency") return text.efficiency;
+    return text.readability;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -205,7 +281,7 @@ export function ResultFeedback({
           <button
             onClick={onClose}
             className="absolute right-4 top-3 flex h-8 w-8 items-center justify-center rounded-[12px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="Close results"
+            aria-label={text.closeResults}
           >
             <X className="h-4 w-4" />
           </button>
@@ -225,10 +301,10 @@ export function ResultFeedback({
                 <AlertTriangle className="h-8 w-8 text-destructive" />
                 <div>
                   <h3 className="text-lg font-bold text-foreground">
-                    Compilation Error
+                    {text.compilationError}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Fix the error and try again
+                    {text.fixAndRetry}
                   </p>
                 </div>
               </div>
@@ -255,7 +331,7 @@ export function ResultFeedback({
                   transition={{ delay: 1.2 }}
                   className="mt-1 text-sm text-muted-foreground"
                 >
-                  {passedCount}/{totalCount} test cases passed
+                  {passedCount}/{totalCount} {text.testCasesPassed}
                 </motion.p>
               </motion.div>
 
@@ -267,7 +343,7 @@ export function ResultFeedback({
                 className="mt-6 rounded-[24px] border border-border/60 bg-card p-5"
               >
                 <h4 className="text-sm font-semibold text-foreground">
-                  Score Breakdown
+                  {text.scoreBreakdown}
                 </h4>
                 <div className="mt-3 flex flex-col gap-3">
                   {breakdownItems.map((item) => (
@@ -276,7 +352,7 @@ export function ResultFeedback({
                         className={`h-4 w-4 flex-shrink-0 ${item.color}`}
                       />
                       <span className="min-w-[85px] text-sm text-foreground">
-                        {item.label}
+                        {localizedLabel(item.label)}
                       </span>
                       <div className="flex-1">
                         <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -323,28 +399,28 @@ export function ResultFeedback({
               >
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold text-accent-foreground">
-                    How to improve?
+                    {text.howToImprove}
                   </h4>
-                  <EfficiencyBadge level={analysis.efficiencyLevel} />
+                  <EfficiencyBadge level={analysis.efficiencyLevel} language={language} />
                 </div>
 
                 <div className="mt-4 flex flex-col gap-3">
                   <div className="rounded-[16px] bg-background p-4">
                     <p className="text-xs font-medium text-muted-foreground">
-                      Complexity Analysis
+                      {text.complexityAnalysis}
                     </p>
                     <p className="mt-1 text-sm text-foreground">
-                      Your solution runs in{" "}
+                      {text.complexitySentence}{" "}
                       <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs font-semibold text-primary">
                         {analysis.bigO}
                       </code>{" "}
-                      time complexity.
+                      {language === "ko" ? "입니다." : "time complexity."}
                     </p>
                   </div>
 
                   <div className="rounded-[16px] bg-background p-4">
                     <p className="text-xs font-medium text-muted-foreground">
-                      Recommendation
+                      {text.recommendation}
                     </p>
                     <p className="mt-1 text-sm leading-relaxed text-foreground">
                       {analysis.suggestion}
@@ -365,7 +441,7 @@ export function ResultFeedback({
                 className="mt-4 rounded-[24px] border border-border/60 bg-card p-5"
               >
                 <h4 className="text-base font-bold text-foreground">
-                  Test Cases
+                  {text.testCases}
                 </h4>
                 <div className="mt-4 flex flex-col gap-3">
                   {result.results.map((testResult, i) => (
@@ -391,14 +467,14 @@ export function ResultFeedback({
                               : "bg-red-600 text-white"
                           }`}
                         >
-                          {testResult.passed ? "통과하였습니다" : "실패"}
+                          {testResult.passed ? text.passed : text.failed}
                         </span>
                       </div>
 
                       {/* Input Section */}
                       <div className="mb-2">
                         <div className="text-muted-foreground font-semibold text-xs mb-1">
-                          Input:
+                          {text.input}:
                         </div>
                         <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-xs text-foreground">
                           {testResult.input}
@@ -410,7 +486,7 @@ export function ResultFeedback({
                         testResult.consoleLogs.length > 0 && (
                           <div className="mb-2">
                             <div className="text-muted-foreground font-semibold text-xs mb-1">
-                              Console Output:
+                              {text.consoleOutput}:
                             </div>
                             <div className="rounded-[12px] bg-muted/50 px-3 py-2 font-mono text-[11px] space-y-0.5">
                               {testResult.consoleLogs.map((log, idx) => (
@@ -428,7 +504,7 @@ export function ResultFeedback({
                       {/* Output Section */}
                       <div className="mb-2">
                         <div className="text-muted-foreground font-semibold text-xs mb-1">
-                          Output:
+                          {text.output}:
                         </div>
                         <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-xs text-foreground">
                           {testResult.actual}
@@ -439,11 +515,11 @@ export function ResultFeedback({
                       {!testResult.passed && (
                         <div>
                           <div className="text-muted-foreground font-semibold text-xs mb-1">
-                            Status:
+                            {text.status}:
                           </div>
                           <div className="rounded-[12px] bg-background p-3">
                             <p className="text-xs font-medium text-red-600 dark:text-red-400">
-                              Expected: {testResult.expected}, but got:{" "}
+                              {text.expectedButGot}: {testResult.expected}, {text.butGot}:{" "}
                               {testResult.actual}
                             </p>
                           </div>
@@ -462,14 +538,14 @@ export function ResultFeedback({
                 className="mt-4 rounded-[24px] border border-border/60 bg-card p-5"
               >
                 <h4 className="text-sm font-semibold text-foreground">
-                  How difficult was this for you?
+                  {text.difficultyQuestion}
                 </h4>
                 <div className="mt-3 flex items-center justify-center gap-3">
                   {(
                     [
-                      { key: "easy", emoji: "\u{1F60A}", label: "Easy" },
-                      { key: "fair", emoji: "\u{1F914}", label: "Fair" },
-                      { key: "hard", emoji: "\u{1F92F}", label: "Hard" },
+                      { key: "easy", emoji: "\u{1F60A}", label: text.easy },
+                      { key: "fair", emoji: "\u{1F914}", label: text.fair },
+                      { key: "hard", emoji: "\u{1F92F}", label: text.hard },
                     ] as const
                   ).map((item) => (
                     <motion.button
@@ -505,7 +581,7 @@ export function ResultFeedback({
                       exit={{ opacity: 0, y: -4 }}
                       className="mt-2 text-center text-xs text-primary"
                     >
-                      Thanks for your feedback!
+                      {text.thanks}
                     </motion.p>
                   )}
                 </AnimatePresence>
@@ -523,7 +599,7 @@ export function ResultFeedback({
                   onClick={onNextChallenge}
                   className="flex w-full items-center justify-center gap-2 rounded-[20px] bg-[#3182F6] px-6 py-4 text-base font-bold text-white shadow-lg shadow-[#3182F6]/30 transition-all hover:bg-[#2870d8] hover:shadow-xl hover:shadow-[#3182F6]/40"
                 >
-                  Next Challenge
+                  {text.nextChallenge}
                   <ArrowRight className="h-5 w-5" />
                 </motion.button>
               </motion.div>

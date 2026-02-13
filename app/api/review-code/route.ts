@@ -1,4 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
+import { generateText } from "ai"
+import {
+  providerCandidates,
+  resolveAIConfig,
+  type AIConfigPayload,
+} from "@/lib/ai-config"
+import { getLanguageModel } from "@/lib/server/ai-model"
+import {
+  getMentorPersonaInstruction,
+  getMentorLanguageInstruction,
+  resolveMentorLanguage,
+  type MentorLanguage,
+} from "@/lib/mentor-language"
 
 interface TestResult {
   passed: boolean
@@ -13,6 +26,92 @@ interface ReviewRequest {
   problemDescription: string
   testResults: TestResult[]
   allTestsPassed: boolean
+  language?: MentorLanguage
+  aiConfig?: Partial<AIConfigPayload>
+}
+
+const REVIEW_REPLY_FORMAT_RULES = `Reply format:
+- Default 1-2 short lines, max 4 lines only if necessary.
+- No greetings, emojis, formal report sections, or long checklists.
+- Focus on the single highest-impact point first.
+- End with one immediate next step.`
+
+function generateFallbackReviewFeedback(
+  language: MentorLanguage,
+  passedCount: number,
+  totalCount: number,
+  allTestsPassed: boolean,
+  note: "no-key" | "service-error"
+): string {
+  const statusNote =
+    note === "no-key"
+      ? language === "ko"
+        ? "지금은 API Key가 없어도, 테스트 결과 기반으로 같이 디버깅/개선해볼 수 있어."
+        : "No API key is configured, so deep AI analysis is limited. Here is a mentor-style review."
+      : language === "ko"
+        ? "AI 연결이 잠깐 불안정하지만, 지금 결과 기준으로 같이 이어가보자."
+        : "AI service is temporarily unstable, but here is a mentor-style review from current results."
+
+  if (language === "ko") {
+    if (!allTestsPassed) {
+      return `현재 ${passedCount}/${totalCount} 통과니까, 복잡도보다 실패 원인 한 군데부터 잡자.
+실패 케이스 1개를 보내주면 입력 -> 분기 -> 반환 흐름으로 바로 짚어줄게. (${statusNote})`
+    }
+
+    return `Pass(${passedCount}/${totalCount}) 좋다. 이제 중첩 루프를 줄일 수 있는지랑 변수명 역할이 명확한지만 빠르게 점검하자.
+원하면 네 코드에서 수정 우선순위 1개만 바로 골라줄게. (${statusNote})`
+  }
+
+  if (!allTestsPassed) {
+    return `You are at ${passedCount}/${totalCount}; debug one failing path first before complexity.
+Share one failing case and I will trace input -> branch -> return with you. (${statusNote})`
+  }
+
+  return `Pass at ${passedCount}/${totalCount}. Now check one optimization point (nested loops -> Map/Set) and one naming cleanup.
+If you want, I can mark the first refactor target directly on your code. (${statusNote})`
+}
+
+function buildReviewPrompt(
+  code: string,
+  problemTitle: string,
+  problemDescription: string,
+  testResults: TestResult[],
+  allTestsPassed: boolean,
+  language: MentorLanguage
+): string {
+  const passedCount = testResults.filter((r) => r.passed).length
+  const totalCount = testResults.length
+
+  return `You are a **Supportive Coding Mentor** reviewing a student's solution for: "${problemTitle}"
+
+**Problem Description:**
+${problemDescription}
+
+**Student's Code:**
+\`\`\`javascript
+${code}
+\`\`\`
+
+**Test Results:** ${passedCount}/${totalCount} tests passed
+
+${testResults
+  .map(
+    (r, i) => `Test ${i + 1}: ${r.passed ? "✓ PASSED" : "✗ FAILED"}
+${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual}` : ""}`
+  )
+  .join("\n")}
+
+**Mentoring Mode:**
+- Use test output as the first source of truth.
+- ${allTestsPassed ? "All tests passed: brief congrats, then suggest one optimization/refactor." : "Tests failed: only debug root cause first; do not discuss complexity yet."}
+- Suggest algorithm alternatives naturally when relevant.
+- Do not dump a full solution unless explicitly requested.
+- ${REVIEW_REPLY_FORMAT_RULES}
+
+Provide your supportive feedback now:
+
+${getMentorPersonaInstruction(language)}
+${getMentorLanguageInstruction(language)}`
 }
 
 async function reviewWithClaude(
@@ -20,82 +119,28 @@ async function reviewWithClaude(
   problemTitle: string,
   problemDescription: string,
   testResults: TestResult[],
-  allTestsPassed: boolean
+  allTestsPassed: boolean,
+  language: MentorLanguage,
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
 ): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-
-  if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY not configured")
-  }
-
-  const passedCount = testResults.filter((r) => r.passed).length
-  const totalCount = testResults.length
-
-  const prompt = `You are a **Supportive Coding Mentor** reviewing a student's solution for: "${problemTitle}"
-
-**Problem Description:**
-${problemDescription}
-
-**Student's Code:**
-\`\`\`javascript
-${code}
-\`\`\`
-
-**Test Results:** ${passedCount}/${totalCount} tests passed
-
-${testResults
-  .map(
-    (r, i) => `Test ${i + 1}: ${r.passed ? "✓ PASSED" : "✗ FAILED"}
-${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual}` : ""}`
+  const prompt = buildReviewPrompt(
+    code,
+    problemTitle,
+    problemDescription,
+    testResults,
+    allTestsPassed,
+    language
   )
-  .join("\n")}
 
-**Your Role as a Supportive Coding Mentor:**
-Your goal is to help the student **think like a developer** and grow their problem-solving skills. You're not here to just point out mistakes, but to guide them toward understanding.
-
-**Your Task:**
-1. **Analyze**: Look at their approach and logic
-2. **Encourage**: Recognize what they did well, even if tests are failing
-3. **Guide**: ${allTestsPassed ? "Suggest how they might optimize or refactor their solution" : "Ask thoughtful questions to help them discover what's wrong (don't give away the answer!)"}
-4. **Teach**: Help them understand the 'why' behind the issue or improvement
-
-**Guidelines:**
-- Be warm, encouraging, and supportive
-- Celebrate their progress and effort
-- If tests are failing, use guiding questions like "What happens when...?" or "Have you considered...?"
-- Help them build their debugging intuition
-- Keep feedback concise but insightful (3-4 short paragraphs)
-- Use a friendly, conversational tone
-- Format with markdown for readability
-
-Provide your supportive feedback now:`
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    }),
+  const result = await generateText({
+    model: getLanguageModel("claude", model, apiKey),
+    prompt,
+    maxOutputTokens,
+    temperature: 0.7,
   })
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Claude API error: ${error}`)
-  }
-
-  const data = await response.json()
-  return data.content[0].text
+  return result.text
 }
 
 async function reviewWithGPT(
@@ -103,87 +148,30 @@ async function reviewWithGPT(
   problemTitle: string,
   problemDescription: string,
   testResults: TestResult[],
-  allTestsPassed: boolean
+  allTestsPassed: boolean,
+  language: MentorLanguage,
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
 ): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY
-
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY not configured")
-  }
-
-  const passedCount = testResults.filter((r) => r.passed).length
-  const totalCount = testResults.length
-
-  const prompt = `You are a **Supportive Coding Mentor** reviewing a student's solution for: "${problemTitle}"
-
-**Problem Description:**
-${problemDescription}
-
-**Student's Code:**
-\`\`\`javascript
-${code}
-\`\`\`
-
-**Test Results:** ${passedCount}/${totalCount} tests passed
-
-${testResults
-  .map(
-    (r, i) => `Test ${i + 1}: ${r.passed ? "✓ PASSED" : "✗ FAILED"}
-${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual}` : ""}`
+  const prompt = buildReviewPrompt(
+    code,
+    problemTitle,
+    problemDescription,
+    testResults,
+    allTestsPassed,
+    language
   )
-  .join("\n")}
 
-**Your Role as a Supportive Coding Mentor:**
-Your goal is to help the student **think like a developer** and grow their problem-solving skills. You're not here to just point out mistakes, but to guide them toward understanding.
-
-**Your Task:**
-1. **Analyze**: Look at their approach and logic
-2. **Encourage**: Recognize what they did well, even if tests are failing
-3. **Guide**: ${allTestsPassed ? "Suggest how they might optimize or refactor their solution" : "Ask thoughtful questions to help them discover what's wrong (don't give away the answer!)"}
-4. **Teach**: Help them understand the 'why' behind the issue or improvement
-
-**Guidelines:**
-- Be warm, encouraging, and supportive
-- Celebrate their progress and effort
-- If tests are failing, use guiding questions like "What happens when...?" or "Have you considered...?"
-- Help them build their debugging intuition
-- Keep feedback concise but insightful (3-4 short paragraphs)
-- Use a friendly, conversational tone
-- Format with markdown for readability
-
-Provide your supportive feedback now:`
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a helpful coding mentor who provides constructive feedback and guides students to learn.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
-    }),
+  const result = await generateText({
+    model: getLanguageModel("gpt", model, apiKey),
+    system:
+      "You are a helpful coding mentor who provides constructive feedback and guides students to learn.",
+    prompt,
+    maxOutputTokens,
+    temperature: 0.7,
   })
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`OpenAI API error: ${error}`)
-  }
-
-  const data = await response.json()
-  return data.choices[0].message.content
+  return result.text
 }
 
 async function reviewWithGemini(
@@ -191,140 +179,116 @@ async function reviewWithGemini(
   problemTitle: string,
   problemDescription: string,
   testResults: TestResult[],
-  allTestsPassed: boolean
+  allTestsPassed: boolean,
+  language: MentorLanguage,
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
 ): Promise<string> {
-  const apiKey = process.env.GOOGLE_API_KEY
-
-  if (!apiKey) {
-    throw new Error("GOOGLE_API_KEY not configured")
-  }
-
-  const passedCount = testResults.filter((r) => r.passed).length
-  const totalCount = testResults.length
-
-  const prompt = `You are a **Supportive Coding Mentor** reviewing a student's solution for: "${problemTitle}"
-
-**Problem Description:**
-${problemDescription}
-
-**Student's Code:**
-\`\`\`javascript
-${code}
-\`\`\`
-
-**Test Results:** ${passedCount}/${totalCount} tests passed
-
-${testResults
-  .map(
-    (r, i) => `Test ${i + 1}: ${r.passed ? "✓ PASSED" : "✗ FAILED"}
-${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual}` : ""}`
-  )
-  .join("\n")}
-
-**Your Role as a Supportive Coding Mentor:**
-Your goal is to help the student **think like a developer** and grow their problem-solving skills. You're not here to just point out mistakes, but to guide them toward understanding.
-
-**Your Task:**
-1. **Analyze**: Look at their approach and logic
-2. **Encourage**: Recognize what they did well, even if tests are failing
-3. **Guide**: ${allTestsPassed ? "Suggest how they might optimize or refactor their solution" : "Ask thoughtful questions to help them discover what's wrong (don't give away the answer!)"}
-4. **Teach**: Help them understand the 'why' behind the issue or improvement
-
-**Guidelines:**
-- Be warm, encouraging, and supportive
-- Celebrate their progress and effort
-- If tests are failing, use guiding questions like "What happens when...?" or "Have you considered...?"
-- Help them build their debugging intuition
-- Keep feedback concise but insightful (3-4 short paragraphs)
-- Use a friendly, conversational tone
-- Format with markdown for readability
-
-Provide your supportive feedback now:`
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1024,
-        },
-      }),
-    }
+  const prompt = buildReviewPrompt(
+    code,
+    problemTitle,
+    problemDescription,
+    testResults,
+    allTestsPassed,
+    language
   )
 
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Gemini API error: ${error}`)
-  }
-
-  const data = await response.json()
-  return data.candidates[0].content.parts[0].text
+  const result = await generateText({
+    model: getLanguageModel("gemini", model, apiKey),
+    prompt,
+    maxOutputTokens,
+    temperature: 0.7,
+  })
+  return result.text
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body: ReviewRequest = await req.json()
     const { code, problemTitle, problemDescription, testResults, allTestsPassed } = body
+    const language = resolveMentorLanguage(body.language, [problemTitle, problemDescription])
 
-    const provider = process.env.AI_PROVIDER || "auto"
+    const config = resolveAIConfig(body.aiConfig)
 
     let feedback: string
 
     try {
-      if (provider === "claude" || (provider === "auto" && process.env.ANTHROPIC_API_KEY)) {
-        feedback = await reviewWithClaude(
-          code,
-          problemTitle,
-          problemDescription,
-          testResults,
-          allTestsPassed
-        )
-      } else if (provider === "gpt" || (provider === "auto" && process.env.OPENAI_API_KEY)) {
-        feedback = await reviewWithGPT(
-          code,
-          problemTitle,
-          problemDescription,
-          testResults,
-          allTestsPassed
-        )
-      } else if (provider === "gemini" || (provider === "auto" && process.env.GOOGLE_API_KEY)) {
-        feedback = await reviewWithGemini(
-          code,
-          problemTitle,
-          problemDescription,
-          testResults,
-          allTestsPassed
-        )
-      } else {
-        feedback = `I noticed you ran some tests! Unfortunately, AI code review is not available right now because no API keys are configured.
+      let resolved: string | null = null
+      for (const provider of providerCandidates(config)) {
+        const apiKey = config.apiKeys[provider]?.trim()
+        if (!apiKey) {
+          continue
+        }
 
-However, I can see that ${testResults.filter(r => r.passed).length} out of ${testResults.length} tests passed. ${
-          !allTestsPassed
-            ? "Try reviewing the failed test cases above and see if you can spot any patterns in what's going wrong."
-            : "Great job! All tests are passing. Consider reviewing your code for potential optimizations."
-        }`
+        try {
+          if (provider === "claude") {
+            resolved = await reviewWithClaude(
+              code,
+              problemTitle,
+              problemDescription,
+              testResults,
+              allTestsPassed,
+              language,
+              apiKey,
+              config.models.claude,
+              config.maxTokens.claude
+            )
+            break
+          }
+
+          if (provider === "gpt") {
+            resolved = await reviewWithGPT(
+              code,
+              problemTitle,
+              problemDescription,
+              testResults,
+              allTestsPassed,
+              language,
+              apiKey,
+              config.models.gpt,
+              config.maxTokens.gpt
+            )
+            break
+          }
+
+          resolved = await reviewWithGemini(
+            code,
+            problemTitle,
+            problemDescription,
+            testResults,
+            allTestsPassed,
+            language,
+            apiKey,
+            config.models.gemini,
+            config.maxTokens.gemini
+          )
+          break
+        } catch (error) {
+          console.error(`AI API error (${provider}):`, error)
+        }
+      }
+
+      if (resolved) {
+        feedback = resolved
+      } else {
+        feedback = generateFallbackReviewFeedback(
+          language,
+          testResults.filter((r) => r.passed).length,
+          testResults.length,
+          allTestsPassed,
+          "no-key"
+        )
       }
     } catch (error) {
       console.error("AI API error:", error)
-      feedback = `I'm having trouble connecting to the AI service right now, but I can see your test results. ${
-        !allTestsPassed
-          ? "Focus on the failing tests and try to understand what might be causing the issues."
-          : "Your tests are passing! Keep up the good work."
-      }`
+      feedback = generateFallbackReviewFeedback(
+        language,
+        testResults.filter((r) => r.passed).length,
+        testResults.length,
+        allTestsPassed,
+        "service-error"
+      )
     }
 
     return NextResponse.json({ feedback })
