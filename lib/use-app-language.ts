@@ -9,11 +9,17 @@ import {
 import { getLocaleCopy } from "@/lib/i18n";
 
 export function useAppLanguage() {
-  const [language, setLanguage] = useState<AppLanguage>("en");
+  const [language, setLanguage] = useState<AppLanguage>(() =>
+    getLanguagePreference()
+  );
 
   useEffect(() => {
-    const sync = () => setLanguage(getLanguagePreference());
-    sync();
+    const sync = () => {
+      setLanguage((prev) => {
+        const next = getLanguagePreference();
+        return prev === next ? prev : next;
+      });
+    };
     return subscribeToProgressUpdates(sync);
   }, []);
 
