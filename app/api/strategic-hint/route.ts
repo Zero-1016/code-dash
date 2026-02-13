@@ -6,12 +6,19 @@ import {
   type AIConfigPayload,
 } from "@/lib/ai-config"
 import { getLanguageModel } from "@/lib/server/ai-model"
+import {
+  getMentorPersonaInstruction,
+  getMentorLanguageInstruction,
+  resolveMentorLanguage,
+  type MentorLanguage,
+} from "@/lib/mentor-language"
 
 interface StrategicHintRequest {
   problemTitle: string
   problemDescription: string
   code: string
   elapsedMinutes: number
+  language?: MentorLanguage
   aiConfig?: Partial<AIConfigPayload>
 }
 
@@ -20,6 +27,7 @@ async function generateHintWithClaude(
   problemDescription: string,
   code: string,
   elapsedMinutes: number,
+  language: MentorLanguage,
   apiKey: string,
   model: string,
   maxOutputTokens: number
@@ -53,7 +61,10 @@ You are NOT here to solve the problem for them. You are here to provide a **Stra
 
 **Important:** This is a crucial moment - they've been stuck for ${elapsedMinutes} minutes. Give them the key insight they need to succeed, but let them implement it themselves.
 
-Provide your strategic hint now:`
+Provide your strategic hint now:
+
+${getMentorPersonaInstruction(language)}
+${getMentorLanguageInstruction(language)}`
 
   const result = await generateText({
     model: getLanguageModel("claude", model, apiKey),
@@ -69,6 +80,7 @@ async function generateHintWithGPT(
   problemDescription: string,
   code: string,
   elapsedMinutes: number,
+  language: MentorLanguage,
   apiKey: string,
   model: string,
   maxOutputTokens: number
@@ -102,7 +114,10 @@ You are NOT here to solve the problem for them. You are here to provide a **Stra
 
 **Important:** This is a crucial moment - they've been stuck for ${elapsedMinutes} minutes. Give them the key insight they need to succeed, but let them implement it themselves.
 
-Provide your strategic hint now:`
+Provide your strategic hint now:
+
+${getMentorPersonaInstruction(language)}
+${getMentorLanguageInstruction(language)}`
 
   const result = await generateText({
     model: getLanguageModel("gpt", model, apiKey),
@@ -120,6 +135,7 @@ async function generateHintWithGemini(
   problemDescription: string,
   code: string,
   elapsedMinutes: number,
+  language: MentorLanguage,
   apiKey: string,
   model: string,
   maxOutputTokens: number
@@ -153,7 +169,10 @@ You are NOT here to solve the problem for them. You are here to provide a **Stra
 
 **Important:** This is a crucial moment - they've been stuck for ${elapsedMinutes} minutes. Give them the key insight they need to succeed, but let them implement it themselves.
 
-Provide your strategic hint now:`
+Provide your strategic hint now:
+
+${getMentorPersonaInstruction(language)}
+${getMentorLanguageInstruction(language)}`
 
   const result = await generateText({
     model: getLanguageModel("gemini", model, apiKey),
@@ -168,6 +187,7 @@ export async function POST(req: NextRequest) {
   try {
     const body: StrategicHintRequest = await req.json()
     const { problemTitle, problemDescription, code, elapsedMinutes } = body
+    const language = resolveMentorLanguage(body.language)
 
     const config = resolveAIConfig(body.aiConfig)
 
@@ -188,6 +208,7 @@ export async function POST(req: NextRequest) {
               problemDescription,
               code,
               elapsedMinutes,
+              language,
               apiKey,
               config.models.claude,
               config.maxTokens.claude
@@ -201,6 +222,7 @@ export async function POST(req: NextRequest) {
               problemDescription,
               code,
               elapsedMinutes,
+              language,
               apiKey,
               config.models.gpt,
               config.maxTokens.gpt
@@ -213,6 +235,7 @@ export async function POST(req: NextRequest) {
             problemDescription,
             code,
             elapsedMinutes,
+            language,
             apiKey,
             config.models.gemini,
             config.maxTokens.gemini
@@ -226,7 +249,20 @@ export async function POST(req: NextRequest) {
       if (resolved) {
         hint = resolved
       } else {
-        hint = `## 💡 Strategic Hint (${elapsedMinutes} minutes milestone)
+        hint =
+          language === "ko"
+            ? `## 💡 전략 힌트 (${elapsedMinutes}분 구간)
+
+문제를 오래 붙잡고 잘 버티고 있어요. 돌파에 도움이 될 핵심 힌트를 드릴게요.
+
+**핵심 접근:** 값을 빠르게 조회할 수 있는 자료구조를 떠올려보세요. 중첩 반복문(O(n²)) 대신, 한 번 순회로 줄일 수 있는 방법이 있는지 점검해보세요.
+
+**핵심 질문:** 이미 본 값을 "기억"해두고 즉시 비교할 수 있다면 어떻게 될까요?
+
+Hash Map의 O(1) 조회 특성이 접근 방식을 크게 바꿔줄 수 있습니다.
+
+*안내: 현재 AI 힌트를 사용할 수 없습니다. 마이페이지에서 최소 1개의 API Key를 설정해주세요.*`
+            : `## 💡 Strategic Hint (${elapsedMinutes} minutes milestone)
 
 You've been working hard on this problem! Here's a key insight to help you break through:
 
@@ -240,7 +276,20 @@ Think about Hash Maps and how they enable O(1) lookups. This could transform you
       }
     } catch (error) {
       console.error("AI API error:", error)
-      hint = `## 💡 Strategic Hint (${elapsedMinutes} minutes milestone)
+      hint =
+        language === "ko"
+          ? `## 💡 전략 힌트 (${elapsedMinutes}분 구간)
+
+문제를 오래 붙잡고 잘 버티고 있어요. 돌파에 도움이 될 핵심 힌트를 드릴게요.
+
+**핵심 접근:** 값을 빠르게 조회할 수 있는 자료구조를 떠올려보세요. 중첩 반복문(O(n²)) 대신, 한 번 순회로 줄일 수 있는 방법이 있는지 점검해보세요.
+
+**핵심 질문:** 이미 본 값을 "기억"해두고 즉시 비교할 수 있다면 어떻게 될까요?
+
+Hash Map의 O(1) 조회 특성이 접근 방식을 크게 바꿔줄 수 있습니다.
+
+*안내: 현재 AI 서비스 연결이 원활하지 않습니다. 잠시 후 다시 시도해주세요.*`
+          : `## 💡 Strategic Hint (${elapsedMinutes} minutes milestone)
 
 You've been working hard on this problem! Here's a key insight to help you break through:
 

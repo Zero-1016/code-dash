@@ -7,6 +7,7 @@ import {
 } from "@/lib/ai-config"
 import { getLanguageModel } from "@/lib/server/ai-model"
 import {
+  getMentorPersonaInstruction,
   getMentorLanguageInstruction,
   resolveMentorLanguage,
   type MentorLanguage,
@@ -52,8 +53,10 @@ function generateFallbackMentorResponse(
       return `${lead}
 
 ${context}
-정답 코드를 주기보다, 지금 막히는 조건 하나를 정확히 찾는 게 먼저야.
-실패한 케이스 1개만 가져오면 그 케이스를 기준으로 다음 힌트를 바로 이어서 줄게.`
+[Level 1: Hint]
+정답 코드를 바로 주기보다, 지금 깨지는 조건 하나를 정확히 찾는 게 먼저야.
+실패한 케이스 1개만 가져오면 거기서 바로 다음 단서를 이어줄게.
+원하면 다음 메시지에 "Level 2"라고 보내줘.`
     }
 
     if (requestType === "review") {
@@ -153,11 +156,12 @@ You're here to guide the student to **think like a developer** and build problem
 
 Remember: Your job is to make them better developers, not just solve this one problem for them.`
 
+  const mentorPersonaInstruction = getMentorPersonaInstruction(language)
   const languageInstruction = getMentorLanguageInstruction(language)
 
   const result = await generateText({
     model: getLanguageModel("claude", model, apiKey),
-    system: `${systemPrompt}\n\n${languageInstruction}`,
+    system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${languageInstruction}`,
     messages: messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
@@ -206,11 +210,12 @@ You're here to guide the student to **think like a developer** and build problem
 
 Remember: Your job is to make them better developers, not just solve this one problem for them.`
 
+  const mentorPersonaInstruction = getMentorPersonaInstruction(language)
   const languageInstruction = getMentorLanguageInstruction(language)
 
   const result = await generateText({
     model: getLanguageModel("gpt", model, apiKey),
-    system: `${systemPrompt}\n\n${languageInstruction}`,
+    system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${languageInstruction}`,
     messages,
     maxOutputTokens,
     temperature: 0.7,
@@ -256,11 +261,12 @@ You're here to guide the student to **think like a developer** and build problem
 
 Remember: Your job is to make them better developers, not just solve this one problem for them.`
 
+  const mentorPersonaInstruction = getMentorPersonaInstruction(language)
   const languageInstruction = getMentorLanguageInstruction(language)
 
   const result = await generateText({
     model: getLanguageModel("gemini", model, apiKey),
-    system: `${systemPrompt}\n\n${languageInstruction}`,
+    system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${languageInstruction}`,
     messages,
     maxOutputTokens,
     temperature: 0.7,
