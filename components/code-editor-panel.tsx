@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Editor from "@monaco-editor/react";
@@ -129,6 +129,11 @@ export function CodeEditorPanel({
   const [isRunningTests, setIsRunningTests] = useState(false);
   const [customTestCases, setCustomTestCases] = useState<CustomTestCase[]>([]);
   const [isAddTestModalOpen, setIsAddTestModalOpen] = useState(false);
+  const [testPanelHeight, setTestPanelHeight] = useState(220);
+  const middleSectionRef = useRef<HTMLDivElement | null>(null);
+  const resizeStateRef = useRef<{ startY: number; startHeight: number } | null>(
+    null
+  );
 
   const handleSubmit = useCallback(async () => {
     setIsJudging(true);
@@ -307,6 +312,59 @@ export function CodeEditorPanel({
     router.push(`/problem/${nextProblem.id}`);
   }, [problem.id, router]);
 
+  const handleResizeStart = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      resizeStateRef.current = {
+        startY: event.clientY,
+        startHeight: testPanelHeight,
+      };
+      document.body.style.cursor = "ns-resize";
+      document.body.style.userSelect = "none";
+    },
+    [testPanelHeight]
+  );
+
+  useEffect(() => {
+    const handleResizeMove = (event: MouseEvent) => {
+      const resizeState = resizeStateRef.current;
+      if (!resizeState) {
+        return;
+      }
+
+      const deltaY = resizeState.startY - event.clientY;
+      const minHeight = 140;
+      const middleHeight = middleSectionRef.current?.clientHeight ?? 0;
+      const maxHeight =
+        middleHeight > 0 ? Math.max(minHeight, Math.floor(middleHeight * 0.7)) : 420;
+      const nextHeight = Math.min(
+        maxHeight,
+        Math.max(minHeight, resizeState.startHeight + deltaY)
+      );
+
+      setTestPanelHeight(nextHeight);
+    };
+
+    const handleResizeEnd = () => {
+      if (!resizeStateRef.current) {
+        return;
+      }
+      resizeStateRef.current = null;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    window.addEventListener("mousemove", handleResizeMove);
+    window.addEventListener("mouseup", handleResizeEnd);
+
+    return () => {
+      window.removeEventListener("mousemove", handleResizeMove);
+      window.removeEventListener("mouseup", handleResizeEnd);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, []);
+
   return (
     <div className="relative flex h-full max-h-full flex-col bg-background overflow-hidden">
       <div className="flex-shrink-0 flex items-center justify-between border-b border-border/60 px-4 py-3">
@@ -327,211 +385,228 @@ export function CodeEditorPanel({
         </button>
       </div>
 
-      {/* Test Cases Preview */}
-      <div className="flex-shrink-0 border-b border-border/60 bg-muted/20 p-4 max-h-[320px] overflow-y-auto">
-        <div className="mb-3">
-          <h3 className="text-xs font-semibold text-muted-foreground">
-            Test Cases (
-            {problem.testCases.slice(0, 2).length + customTestCases.length})
-          </h3>
+      <div ref={middleSectionRef} className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0 relative z-10" style={{ overflow: "visible" }}>
+          <Editor
+            height="100%"
+            defaultLanguage="javascript"
+            value={code}
+            onChange={(value) => setCode(value || "")}
+            theme="vs"
+            options={{
+              fontSize: 14,
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              lineHeight: 22,
+              padding: { top: 16, bottom: 16 },
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              renderLineHighlight: "none",
+              overviewRulerBorder: false,
+              hideCursorInOverviewRuler: true,
+              overviewRulerLanes: 0,
+              scrollbar: {
+                vertical: "hidden",
+                horizontal: "hidden",
+              },
+              wordWrap: "on",
+              automaticLayout: true,
+              tabSize: 2,
+              lineNumbers: "on",
+              folding: false,
+              glyphMargin: false,
+              lineDecorationsWidth: 0,
+              lineNumbersMinChars: 3,
+              fixedOverflowWidgets: true,
+            }}
+          />
         </div>
 
-        <div className="space-y-2">
-          {/* Default Test Cases */}
-          {problem.testCases.slice(0, 2).map((testCase, index) => {
-            const testResult = testResults[index];
-            return (
-              <div
-                key={`default-${index}`}
-                className="rounded-[16px] border border-border/60 bg-background p-4 text-xs"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-bold text-sm text-foreground">
-                    Test Case {index + 1}
-                  </span>
-                  {testResult && (
-                    <span
-                      className={`rounded-[12px] px-3 py-1.5 text-[10px] font-bold ${
-                        testResult.passed
-                          ? "bg-[#3182F6] text-white"
-                          : "bg-red-600 text-white"
-                      }`}
-                    >
-                      {testResult.passed ? "Passed" : "Failed"}
-                    </span>
-                  )}
-                </div>
+        {/* Test Cases Preview */}
+        <div
+          className="flex-shrink-0 border-t border-border/60 bg-muted/20"
+          style={{ height: `${testPanelHeight}px` }}
+        >
+          <button
+            type="button"
+            onMouseDown={handleResizeStart}
+            className="flex h-4 w-full cursor-ns-resize items-center justify-center hover:bg-muted/60"
+            aria-label="Resize test cases panel"
+          >
+            <span className="h-1 w-12 rounded-full bg-border/80" />
+          </button>
 
-                {/* Input Section */}
-                <div className="mb-2">
-                  <div className="text-muted-foreground font-semibold mb-1">
-                    Input:
-                  </div>
-                  <code className="block rounded-[12px] bg-muted px-3 py-2 font-mono text-foreground">
-                    {testCase.input
-                      .map((val) => JSON.stringify(val))
-                      .join(", ")}
-                  </code>
-                </div>
+          <div className="h-[calc(100%-1rem)] overflow-y-auto p-4">
+            <div className="mb-3">
+              <h3 className="text-xs font-semibold text-muted-foreground">
+                Test Cases (
+                {problem.testCases.slice(0, 2).length + customTestCases.length})
+              </h3>
+            </div>
 
-                {/* Console Output Section */}
-                {testResult?.consoleLogs &&
-                  testResult.consoleLogs.length > 0 && (
+            <div className="space-y-2">
+              {/* Default Test Cases */}
+              {problem.testCases.slice(0, 2).map((testCase, index) => {
+                const testResult = testResults[index];
+                return (
+                  <div
+                    key={`default-${index}`}
+                    className="rounded-[16px] border border-border/60 bg-background p-4 text-xs"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-bold text-sm text-foreground">
+                        Test Case {index + 1}
+                      </span>
+                      {testResult && (
+                        <span
+                          className={`rounded-[12px] px-3 py-1.5 text-[10px] font-bold ${
+                            testResult.passed
+                              ? "bg-[#3182F6] text-white"
+                              : "bg-red-600 text-white"
+                          }`}
+                        >
+                          {testResult.passed ? "Passed" : "Failed"}
+                        </span>
+                      )}
+                    </div>
+
                     <div className="mb-2">
                       <div className="text-muted-foreground font-semibold mb-1">
-                        Console Output:
+                        Input:
                       </div>
-                      <div className="rounded-[12px] bg-muted/50 px-3 py-2 font-mono text-[11px] space-y-0.5">
-                        {testResult.consoleLogs.map((log, i) => (
-                          <div key={i} className="text-muted-foreground">
-                            {log}
+                      <code className="block rounded-[12px] bg-muted px-3 py-2 font-mono text-foreground">
+                        {testCase.input
+                          .map((val) => JSON.stringify(val))
+                          .join(", ")}
+                      </code>
+                    </div>
+
+                    {testResult?.consoleLogs &&
+                      testResult.consoleLogs.length > 0 && (
+                        <div className="mb-2">
+                          <div className="text-muted-foreground font-semibold mb-1">
+                            Console Output:
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                          <div className="rounded-[12px] bg-muted/50 px-3 py-2 font-mono text-[11px] space-y-0.5">
+                            {testResult.consoleLogs.map((log, i) => (
+                              <div key={i} className="text-muted-foreground">
+                                {log}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
-                {/* Result Section */}
-                {testResult && (
-                  <div>
-                    <div className="text-muted-foreground font-semibold mb-1">
-                      Result:
-                    </div>
-                    {testResult.passed ? (
-                      <div className="rounded-[12px] bg-[#3182F6]/10 px-3 py-2 text-[#3182F6] font-medium">
-                        ✓ Passed
-                      </div>
-                    ) : (
-                      <div className="rounded-[12px] bg-red-50 dark:bg-red-950/20 px-3 py-2 text-red-600 dark:text-red-400 font-medium">
-                        Expected: {JSON.stringify(testCase.expected)}, but got:{" "}
-                        {testResult.actual}
+                    {testResult && (
+                      <div>
+                        <div className="text-muted-foreground font-semibold mb-1">
+                          Result:
+                        </div>
+                        {testResult.passed ? (
+                          <div className="rounded-[12px] bg-[#3182F6]/10 px-3 py-2 text-[#3182F6] font-medium">
+                            ✓ Passed
+                          </div>
+                        ) : (
+                          <div className="rounded-[12px] bg-red-50 dark:bg-red-950/20 px-3 py-2 text-red-600 dark:text-red-400 font-medium">
+                            Expected: {JSON.stringify(testCase.expected)}, but got:{" "}
+                            {testResult.actual}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
 
-          {/* Custom Test Cases */}
-          {customTestCases.map((testCase, index) => {
-            const testResult =
-              testResults[problem.testCases.slice(0, 2).length + index];
-            return (
-              <div
-                key={`custom-${index}`}
-                className="rounded-[16px] border-2 border-[#3182F6]/30 bg-[#3182F6]/5 p-4 text-xs"
+              {/* Custom Test Cases */}
+              {customTestCases.map((testCase, index) => {
+                const testResult =
+                  testResults[problem.testCases.slice(0, 2).length + index];
+                return (
+                  <div
+                    key={`custom-${index}`}
+                    className="rounded-[16px] border-2 border-[#3182F6]/30 bg-[#3182F6]/5 p-4 text-xs"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-foreground">
+                          Custom Test {index + 1}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveCustomTest(index)}
+                          className="flex h-6 w-6 items-center justify-center rounded-[8px] text-muted-foreground transition-colors hover:bg-red-100 hover:text-red-600"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                      {testResult && (
+                        <span
+                          className={`rounded-[12px] px-3 py-1.5 text-[10px] font-bold ${
+                            testResult.passed
+                              ? "bg-[#3182F6] text-white"
+                              : "bg-red-600 text-white"
+                          }`}
+                        >
+                          {testResult.passed ? "Passed" : "Failed"}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mb-2">
+                      <div className="text-muted-foreground font-semibold mb-1">
+                        Input:
+                      </div>
+                      <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-foreground">
+                        {testCase.input}
+                      </code>
+                    </div>
+
+                    {testResult?.consoleLogs && testResult.consoleLogs.length > 0 && (
+                      <div className="mb-2">
+                        <div className="text-muted-foreground font-semibold mb-1">
+                          Console Output:
+                        </div>
+                        <div className="rounded-[12px] bg-background/50 px-3 py-2 font-mono text-[11px] space-y-0.5">
+                          {testResult.consoleLogs.map((log, i) => (
+                            <div key={i} className="text-muted-foreground">
+                              {log}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {testResult && (
+                      <div>
+                        <div className="text-muted-foreground font-semibold mb-1">
+                          Result:
+                        </div>
+                        {testResult.passed ? (
+                          <div className="rounded-[12px] bg-[#3182F6]/20 px-3 py-2 text-[#3182F6] font-medium">
+                            ✓ Passed
+                          </div>
+                        ) : (
+                          <div className="rounded-[12px] bg-red-100 dark:bg-red-950/40 px-3 py-2 text-red-600 dark:text-red-400 font-medium">
+                            Expected: {testCase.expected}, but got: {testResult.actual}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              <button
+                onClick={() => setIsAddTestModalOpen(true)}
+                className="w-full rounded-[16px] border-2 border-dashed border-border bg-muted/30 p-3 text-xs font-semibold text-muted-foreground transition-all hover:border-[#3182F6] hover:bg-[#3182F6]/5 hover:text-[#3182F6]"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-foreground">
-                      Custom Test {index + 1}
-                    </span>
-                    <button
-                      onClick={() => handleRemoveCustomTest(index)}
-                      className="flex h-6 w-6 items-center justify-center rounded-[8px] text-muted-foreground transition-colors hover:bg-red-100 hover:text-red-600"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                  {testResult && (
-                    <span
-                      className={`rounded-[12px] px-3 py-1.5 text-[10px] font-bold ${
-                        testResult.passed
-                          ? "bg-[#3182F6] text-white"
-                          : "bg-red-600 text-white"
-                      }`}
-                    >
-                      {testResult.passed ? "Passed" : "Failed"}
-                    </span>
-                  )}
+                <div className="flex items-center justify-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Custom Test Case
                 </div>
-
-                {/* Input Section */}
-                <div className="mb-2">
-                  <div className="text-muted-foreground font-semibold mb-1">Input:</div>
-                  <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-foreground">
-                    {testCase.input}
-                  </code>
-                </div>
-
-                {/* Console Output Section */}
-                {testResult?.consoleLogs && testResult.consoleLogs.length > 0 && (
-                  <div className="mb-2">
-                    <div className="text-muted-foreground font-semibold mb-1">Console Output:</div>
-                    <div className="rounded-[12px] bg-background/50 px-3 py-2 font-mono text-[11px] space-y-0.5">
-                      {testResult.consoleLogs.map((log, i) => (
-                        <div key={i} className="text-muted-foreground">{log}</div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Result Section */}
-                {testResult && (
-                  <div>
-                    <div className="text-muted-foreground font-semibold mb-1">Result:</div>
-                    {testResult.passed ? (
-                      <div className="rounded-[12px] bg-[#3182F6]/20 px-3 py-2 text-[#3182F6] font-medium">
-                        ✓ Passed
-                      </div>
-                    ) : (
-                      <div className="rounded-[12px] bg-red-100 dark:bg-red-950/40 px-3 py-2 text-red-600 dark:text-red-400 font-medium">
-                        Expected: {testCase.expected}, but got: {testResult.actual}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Add Test Case Button */}
-          <button
-            onClick={() => setIsAddTestModalOpen(true)}
-            className="w-full rounded-[16px] border-2 border-dashed border-border bg-muted/30 p-3 text-xs font-semibold text-muted-foreground transition-all hover:border-[#3182F6] hover:bg-[#3182F6]/5 hover:text-[#3182F6]"
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Custom Test Case
+              </button>
             </div>
-          </button>
+          </div>
         </div>
-      </div>
-
-      <div className="flex-1 min-h-0 relative z-10" style={{ overflow: "visible" }}>
-        <Editor
-          height="100%"
-          defaultLanguage="javascript"
-          value={code}
-          onChange={(value) => setCode(value || "")}
-          theme="vs"
-          options={{
-            fontSize: 14,
-            fontFamily: "var(--font-jetbrains-mono), monospace",
-            lineHeight: 22,
-            padding: { top: 16, bottom: 16 },
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            renderLineHighlight: "none",
-            overviewRulerBorder: false,
-            hideCursorInOverviewRuler: true,
-            overviewRulerLanes: 0,
-            scrollbar: {
-              vertical: "hidden",
-              horizontal: "hidden",
-            },
-            wordWrap: "on",
-            automaticLayout: true,
-            tabSize: 2,
-            lineNumbers: "on",
-            folding: false,
-            glyphMargin: false,
-            lineDecorationsWidth: 0,
-            lineNumbersMinChars: 3,
-            fixedOverflowWidgets: true,
-          }}
-        />
       </div>
 
       <AddTestCaseModal
