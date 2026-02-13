@@ -1142,15 +1142,21 @@ function buildGeneratedTitleByIndexKo(seedId: Problem["id"], index: number): str
 }
 
 function buildGeneratedDifficulty(seedId: Problem["id"], index: number, fallback: Difficulty): Difficulty {
-  if (seedId === "binary-tree-level-order") {
-    const difficultyCycle: Difficulty[] = ["Medium", "Hard", "Medium", "Easy", "Hard"]
-    return difficultyCycle[index % difficultyCycle.length]
+  const difficultyCycles: Record<Problem["id"], Difficulty[]> = {
+    "two-sum": ["Easy", "Medium", "Easy", "Hard", "Medium"],
+    "valid-parentheses": ["Easy", "Medium", "Hard", "Easy", "Medium"],
+    "reverse-linked-list": ["Easy", "Medium", "Easy", "Hard", "Medium"],
+    "maximum-subarray": ["Medium", "Hard", "Medium", "Easy", "Hard"],
+    "merge-intervals": ["Medium", "Hard", "Easy", "Medium", "Hard"],
+    "longest-substring": ["Medium", "Hard", "Easy", "Medium", "Hard"],
+    "binary-tree-level-order": ["Medium", "Hard", "Medium", "Easy", "Hard"],
+    "trapping-rain-water": ["Medium", "Hard", "Easy", "Medium", "Hard"],
   }
-  if (seedId === "trapping-rain-water") {
-    const difficultyCycle: Difficulty[] = ["Medium", "Hard", "Easy", "Medium", "Hard"]
-    return difficultyCycle[index % difficultyCycle.length]
+  const cycle = difficultyCycles[seedId]
+  if (!cycle || cycle.length === 0) {
+    return fallback
   }
-  return fallback
+  return cycle[index % cycle.length]
 }
 
 function createGeneratedProblem(seed: Problem, index: number): Problem {
