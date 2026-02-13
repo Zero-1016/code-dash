@@ -91,11 +91,14 @@ function generateFallbackMentorResponse(
   const mentionsDuplicateCase = /(중복|duplicate|같은 숫자|같은 값|2번 들어|two same|same number|중복 검사)/i.test(
     normalized
   )
+  const mentionsEmptyInput = /(빈 입력|empty input|길이 0|length 0|없을 때|아무 값도 없)/i.test(
+    normalized
+  )
   const mentionsMap = /(map|해시맵|hash map|hashmap)/i.test(normalized)
   const asksApproach = /(어떻게 풀|어떻게 접근|접근법|방법|전략|어떤 방식|풀이 방향|approach|strategy)/i.test(
     normalized
   )
-  const asksRelationally = /(대답하기 싫|무시하|왜 대답 안|답하기 싫|반복해서 답|말을 안듣)/i.test(
+  const asksRelationally = /(대답하기 싫|무시하|왜 대답 안|답하기 싫|반복해서 답|말을 안듣|혼자 말|아예 못하|대답을 아예 못|코드는 안쓰고 질문)/i.test(
     normalized
   )
   const shouldUseDebugFlow = hasFailingTests || asksDebug
@@ -107,7 +110,12 @@ function generateFallbackMentorResponse(
 
     if (asksRelationally) {
       return `맞아, 방금은 내가 질문 의도를 제대로 못 잡았어.
-지금부터는 네 마지막 질문에만 바로 답할게. 지금 기준이면 Map으로 중복 체크하는 방향은 좋은 선택이야.`
+지금부터는 네 마지막 질문에만 바로 답할게. 코드 없이 질문해도 충분히 답할 수 있어.`
+    }
+
+    if (mentionsEmptyInput && !asksDebug) {
+      return `좋은 질문이야. 빈 입력이면 보통 "조건 불충족"으로 바로 반환하도록 먼저 정해두면 돼.
+예를 들어 중복 찾기 문제라면 빈 입력은 중복이 없으니 false(또는 빈 결과)로 early return 하는 식이 안정적이야.`
     }
 
     if (asksConfirmation && mentionsDuplicateCase) {
@@ -161,8 +169,8 @@ Set/Map으로 이미 본 값인지 확인하고, 중복을 만났을 때 바로 
     }
 
     if (asksConceptually && !shouldUseDebugFlow) {
-      return `좋아, 코드 없이도 충분히 풀 수 있어.
-핵심 개념을 짧게 설명해줄게. 지금 궁금한 포인트 하나만 지정해주면 그 주제부터 바로 정리해줄게.`
+      return `좋아, 코드 없이도 바로 답할게.
+지금 질문 기준으로는 조건 하나(빈 입력/중복/경계값)를 먼저 정의하고, 그 조건에서 기대 결과를 먼저 고정하는 게 핵심이야.`
     }
 
     if (shouldUseDebugFlow) {
@@ -171,7 +179,7 @@ Set/Map으로 이미 본 값인지 확인하고, 중복을 만났을 때 바로 
     }
 
     return `${contextLine}
-아직 코드를 안 써도 괜찮아. 접근 아이디어(자료구조 후보 1-2개)만 적어주면 맞는 방향인지 바로 피드백해줄게.`
+코드 없어도 괜찮아. 지금 궁금한 조건 하나를 말해주면 그 조건 기준으로 바로 답해줄게.`
   }
 
   const failingContext =
@@ -184,7 +192,12 @@ Set/Map으로 이미 본 값인지 확인하고, 중복을 만났을 때 바로 
 
   if (asksRelationally) {
     return `You're right, I was too repetitive.
-I will answer your latest question directly from now on.`
+I will answer your latest question directly from now on, even without code.`
+  }
+
+  if (mentionsEmptyInput && !asksDebug) {
+    return `Good question. For empty input, define behavior first and return early.
+In many duplicate-check problems, empty input means no duplicates, so return false (or an empty result).`
   }
 
   if (asksConfirmation && mentionsDuplicateCase) {
@@ -230,7 +243,7 @@ I will pick the better fit and explain why in short.`
 
   if (asksConceptually && !shouldUseDebugFlow) {
     return `You can ask without writing code first.
-Share one concept you want to clarify, and I will explain it with one practical example.`
+Start by fixing expected behavior for one condition (empty input, duplicates, or boundary values), then build logic around it.`
   }
 
   if (shouldUseDebugFlow) {
@@ -239,7 +252,7 @@ Send one error or failed test, and we will debug only that point next.`
   }
 
   return `${context}
-No code yet is fine. Send one approach idea, and I will tell you if it is a good direction.`
+No code is fine. Tell me one condition you want to handle first, and I will answer directly for that case.`
 }
 
 function buildChatSystemPrompt(
