@@ -39,14 +39,14 @@ interface ChatRequest {
 
 const MENTOR_REPLY_FORMAT_RULES = `Conversational Flow:
 - Start from the user's latest intent and answer it directly.
-- Keep replies concise but natural (usually 2-4 short lines) and end with one practical next step.
+- Keep replies concise and natural; no hard line or character limits.
 - Use a supportive teammate tone, not a formal report tone.
 - If recent test context is HAS_FAIL:
   - Prioritize emotional support + debugging clarity first ("you're close", "let's isolate one failing path").
   - Focus on root-cause tracing from failing input/output.
   - Defer optimization/complexity discussions until the failing case is stabilized.
 - If recent test context is ALL_PASS:
-  - Briefly acknowledge progress, then suggest one optimization/refactor opportunity.`
+  - Explicitly acknowledge the current solution is correct, then suggest one optimization/refactor opportunity.`
 
 function buildTestResultsContext(testResults: ChatTestResult[] = [], allTestsPassed?: boolean): string {
   if (!testResults.length) {

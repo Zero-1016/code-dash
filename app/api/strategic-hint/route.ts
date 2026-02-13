@@ -23,7 +23,7 @@ interface StrategicHintRequest {
 }
 
 const STRATEGIC_HINT_REPLY_RULES = `Reply format:
-- Default 1-2 short lines, max 4 lines.
+- Keep it concise by default, but do not enforce hard line or character limits.
 - No greetings, emojis, markdown headings, or long paragraphs.
 - Give one decisive algorithm insight and one immediate next step.
 - Do not provide full solution code.`

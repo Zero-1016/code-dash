@@ -31,7 +31,7 @@ interface ReviewRequest {
 }
 
 const REVIEW_REPLY_FORMAT_RULES = `Reply format:
-- Default 1-2 short lines, max 4 lines only if necessary.
+- Keep it concise by default, but use as many lines as needed for clarity.
 - No greetings, emojis, formal report sections, or long checklists.
 - Focus on the single highest-impact point first.
 - End with one immediate next step.`
@@ -103,7 +103,11 @@ ${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual
 
 **Mentoring Mode:**
 - Use test output as the first source of truth.
-- ${allTestsPassed ? "All tests passed: brief congrats, then suggest one optimization/refactor." : "Tests failed: only debug root cause first; do not discuss complexity yet."}
+- ${
+    allTestsPassed
+      ? "All tests passed: explicitly confirm the solution is currently correct first, then suggest one optimization/refactor."
+      : "Tests failed: clearly state it is not correct yet, then debug root cause first; do not discuss complexity yet."
+  }
 - Suggest algorithm alternatives naturally when relevant.
 - Do not dump a full solution unless explicitly requested.
 - ${REVIEW_REPLY_FORMAT_RULES}
