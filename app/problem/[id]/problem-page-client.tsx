@@ -2,8 +2,9 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Code2, MessageCircle, X } from "lucide-react";
+import { ArrowLeft, MessageCircle, X } from "lucide-react";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -131,9 +132,14 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
           </Link>
           <div className="h-4 w-px bg-border" />
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-[12px] bg-[#3182F6]">
-              <Code2 className="h-3.5 w-3.5 text-white" />
-            </div>
+            <Image
+              src="/codedash-mark.svg"
+              alt="CodeDash logo"
+              width={28}
+              height={28}
+              className="h-7 w-7 rounded-[8px]"
+              priority
+            />
             <span className="text-sm font-semibold text-foreground">
               CodeDash
             </span>

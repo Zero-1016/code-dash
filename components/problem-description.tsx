@@ -1,6 +1,4 @@
 "use client"
-
-import Image from "next/image"
 import { motion } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -84,14 +82,6 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
           transition={{ duration: 0.4, ease: "easeOut" }}
         >
           <div className="flex items-center gap-3">
-            <Image
-              src="/codedash-mark.svg"
-              alt="CodeDash logo"
-              width={28}
-              height={28}
-              className="h-7 w-7 rounded-md"
-              priority
-            />
             <h1 className="text-xl font-bold text-foreground lg:text-2xl">
               {localized.text.title}
             </h1>
