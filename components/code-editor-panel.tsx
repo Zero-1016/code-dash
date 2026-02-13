@@ -817,6 +817,8 @@ export function CodeEditorPanel({
           <ResultFeedback
             result={judgeResult}
             analysis={analysis}
+            problemId={problem.id}
+            problemTitle={problem.title}
             onClose={() => setShowResult(false)}
             onNextChallenge={handleNextChallenge}
           />

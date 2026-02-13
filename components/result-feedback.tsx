@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
-  XCircle,
   AlertTriangle,
   ArrowRight,
   Zap,
@@ -35,6 +34,8 @@ type DifficultyFeedback = "easy" | "fair" | "hard" | null;
 interface ResultFeedbackProps {
   result: JudgeResult;
   analysis: CodeAnalysis;
+  problemId: string;
+  problemTitle: string;
   onClose: () => void;
   onNextChallenge: () => void;
 }
@@ -122,9 +123,12 @@ function EfficiencyBadge({
 export function ResultFeedback({
   result,
   analysis,
+  problemId,
+  problemTitle,
   onClose,
   onNextChallenge,
 }: ResultFeedbackProps) {
+  const GITHUB_NEW_ISSUE_URL = "https://github.com/Zero-1016/code-dash/issues/new";
   const { language } = useAppLanguage();
   const text =
     language === "ko"
@@ -154,6 +158,7 @@ export function ResultFeedback({
           hard: "어려움",
           thanks: "피드백 고마워요!",
           nextChallenge: "다음 문제",
+          reportBadCase: "잘못된 케이스 제보",
           passed: "통과했습니다",
           failed: "실패",
         }
@@ -183,6 +188,7 @@ export function ResultFeedback({
           hard: "Hard",
           thanks: "Thanks for your feedback!",
           nextChallenge: "Next Challenge",
+          reportBadCase: "Report bad case",
           passed: "Passed",
           failed: "Failed",
         };
@@ -258,6 +264,35 @@ export function ResultFeedback({
     if (label === "Efficiency") return text.efficiency;
     return text.readability;
   };
+
+  const handleReportBadCase = useCallback(() => {
+    const failedCases = result.results
+      .filter((testResult) => !testResult.passed)
+      .map(
+        (testResult, index) =>
+          `- Case ${index + 1}\n  - input: ${testResult.input}\n  - expected: ${testResult.expected}\n  - actual: ${testResult.actual}`
+      )
+      .join("\n");
+    const pageUrl = typeof window !== "undefined" ? window.location.href : "";
+    const title = `[Case Report] ${problemId}`;
+    const body = [
+      "## 잘못된 케이스 제보",
+      "",
+      `- Problem ID: ${problemId}`,
+      `- Problem Title: ${problemTitle}`,
+      pageUrl ? `- Page URL: ${pageUrl}` : "",
+      "",
+      "### 실패 케이스",
+      failedCases || "- (실패 케이스 정보 없음)",
+      "",
+      "### 메모",
+      "- 무엇이 이상한지 상세히 적어주세요.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    const issueUrl = `${GITHUB_NEW_ISSUE_URL}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+    window.open(issueUrl, "_blank", "noopener,noreferrer");
+  }, [problemId, problemTitle, result.results]);
 
   return (
     <motion.div
@@ -594,6 +629,13 @@ export function ResultFeedback({
                 transition={{ delay: 1.2 }}
                 className="mt-6 pb-2"
               >
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleReportBadCase}
+                  className="mb-3 flex w-full items-center justify-center gap-2 rounded-[20px] border border-[#3182F6]/30 bg-[#3182F6]/5 px-6 py-3 text-sm font-semibold text-[#3182F6] transition-all hover:bg-[#3182F6]/10"
+                >
+                  {text.reportBadCase}
+                </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.98 }}
                   onClick={onNextChallenge}
