@@ -333,7 +333,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
         </AnimatePresence>
       </motion.div>
       <AlertDialog open={isMentorAlertOpen} onOpenChange={setIsMentorAlertOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent overlayClassName="bg-black/45">
           <AlertDialogHeader>
             <AlertDialogTitle>AI 멘토 설정 필요</AlertDialogTitle>
             <AlertDialogDescription>
@@ -343,7 +343,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction onClick={() => router.push("/settings")}>
-              확인
+              설정 페이지로 이동
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
