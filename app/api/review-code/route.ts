@@ -37,10 +37,6 @@ const REVIEW_REPLY_FORMAT_RULES = `Reply format:
 - Avoid rhetorical questions and repetitive praise.
 - Keep it to one short acknowledgement + one concrete action point whenever possible.`
 
-function resolveResponseTokenLimit(maxOutputTokens: number): number {
-  return Math.max(320, maxOutputTokens)
-}
-
 function finalizeMentorResponse(
   text: string,
   language: MentorLanguage,
@@ -157,7 +153,6 @@ ${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual
   }
 - Suggest algorithm alternatives naturally when relevant.
 - Do not dump a full solution unless explicitly requested.
-- Target around 4 sentences unless the user asks for more detail.
 - ${REVIEW_REPLY_FORMAT_RULES}
 
 Provide your supportive feedback now:
@@ -189,7 +184,7 @@ async function reviewWithClaude(
   const result = await generateText({
     model: getLanguageModel("claude", model, apiKey),
     prompt,
-    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
+    maxOutputTokens,
     temperature: 0.7,
   })
   return result.text
@@ -220,7 +215,7 @@ async function reviewWithGPT(
     system:
       "You are a helpful coding mentor who provides constructive feedback and guides students to learn.",
     prompt,
-    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
+    maxOutputTokens,
     temperature: 0.7,
   })
   return result.text
@@ -249,7 +244,7 @@ async function reviewWithGemini(
   const result = await generateText({
     model: getLanguageModel("gemini", model, apiKey),
     prompt,
-    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
+    maxOutputTokens,
     temperature: 0.7,
   })
   return result.text

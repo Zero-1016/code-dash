@@ -43,17 +43,12 @@ const MENTOR_REPLY_FORMAT_RULES = `Conversational Flow:
 - Prefer one compact paragraph unless structure is truly needed.
 - Use a supportive teammate tone, not a formal report tone.
 - Avoid rhetorical questions unless the user explicitly asks for brainstorming.
-- Target around 4 sentences unless the user asks for more detail.
 - If recent test context is HAS_FAIL:
   - Prioritize emotional support + debugging clarity first ("you're close", "let's isolate one failing path").
   - Focus on root-cause tracing from failing input/output.
   - Defer optimization/complexity discussions until the failing case is stabilized.
 - If recent test context is ALL_PASS:
   - Explicitly acknowledge the current solution is correct, then suggest one optimization/refactor opportunity.`
-
-function resolveResponseTokenLimit(maxOutputTokens: number): number {
-  return Math.max(320, maxOutputTokens)
-}
 
 function finalizeMentorResponse(
   text: string,
@@ -373,7 +368,7 @@ async function chatWithClaude(
       role: msg.role,
       content: msg.content,
     })),
-    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
+    maxOutputTokens,
     temperature: 0.7,
   })
   return result.text
@@ -406,7 +401,7 @@ async function chatWithGPT(
     model: getLanguageModel("gpt", model, apiKey),
     system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${mentorConversationSkillInstruction}\n\n${languageInstruction}`,
     messages,
-    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
+    maxOutputTokens,
     temperature: 0.7,
   })
   return result.text
@@ -439,7 +434,7 @@ async function chatWithGemini(
     model: getLanguageModel("gemini", model, apiKey),
     system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${mentorConversationSkillInstruction}\n\n${languageInstruction}`,
     messages,
-    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
+    maxOutputTokens,
     temperature: 0.7,
   })
   return result.text
