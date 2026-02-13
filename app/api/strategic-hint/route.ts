@@ -22,17 +22,20 @@ interface StrategicHintRequest {
   aiConfig?: Partial<AIConfigPayload>
 }
 
-async function generateHintWithClaude(
+const STRATEGIC_HINT_REPLY_RULES = `Reply format:
+- Default 1-2 short lines, max 4 lines.
+- No greetings, emojis, markdown headings, or long paragraphs.
+- Give one decisive algorithm insight and one immediate next step.
+- Do not provide full solution code.`
+
+function buildStrategicHintPrompt(
   problemTitle: string,
   problemDescription: string,
   code: string,
   elapsedMinutes: number,
-  language: MentorLanguage,
-  apiKey: string,
-  model: string,
-  maxOutputTokens: number
-): Promise<string> {
-  const prompt = `You are a **Supportive Coding Mentor** helping a student who has been working on this problem for ${elapsedMinutes} minutes.
+  language: MentorLanguage
+): string {
+  return `You are a **Supportive Coding Mentor** helping a student who has been working on this problem for ${elapsedMinutes} minutes.
 
 **Problem:** "${problemTitle}"
 
@@ -45,26 +48,41 @@ ${code}
 \`\`\`
 
 **Your Role:**
-You are NOT here to solve the problem for them. You are here to provide a **Strategic Hint** that:
-1. Reveals the **core algorithm or data structure** they should consider
-2. Provides a **decisive clue** about the optimal approach (e.g., "Try using a Hash Map to reduce complexity to O(n)")
-3. Helps them **think like a developer** by explaining WHY this approach works
-4. **DOES NOT** provide any actual solution code
+Provide a strategic hint, not a full solution.
+
+**Hint goal:**
+1. Reveal the core algorithm/data structure to consider.
+2. Explain why it matters for this specific problem.
+3. Give one concrete next step to try immediately.
 
 **Guidelines:**
-- Be warm, encouraging, and supportive
-- Focus on the conceptual breakthrough they need
-- Explain the "aha moment" without crossing the finish line for them
-- Use analogies or real-world examples when helpful
-- Keep it concise (2-4 paragraphs)
-- Format with markdown for readability
+- Focus on the conceptual breakthrough.
+- Keep it short and direct, like pair programming chat.
+- ${STRATEGIC_HINT_REPLY_RULES}
 
-**Important:** This is a crucial moment - they've been stuck for ${elapsedMinutes} minutes. Give them the key insight they need to succeed, but let them implement it themselves.
-
-Provide your strategic hint now:
+This is a key stuck moment at ${elapsedMinutes} minutes. Deliver only the highest-leverage hint.
 
 ${getMentorPersonaInstruction(language)}
 ${getMentorLanguageInstruction(language)}`
+}
+
+async function generateHintWithClaude(
+  problemTitle: string,
+  problemDescription: string,
+  code: string,
+  elapsedMinutes: number,
+  language: MentorLanguage,
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
+): Promise<string> {
+  const prompt = buildStrategicHintPrompt(
+    problemTitle,
+    problemDescription,
+    code,
+    elapsedMinutes,
+    language
+  )
 
   const result = await generateText({
     model: getLanguageModel("claude", model, apiKey),
@@ -85,39 +103,13 @@ async function generateHintWithGPT(
   model: string,
   maxOutputTokens: number
 ): Promise<string> {
-  const prompt = `You are a **Supportive Coding Mentor** helping a student who has been working on this problem for ${elapsedMinutes} minutes.
-
-**Problem:** "${problemTitle}"
-
-**Description:**
-${problemDescription}
-
-**Student's Current Code:**
-\`\`\`javascript
-${code}
-\`\`\`
-
-**Your Role:**
-You are NOT here to solve the problem for them. You are here to provide a **Strategic Hint** that:
-1. Reveals the **core algorithm or data structure** they should consider
-2. Provides a **decisive clue** about the optimal approach (e.g., "Try using a Hash Map to reduce complexity to O(n)")
-3. Helps them **think like a developer** by explaining WHY this approach works
-4. **DOES NOT** provide any actual solution code
-
-**Guidelines:**
-- Be warm, encouraging, and supportive
-- Focus on the conceptual breakthrough they need
-- Explain the "aha moment" without crossing the finish line for them
-- Use analogies or real-world examples when helpful
-- Keep it concise (2-4 paragraphs)
-- Format with markdown for readability
-
-**Important:** This is a crucial moment - they've been stuck for ${elapsedMinutes} minutes. Give them the key insight they need to succeed, but let them implement it themselves.
-
-Provide your strategic hint now:
-
-${getMentorPersonaInstruction(language)}
-${getMentorLanguageInstruction(language)}`
+  const prompt = buildStrategicHintPrompt(
+    problemTitle,
+    problemDescription,
+    code,
+    elapsedMinutes,
+    language
+  )
 
   const result = await generateText({
     model: getLanguageModel("gpt", model, apiKey),
@@ -140,39 +132,13 @@ async function generateHintWithGemini(
   model: string,
   maxOutputTokens: number
 ): Promise<string> {
-  const prompt = `You are a **Supportive Coding Mentor** helping a student who has been working on this problem for ${elapsedMinutes} minutes.
-
-**Problem:** "${problemTitle}"
-
-**Description:**
-${problemDescription}
-
-**Student's Current Code:**
-\`\`\`javascript
-${code}
-\`\`\`
-
-**Your Role:**
-You are NOT here to solve the problem for them. You are here to provide a **Strategic Hint** that:
-1. Reveals the **core algorithm or data structure** they should consider
-2. Provides a **decisive clue** about the optimal approach (e.g., "Try using a Hash Map to reduce complexity to O(n)")
-3. Helps them **think like a developer** by explaining WHY this approach works
-4. **DOES NOT** provide any actual solution code
-
-**Guidelines:**
-- Be warm, encouraging, and supportive
-- Focus on the conceptual breakthrough they need
-- Explain the "aha moment" without crossing the finish line for them
-- Use analogies or real-world examples when helpful
-- Keep it concise (2-4 paragraphs)
-- Format with markdown for readability
-
-**Important:** This is a crucial moment - they've been stuck for ${elapsedMinutes} minutes. Give them the key insight they need to succeed, but let them implement it themselves.
-
-Provide your strategic hint now:
-
-${getMentorPersonaInstruction(language)}
-${getMentorLanguageInstruction(language)}`
+  const prompt = buildStrategicHintPrompt(
+    problemTitle,
+    problemDescription,
+    code,
+    elapsedMinutes,
+    language
+  )
 
   const result = await generateText({
     model: getLanguageModel("gemini", model, apiKey),
@@ -251,55 +217,19 @@ export async function POST(req: NextRequest) {
       } else {
         hint =
           language === "ko"
-            ? `## 💡 전략 힌트 (${elapsedMinutes}분 구간)
-
-문제를 오래 붙잡고 잘 버티고 있어요. 돌파에 도움이 될 핵심 힌트를 드릴게요.
-
-**핵심 접근:** 값을 빠르게 조회할 수 있는 자료구조를 떠올려보세요. 중첩 반복문(O(n²)) 대신, 한 번 순회로 줄일 수 있는 방법이 있는지 점검해보세요.
-
-**핵심 질문:** 이미 본 값을 "기억"해두고 즉시 비교할 수 있다면 어떻게 될까요?
-
-Hash Map의 O(1) 조회 특성이 접근 방식을 크게 바꿔줄 수 있습니다.
-
-*안내: 현재 AI 힌트를 사용할 수 없습니다. 마이페이지에서 최소 1개의 API Key를 설정해주세요.*`
-            : `## 💡 Strategic Hint (${elapsedMinutes} minutes milestone)
-
-You've been working hard on this problem! Here's a key insight to help you break through:
-
-**Core Approach:** Consider the data structure that would allow you to look up values efficiently. Instead of nested loops (O(n²)), think about how you could reduce this to a single pass through the data.
-
-**Key Question:** What if you could "remember" values you've already seen and check against them instantly?
-
-Think about Hash Maps and how they enable O(1) lookups. This could transform your approach!
-
-*Note: AI hints are currently unavailable. Configure at least one API key in My Page to get personalized strategic hints.*`
+            ? `핵심은 "이미 본 값을 즉시 조회"하는 구조를 쓰는 거야. 중첩 루프 대신 Hash Map으로 한 번 순회를 시도해봐.
+안내: AI 힌트가 비활성화되어 있어. 마이페이지에서 API Key를 설정해줘.`
+            : `The key is instant lookup of previously seen values. Try a one-pass Hash Map approach instead of nested loops.
+Note: AI hints are unavailable right now. Configure an API key in My Page.`
       }
     } catch (error) {
       console.error("AI API error:", error)
       hint =
         language === "ko"
-          ? `## 💡 전략 힌트 (${elapsedMinutes}분 구간)
-
-문제를 오래 붙잡고 잘 버티고 있어요. 돌파에 도움이 될 핵심 힌트를 드릴게요.
-
-**핵심 접근:** 값을 빠르게 조회할 수 있는 자료구조를 떠올려보세요. 중첩 반복문(O(n²)) 대신, 한 번 순회로 줄일 수 있는 방법이 있는지 점검해보세요.
-
-**핵심 질문:** 이미 본 값을 "기억"해두고 즉시 비교할 수 있다면 어떻게 될까요?
-
-Hash Map의 O(1) 조회 특성이 접근 방식을 크게 바꿔줄 수 있습니다.
-
-*안내: 현재 AI 서비스 연결이 원활하지 않습니다. 잠시 후 다시 시도해주세요.*`
-          : `## 💡 Strategic Hint (${elapsedMinutes} minutes milestone)
-
-You've been working hard on this problem! Here's a key insight to help you break through:
-
-**Core Approach:** Consider the data structure that would allow you to look up values efficiently. Instead of nested loops (O(n²)), think about how you could reduce this to a single pass through the data.
-
-**Key Question:** What if you could "remember" values you've already seen and check against them instantly?
-
-Think about Hash Maps and how they enable O(1) lookups. This could transform your approach!
-
-*Note: AI service temporarily unavailable. Try refreshing or checking your configuration.*`
+          ? `핵심은 "이미 본 값을 즉시 조회"하는 구조야. Hash Map으로 한 번 순회가 가능한지 먼저 점검해봐.
+안내: AI 서비스 연결이 불안정해. 잠시 후 다시 시도해줘.`
+          : `The core insight is instant lookup of seen values. Check whether a one-pass Hash Map fits this case.
+Note: AI service is temporarily unstable. Please try again shortly.`
     }
 
     return NextResponse.json({ hint })

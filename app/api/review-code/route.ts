@@ -30,6 +30,12 @@ interface ReviewRequest {
   aiConfig?: Partial<AIConfigPayload>
 }
 
+const REVIEW_REPLY_FORMAT_RULES = `Reply format:
+- Default 1-2 short lines, max 4 lines only if necessary.
+- No greetings, emojis, formal report sections, or long checklists.
+- Focus on the single highest-impact point first.
+- End with one immediate next step.`
+
 function generateFallbackReviewFeedback(
   language: MentorLanguage,
   passedCount: number,
@@ -48,66 +54,35 @@ function generateFallbackReviewFeedback(
 
   if (language === "ko") {
     if (!allTestsPassed) {
-      return `좋아, 지금은 효율 얘기보다 왜 실패했는지부터 같이 잡자.
-현재 통과는 ${passedCount}/${totalCount}개야.
-
-실패 케이스 1개만 골라서 입력 -> 조건 분기 -> 반환값 순서로 따라가보자.
-특히 경계값(빈 입력, 길이 1, 중복)에서 조건이 먼저 탈락하는지 확인해봐.
-
-실패한 케이스 하나 붙여주면, 내가 그 흐름을 한 줄씩 같이 디버깅해줄게.
-
-(${statusNote})`
+      return `현재 ${passedCount}/${totalCount} 통과니까, 복잡도보다 실패 원인 한 군데부터 잡자.
+실패 케이스 1개를 보내주면 입력 -> 분기 -> 반환 흐름으로 바로 짚어줄게. (${statusNote})`
     }
 
-    return `Pass! 잘했다 👏 지금 통과는 ${passedCount}/${totalCount}개야.
-
-이제 프로덕션 관점으로 한 단계만 더 올려보자.
-- 시간복잡도: 중첩 루프가 있으면 O(n^2)일 가능성이 커. Map/Set으로 O(n)까지 줄일 수 있는지 보자.
-- 공간복잡도: 보조 자료구조를 쓰는 대신 반복을 줄이는 트레이드오프가 맞는지 확인해보자.
-- 네이밍: i, tmp 같은 이름은 역할 기반(countMap, left, current)으로 바꾸면 유지보수가 훨씬 쉬워져.
-
-원하면 네 코드 기준으로 어떤 줄을 어떻게 바꾸면 좋은지 바로 제안해줄게.
-
-(${statusNote})`
+    return `Pass(${passedCount}/${totalCount}) 좋다. 이제 중첩 루프를 줄일 수 있는지랑 변수명 역할이 명확한지만 빠르게 점검하자.
+원하면 네 코드에서 수정 우선순위 1개만 바로 골라줄게. (${statusNote})`
   }
 
   if (!allTestsPassed) {
-    return `Let us focus on debugging first, not complexity yet.
-Current pass count is ${passedCount}/${totalCount}.
-
-Pick one failing case and trace input -> branch condition -> returned value line by line.
-Share one failing example and I can walk through the exact break point with you.
-
-(${statusNote})`
+    return `You are at ${passedCount}/${totalCount}; debug one failing path first before complexity.
+Share one failing case and I will trace input -> branch -> return with you. (${statusNote})`
   }
 
-  return `Pass! Nice work. You are at ${passedCount}/${totalCount}.
-
-Now we can optimize:
-- Time: if there are nested loops, check if Map/Set can reduce it.
-- Space: verify the trade-off for auxiliary structures.
-- Naming: replace short names with role-based names like left/countMap/current.
-
-If you want, I can suggest concrete refactors on your current code.
-
-(${statusNote})`
+  return `Pass at ${passedCount}/${totalCount}. Now check one optimization point (nested loops -> Map/Set) and one naming cleanup.
+If you want, I can mark the first refactor target directly on your code. (${statusNote})`
 }
 
-async function reviewWithClaude(
+function buildReviewPrompt(
   code: string,
   problemTitle: string,
   problemDescription: string,
   testResults: TestResult[],
   allTestsPassed: boolean,
-  language: MentorLanguage,
-  apiKey: string,
-  model: string,
-  maxOutputTokens: number
-): Promise<string> {
+  language: MentorLanguage
+): string {
   const passedCount = testResults.filter((r) => r.passed).length
   const totalCount = testResults.length
 
-  const prompt = `You are a **Supportive Coding Mentor** reviewing a student's solution for: "${problemTitle}"
+  return `You are a **Supportive Coding Mentor** reviewing a student's solution for: "${problemTitle}"
 
 **Problem Description:**
 ${problemDescription}
@@ -127,17 +102,37 @@ ${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual
   .join("\n")}
 
 **Mentoring Mode:**
-- Keep the tone natural and conversational, like pair programming chat.
-- Avoid rigid report sections or formal header templates.
-- Use the test output as the first source of truth.
-- ${allTestsPassed ? "All tests passed: congratulate briefly, then cover optimization (time/space), naming clarity, and production-ready refactoring." : "Tests failed: focus only on debugging root cause first. Trace line-by-line and explain why the output diverges. Do not discuss complexity yet."}
-- Suggest algorithm alternatives naturally (Two Pointers / Stack / Hash Map trade-offs) when relevant.
+- Use test output as the first source of truth.
+- ${allTestsPassed ? "All tests passed: brief congrats, then suggest one optimization/refactor." : "Tests failed: only debug root cause first; do not discuss complexity yet."}
+- Suggest algorithm alternatives naturally when relevant.
 - Do not dump a full solution unless explicitly requested.
+- ${REVIEW_REPLY_FORMAT_RULES}
 
 Provide your supportive feedback now:
 
 ${getMentorPersonaInstruction(language)}
 ${getMentorLanguageInstruction(language)}`
+}
+
+async function reviewWithClaude(
+  code: string,
+  problemTitle: string,
+  problemDescription: string,
+  testResults: TestResult[],
+  allTestsPassed: boolean,
+  language: MentorLanguage,
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
+): Promise<string> {
+  const prompt = buildReviewPrompt(
+    code,
+    problemTitle,
+    problemDescription,
+    testResults,
+    allTestsPassed,
+    language
+  )
 
   const result = await generateText({
     model: getLanguageModel("claude", model, apiKey),
@@ -159,40 +154,14 @@ async function reviewWithGPT(
   model: string,
   maxOutputTokens: number
 ): Promise<string> {
-  const passedCount = testResults.filter((r) => r.passed).length
-  const totalCount = testResults.length
-
-  const prompt = `You are a **Supportive Coding Mentor** reviewing a student's solution for: "${problemTitle}"
-
-**Problem Description:**
-${problemDescription}
-
-**Student's Code:**
-\`\`\`javascript
-${code}
-\`\`\`
-
-**Test Results:** ${passedCount}/${totalCount} tests passed
-
-${testResults
-  .map(
-    (r, i) => `Test ${i + 1}: ${r.passed ? "✓ PASSED" : "✗ FAILED"}
-${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual}` : ""}`
+  const prompt = buildReviewPrompt(
+    code,
+    problemTitle,
+    problemDescription,
+    testResults,
+    allTestsPassed,
+    language
   )
-  .join("\n")}
-
-**Mentoring Mode:**
-- Keep the tone natural and conversational, like pair programming chat.
-- Avoid rigid report sections or formal header templates.
-- Use the test output as the first source of truth.
-- ${allTestsPassed ? "All tests passed: congratulate briefly, then cover optimization (time/space), naming clarity, and production-ready refactoring." : "Tests failed: focus only on debugging root cause first. Trace line-by-line and explain why the output diverges. Do not discuss complexity yet."}
-- Suggest algorithm alternatives naturally (Two Pointers / Stack / Hash Map trade-offs) when relevant.
-- Do not dump a full solution unless explicitly requested.
-
-Provide your supportive feedback now:
-
-${getMentorPersonaInstruction(language)}
-${getMentorLanguageInstruction(language)}`
 
   const result = await generateText({
     model: getLanguageModel("gpt", model, apiKey),
@@ -216,40 +185,14 @@ async function reviewWithGemini(
   model: string,
   maxOutputTokens: number
 ): Promise<string> {
-  const passedCount = testResults.filter((r) => r.passed).length
-  const totalCount = testResults.length
-
-  const prompt = `You are a **Supportive Coding Mentor** reviewing a student's solution for: "${problemTitle}"
-
-**Problem Description:**
-${problemDescription}
-
-**Student's Code:**
-\`\`\`javascript
-${code}
-\`\`\`
-
-**Test Results:** ${passedCount}/${totalCount} tests passed
-
-${testResults
-  .map(
-    (r, i) => `Test ${i + 1}: ${r.passed ? "✓ PASSED" : "✗ FAILED"}
-${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual}` : ""}`
+  const prompt = buildReviewPrompt(
+    code,
+    problemTitle,
+    problemDescription,
+    testResults,
+    allTestsPassed,
+    language
   )
-  .join("\n")}
-
-**Mentoring Mode:**
-- Keep the tone natural and conversational, like pair programming chat.
-- Avoid rigid report sections or formal header templates.
-- Use the test output as the first source of truth.
-- ${allTestsPassed ? "All tests passed: congratulate briefly, then cover optimization (time/space), naming clarity, and production-ready refactoring." : "Tests failed: focus only on debugging root cause first. Trace line-by-line and explain why the output diverges. Do not discuss complexity yet."}
-- Suggest algorithm alternatives naturally (Two Pointers / Stack / Hash Map trade-offs) when relevant.
-- Do not dump a full solution unless explicitly requested.
-
-Provide your supportive feedback now:
-
-${getMentorPersonaInstruction(language)}
-${getMentorLanguageInstruction(language)}`
 
   const result = await generateText({
     model: getLanguageModel("gemini", model, apiKey),

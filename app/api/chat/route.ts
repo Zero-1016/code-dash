@@ -36,6 +36,13 @@ interface ChatRequest {
   aiConfig?: Partial<AIConfigPayload>
 }
 
+const MENTOR_REPLY_FORMAT_RULES = `Reply format:
+- Default: 1-2 short lines.
+- Max: 4 short lines only if absolutely needed.
+- No greetings, emojis, long intros, or "quick diagnostic questions".
+- No markdown headings/bullets unless user explicitly asks for structured format.
+- End with one concrete next step.`
+
 function buildTestResultsContext(testResults: ChatTestResult[] = [], allTestsPassed?: boolean): string {
   if (!testResults.length) {
     return "No recent test output context was provided."
@@ -70,86 +77,90 @@ function generateFallbackMentorResponse(
   })()
 
   if (language === "ko") {
-    const lead = "좋아, 나는 지금부터 네 사고 흐름을 잡아주는 멘토로 같이 갈게."
     const context = hasCode
-      ? "지금 코드 기준으로 핵심 분기 하나만 먼저 좁혀보자."
-      : "아직 코드가 없다면 예시 입력 하나를 손으로 추적하면서 시작하자."
+      ? "지금 코드는 핵심 분기 한 군데만 먼저 확인하면 돼."
+      : "코드가 없으면 예시 입력 1개를 손으로 먼저 추적해보자."
+    const failingContext =
+      testResults.length > 0 && allTestsPassed === false
+        ? `실패 케이스부터 보자. (${testResults.filter((r) => r.passed).length}/${testResults.length} 통과)`
+        : context
 
     if (requestType === "hint") {
-      const debugLead =
-        testResults.length > 0 && allTestsPassed === false
-          ? `최근 테스트 출력 기준으로 먼저 실패 원인부터 잡자. (현재 ${testResults.filter((r) => r.passed).length}/${testResults.length} 통과)`
-          : context
-      return `${lead}
-
-${debugLead}
-[Level 1: Hint]
-정답 코드를 바로 주기보다, 지금 깨지는 조건 하나를 정확히 찾는 게 먼저야.
-실패한 케이스 1개만 가져오면 거기서 바로 다음 단서를 이어줄게.
-원하면 다음 메시지에 "Level 2"라고 보내줘.`
+      return `${failingContext}
+정답 코드 대신 깨지는 조건 1개만 정확히 잡자. 실패 케이스 1개를 붙여줘.`
     }
 
     if (requestType === "review") {
-      return `${lead}
-
-${context}
-리뷰는 "의도한 로직"과 "실제 동작"의 차이를 찾는 과정이야.
-네가 의도한 알고리즘을 한 줄로 적어주면, 틀어지는 지점을 멘토 관점으로 짚어줄게.`
+      return `${context}
+의도한 알고리즘을 한 줄로 적어줘. 실제 동작과 어긋나는 지점을 바로 짚어줄게.`
     }
 
     if (requestType === "explain") {
-      return `${lead}
-
-개념은 외우는 게 아니라 흐름으로 이해하면 오래가.
-문제를 한 문장으로 요약하고 필요한 자료구조 후보를 2개만 적어봐.
-그다음 어떤 선택이 맞는지 이유까지 같이 정리해줄게.`
+      return `핵심은 흐름이야: 문제를 한 문장으로 요약하고 자료구조 후보 2개만 써봐.
+그중 이 문제 핵심에 맞는 선택을 짧게 정리해줄게.`
     }
 
-    return `${lead}
-
-${context}
-지금은 넓게 보지 말고, 가장 먼저 깨지는 포인트 하나만 고르자.
-오류 메시지나 실패 테스트를 보내주면 그 지점만 집중해서 다음 단계를 안내할게.`
+    return `${failingContext}
+오류 메시지나 실패 테스트 1개만 보내줘. 그 지점만 바로 같이 디버깅하자.`
   }
 
-  const lead = "Good. I will mentor your thinking process step by step."
+  const failingContext =
+    testResults.length > 0 && allTestsPassed === false
+      ? `Start from one failing case first. (${testResults.filter((r) => r.passed).length}/${testResults.length} passing)`
+      : null
   const context = hasCode
-    ? "Let's narrow down one critical branch in your current code first."
-    : "If code is empty, start by tracing one tiny example manually."
+    ? "Your current code likely has one critical branch to fix first."
+    : "If code is empty, trace one tiny example manually first."
 
   if (requestType === "hint") {
-    const debugLead =
-      testResults.length > 0 && allTestsPassed === false
-        ? `Let us start from the failing output first. (${testResults.filter((r) => r.passed).length}/${testResults.length} passing)`
-        : context
-    return `${lead}
-
-${debugLead}
-Instead of giving the final code, we should isolate the first failing condition.
-Share one failing case and I will give you the next targeted hint from there.`
+    return `${failingContext ?? context}
+Skip full code for now; isolate one failing condition and share that case.`
   }
 
   if (requestType === "review") {
-    return `${lead}
-
-${context}
-A good review compares intended logic vs actual behavior.
-Write your intended algorithm in one line, and I will pinpoint where it drifts.`
+    return `${context}
+Write your intended algorithm in one line, and I will pinpoint where behavior drifts.`
   }
 
   if (requestType === "explain") {
-    return `${lead}
-
-Concepts stick when you understand the flow, not just definitions.
-Summarize the problem in one sentence and list two candidate data structures.
-I will help you choose the right one and explain why.`
+    return `Summarize the problem in one sentence and list two data-structure candidates.
+I will pick the better fit and explain why in short.`
   }
 
-  return `${lead}
+  return `${failingContext ?? context}
+Send one error or failed test, and we will debug only that point next.`
+}
 
-${context}
-Do not debug everything at once; pick the first breaking point.
-Send the error or failed test and I will guide only that step next.`
+function buildChatSystemPrompt(
+  problemTitle: string,
+  problemDescription: string,
+  code: string,
+  testOutputContext: string
+): string {
+  return `You are a **Supportive Coding Mentor** helping a student work through: "${problemTitle}".
+
+**Problem Description:**
+${problemDescription}
+
+**Student's Current Code:**
+\`\`\`javascript
+${code}
+\`\`\`
+
+**Recent Test Output Context:**
+${testOutputContext}
+
+**Your Role:**
+You are mentoring like a senior teammate in pair programming chat.
+
+**Guidelines:**
+- If tests are failing, focus on root cause from outputs first. Avoid complexity talk at this stage.
+- If tests are passing, brief congrats then suggest one optimization/refactor.
+- Keep replies practical and context-aware.
+- Do not paste full solution code unless explicitly requested.
+- ${MENTOR_REPLY_FORMAT_RULES}
+
+Remember: Help the learner think clearly, not just finish this one problem.`
 }
 
 // Helper to call Anthropic Claude API
@@ -164,31 +175,12 @@ async function chatWithClaude(
   model: string,
   maxOutputTokens: number
 ): Promise<string> {
-  const systemPrompt = `You are a **Supportive Coding Mentor** helping a student work through: "${problemTitle}".
-
-**Problem Description:**
-${problemDescription}
-
-**Student's Current Code:**
-\`\`\`javascript
-${code}
-\`\`\`
-
-**Recent Test Output Context:**
-${testOutputContext}
-
-**Your Role:**
-You're mentoring like a senior teammate in chat. Keep it natural and human, not robotic.
-
-**Guidelines:**
-- If tests are failing, focus on debugging root cause from output first. Avoid complexity talk at this stage.
-- If tests are passing, congratulate briefly then suggest optimization and naming/refactor improvements.
-- Use natural pair-programming tone like Slack/KakaoTalk.
-- Keep answers concise, practical, and context-aware from recent outputs.
-- Do not use rigid section headers.
-- Do not paste full solution code unless explicitly requested.
-
-Remember: Your job is to make them better developers, not just solve this one problem for them.`
+  const systemPrompt = buildChatSystemPrompt(
+    problemTitle,
+    problemDescription,
+    code,
+    testOutputContext
+  )
 
   const mentorPersonaInstruction = getMentorPersonaInstruction(language)
   const languageInstruction = getMentorLanguageInstruction(language)
@@ -218,31 +210,12 @@ async function chatWithGPT(
   model: string,
   maxOutputTokens: number
 ): Promise<string> {
-  const systemPrompt = `You are a **Supportive Coding Mentor** helping a student work through: "${problemTitle}".
-
-**Problem Description:**
-${problemDescription}
-
-**Student's Current Code:**
-\`\`\`javascript
-${code}
-\`\`\`
-
-**Recent Test Output Context:**
-${testOutputContext}
-
-**Your Role:**
-You're mentoring like a senior teammate in chat. Keep it natural and human, not robotic.
-
-**Guidelines:**
-- If tests are failing, focus on debugging root cause from output first. Avoid complexity talk at this stage.
-- If tests are passing, congratulate briefly then suggest optimization and naming/refactor improvements.
-- Use natural pair-programming tone like Slack/KakaoTalk.
-- Keep answers concise, practical, and context-aware from recent outputs.
-- Do not use rigid section headers.
-- Do not paste full solution code unless explicitly requested.
-
-Remember: Your job is to make them better developers, not just solve this one problem for them.`
+  const systemPrompt = buildChatSystemPrompt(
+    problemTitle,
+    problemDescription,
+    code,
+    testOutputContext
+  )
 
   const mentorPersonaInstruction = getMentorPersonaInstruction(language)
   const languageInstruction = getMentorLanguageInstruction(language)
@@ -269,31 +242,12 @@ async function chatWithGemini(
   model: string,
   maxOutputTokens: number
 ): Promise<string> {
-  const systemPrompt = `You are a **Supportive Coding Mentor** helping a student work through: "${problemTitle}".
-
-**Problem Description:**
-${problemDescription}
-
-**Student's Current Code:**
-\`\`\`javascript
-${code}
-\`\`\`
-
-**Recent Test Output Context:**
-${testOutputContext}
-
-**Your Role:**
-You're mentoring like a senior teammate in chat. Keep it natural and human, not robotic.
-
-**Guidelines:**
-- If tests are failing, focus on debugging root cause from output first. Avoid complexity talk at this stage.
-- If tests are passing, congratulate briefly then suggest optimization and naming/refactor improvements.
-- Use natural pair-programming tone like Slack/KakaoTalk.
-- Keep answers concise, practical, and context-aware from recent outputs.
-- Do not use rigid section headers.
-- Do not paste full solution code unless explicitly requested.
-
-Remember: Your job is to make them better developers, not just solve this one problem for them.`
+  const systemPrompt = buildChatSystemPrompt(
+    problemTitle,
+    problemDescription,
+    code,
+    testOutputContext
+  )
 
   const mentorPersonaInstruction = getMentorPersonaInstruction(language)
   const languageInstruction = getMentorLanguageInstruction(language)
