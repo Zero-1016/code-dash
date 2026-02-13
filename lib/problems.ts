@@ -1141,17 +1141,31 @@ function buildGeneratedTitleByIndexKo(seedId: Problem["id"], index: number): str
   return `${base} ${index + 1}`
 }
 
+function buildGeneratedDifficulty(seedId: Problem["id"], index: number, fallback: Difficulty): Difficulty {
+  if (seedId === "binary-tree-level-order") {
+    const difficultyCycle: Difficulty[] = ["Medium", "Hard", "Medium", "Easy", "Hard"]
+    return difficultyCycle[index % difficultyCycle.length]
+  }
+  if (seedId === "trapping-rain-water") {
+    const difficultyCycle: Difficulty[] = ["Medium", "Hard", "Easy", "Medium", "Hard"]
+    return difficultyCycle[index % difficultyCycle.length]
+  }
+  return fallback
+}
+
 function createGeneratedProblem(seed: Problem, index: number): Problem {
   const generatedTitle = buildGeneratedTitleByIndex(seed.id, index)
   const generatedId = `${toKebabCase(generatedTitle)}-${index + 2}`
   const generatedFunctionName = `${seed.functionName}Set${index + 2}`
   const functionNameRegex = new RegExp(`\\b${escapeRegExp(seed.functionName)}\\b`)
   const testCases = buildTestCases(seed.id, index)
+  const generatedDifficulty = buildGeneratedDifficulty(seed.id, index, seed.difficulty)
 
   return {
     ...seed,
     id: generatedId,
     title: generatedTitle,
+    difficulty: generatedDifficulty,
     successRate: Math.max(20, seed.successRate - ((index * 3) % 20)),
     description: buildGeneratedDescription(seed.id, generatedTitle),
     constraints: buildGeneratedConstraints(seed.id),
