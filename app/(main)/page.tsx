@@ -17,12 +17,66 @@ import {
 import { useAppLanguage } from "@/lib/use-app-language"
 import { usePageEntryAnimation } from "@/lib/use-page-entry-animation"
 
+const HOME_VIEW_STATE_KEY = "codedash.home.view-state.v1"
+
+interface HomeViewState {
+  selectedCategory: string
+  selectedDifficulty: "ALL" | Difficulty
+  sortBy: "difficulty-asc" | "difficulty-desc"
+  scrollY: number
+}
+
+function readInitialHomeViewState(): HomeViewState | null {
+  if (typeof window === "undefined") {
+    return null
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(HOME_VIEW_STATE_KEY)
+    if (!raw) {
+      return null
+    }
+    const parsed = JSON.parse(raw) as Partial<HomeViewState>
+    if (
+      typeof parsed.selectedCategory !== "string" ||
+      (parsed.selectedDifficulty !== "ALL" &&
+        parsed.selectedDifficulty !== "Easy" &&
+        parsed.selectedDifficulty !== "Medium" &&
+        parsed.selectedDifficulty !== "Hard") ||
+      (parsed.sortBy !== "difficulty-asc" && parsed.sortBy !== "difficulty-desc")
+    ) {
+      return null
+    }
+
+    return {
+      selectedCategory: parsed.selectedCategory,
+      selectedDifficulty: parsed.selectedDifficulty,
+      sortBy: parsed.sortBy,
+      scrollY:
+        typeof parsed.scrollY === "number" && Number.isFinite(parsed.scrollY)
+          ? Math.max(0, parsed.scrollY)
+          : 0,
+    }
+  } catch {
+    return null
+  }
+}
+
 export default function HomePage() {
+  const [initialViewState] = useState<HomeViewState | null>(() =>
+    readInitialHomeViewState()
+  )
   const { language, copy } = useAppLanguage()
   const shouldAnimateOnMount = usePageEntryAnimation()
-  const [selectedCategory, setSelectedCategory] = useState("ALL")
-  const [selectedDifficulty, setSelectedDifficulty] = useState<"ALL" | Difficulty>("ALL")
-  const [sortBy, setSortBy] = useState<"difficulty-asc" | "difficulty-desc">("difficulty-asc")
+  const [selectedCategory, setSelectedCategory] = useState(
+    initialViewState?.selectedCategory ?? "ALL"
+  )
+  const [selectedDifficulty, setSelectedDifficulty] = useState<"ALL" | Difficulty>(
+    initialViewState?.selectedDifficulty ?? "ALL"
+  )
+  const [sortBy, setSortBy] = useState<"difficulty-asc" | "difficulty-desc">(
+    initialViewState?.sortBy ?? "difficulty-asc"
+  )
   const [solvedIds, setSolvedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -84,6 +138,65 @@ export default function HomePage() {
     }
     return source.filter((problem) => problem.difficulty === difficulty).length
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const writeState = (scrollY: number) => {
+      const payload: HomeViewState = {
+        selectedCategory,
+        selectedDifficulty,
+        sortBy,
+        scrollY: Math.max(0, scrollY),
+      }
+      window.sessionStorage.setItem(HOME_VIEW_STATE_KEY, JSON.stringify(payload))
+    }
+
+    writeState(window.scrollY)
+  }, [selectedCategory, selectedDifficulty, sortBy])
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    let ticking = false
+    const onScroll = () => {
+      if (ticking) {
+        return
+      }
+      ticking = true
+      window.requestAnimationFrame(() => {
+        ticking = false
+        const payload: HomeViewState = {
+          selectedCategory,
+          selectedDifficulty,
+          sortBy,
+          scrollY: Math.max(0, window.scrollY),
+        }
+        window.sessionStorage.setItem(HOME_VIEW_STATE_KEY, JSON.stringify(payload))
+      })
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+    }
+  }, [selectedCategory, selectedDifficulty, sortBy])
+
+  useEffect(() => {
+    if (!initialViewState || typeof window === "undefined") {
+      return
+    }
+
+    // Wait one frame so virtualized rows/layout are mounted before restoring.
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: initialViewState.scrollY, behavior: "auto" })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [initialViewState])
 
   return (
     <PageTransition animateOnMount={shouldAnimateOnMount}>
