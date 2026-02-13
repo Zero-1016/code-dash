@@ -68,6 +68,7 @@ function generateFallbackMentorResponse(
   const latestUserMessage = [...messages].reverse().find((msg) => msg.role === "user")?.content.trim() ?? ""
   const hasCode = code.trim().length > 0
   const normalized = latestUserMessage.toLowerCase()
+  const hasFailingTests = testResults.length > 0 && allTestsPassed === false
 
   const requestType = (() => {
     if (/(hint|힌트|단서)/i.test(normalized)) return "hint"
@@ -75,18 +76,25 @@ function generateFallbackMentorResponse(
     if (/(explain|설명|이해)/i.test(normalized)) return "explain"
     return "general"
   })()
+  const asksConceptually = /(what|why|how|difference|개념|원리|차이|왜|어떻게|시간복잡도|공간복잡도|자료구조|알고리즘)/i.test(
+    normalized
+  )
+  const asksDebug = /(error|실패|버그|디버깅|안돼|틀려|runtime|exception|stack trace|오류)/i.test(
+    normalized
+  )
+  const shouldUseDebugFlow = hasFailingTests || asksDebug
 
   if (language === "ko") {
     const context = hasCode
       ? "지금 코드는 핵심 분기 한 군데만 먼저 확인하면 돼."
       : "코드가 없으면 예시 입력 1개를 손으로 먼저 추적해보자."
     const failingContext =
-      testResults.length > 0 && allTestsPassed === false
+      hasFailingTests
         ? `실패 케이스부터 보자. (${testResults.filter((r) => r.passed).length}/${testResults.length} 통과)`
         : context
 
     if (requestType === "hint") {
-      return `${failingContext}
+      return `${shouldUseDebugFlow ? failingContext : context}
 정답 코드 대신 깨지는 조건 1개만 정확히 잡자. 실패 케이스 1개를 붙여줘.`
     }
 
@@ -100,12 +108,22 @@ function generateFallbackMentorResponse(
 그중 이 문제 핵심에 맞는 선택을 짧게 정리해줄게.`
     }
 
-    return `${failingContext}
+    if (asksConceptually && !shouldUseDebugFlow) {
+      return `좋아, 코드 없이도 충분히 풀 수 있어.
+핵심 개념을 짧게 설명해줄게. 지금 궁금한 포인트 하나만 지정해주면 그 주제부터 바로 정리해줄게.`
+    }
+
+    if (shouldUseDebugFlow) {
+      return `${failingContext}
 오류 메시지나 실패 테스트 1개만 보내줘. 그 지점만 바로 같이 디버깅하자.`
+    }
+
+    return `${context}
+아직 코드를 안 써도 괜찮아. 접근 아이디어(자료구조 후보 1-2개)만 적어주면 맞는 방향인지 바로 피드백해줄게.`
   }
 
   const failingContext =
-    testResults.length > 0 && allTestsPassed === false
+    hasFailingTests
       ? `Start from one failing case first. (${testResults.filter((r) => r.passed).length}/${testResults.length} passing)`
       : null
   const context = hasCode
@@ -113,7 +131,7 @@ function generateFallbackMentorResponse(
     : "If code is empty, trace one tiny example manually first."
 
   if (requestType === "hint") {
-    return `${failingContext ?? context}
+    return `${shouldUseDebugFlow ? failingContext ?? context : context}
 Skip full code for now; isolate one failing condition and share that case.`
   }
 
@@ -127,8 +145,18 @@ Write your intended algorithm in one line, and I will pinpoint where behavior dr
 I will pick the better fit and explain why in short.`
   }
 
-  return `${failingContext ?? context}
+  if (asksConceptually && !shouldUseDebugFlow) {
+    return `You can ask without writing code first.
+Share one concept you want to clarify, and I will explain it with one practical example.`
+  }
+
+  if (shouldUseDebugFlow) {
+    return `${failingContext ?? context}
 Send one error or failed test, and we will debug only that point next.`
+  }
+
+  return `${context}
+No code yet is fine. Send one approach idea, and I will tell you if it is a good direction.`
 }
 
 function buildChatSystemPrompt(
@@ -154,6 +182,7 @@ ${testOutputContext}
 You are mentoring like a senior teammate in pair programming chat.
 
 **Guidelines:**
+- If user asks a conceptual/no-code question, answer directly and clearly first; do not force debugging flow.
 - If tests are failing, focus on root cause from outputs first. Avoid complexity talk at this stage.
 - If tests are passing, brief congrats then suggest one optimization/refactor.
 - Keep replies practical and context-aware.
