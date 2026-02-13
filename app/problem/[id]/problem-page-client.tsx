@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -48,6 +48,11 @@ interface MentorTestResult {
   actual: string;
 }
 
+interface AssistantResizeState {
+  startX: number;
+  startWidth: number;
+}
+
 export function ProblemPageClient({ problem }: ProblemPageClientProps) {
   const REQUEST_TIMEOUT_MS = 20000;
   const router = useRouter();
@@ -75,6 +80,9 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
   const [latestTestResults, setLatestTestResults] = useState<MentorTestResult[]>([]);
   const [isMentorConfigured, setIsMentorConfigured] = useState(false);
   const [isMentorAlertOpen, setIsMentorAlertOpen] = useState(false);
+  const [assistantWidth, setAssistantWidth] = useState(400);
+  const [isResizingAssistant, setIsResizingAssistant] = useState(false);
+  const assistantResizeStateRef = useRef<AssistantResizeState | null>(null);
 
   useEffect(() => {
     const sync = () => {
@@ -191,6 +199,58 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
       language,
     ]
   );
+
+  const handleAssistantResizeStart = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      assistantResizeStateRef.current = {
+        startX: event.clientX,
+        startWidth: assistantWidth,
+      };
+      setIsResizingAssistant(true);
+      document.body.style.cursor = "ew-resize";
+      document.body.style.userSelect = "none";
+    },
+    [assistantWidth]
+  );
+
+  useEffect(() => {
+    const handleResizeMove = (event: MouseEvent) => {
+      const resizeState = assistantResizeStateRef.current;
+      if (!resizeState) {
+        return;
+      }
+
+      const deltaX = resizeState.startX - event.clientX;
+      const minWidth = 320;
+      const viewportMax = Math.max(minWidth, Math.min(900, window.innerWidth - 80));
+      const nextWidth = Math.min(
+        viewportMax,
+        Math.max(minWidth, resizeState.startWidth + deltaX)
+      );
+      setAssistantWidth(nextWidth);
+    };
+
+    const handleResizeEnd = () => {
+      if (!assistantResizeStateRef.current) {
+        return;
+      }
+      assistantResizeStateRef.current = null;
+      setIsResizingAssistant(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    window.addEventListener("mousemove", handleResizeMove);
+    window.addEventListener("mouseup", handleResizeEnd);
+
+    return () => {
+      window.removeEventListener("mousemove", handleResizeMove);
+      window.removeEventListener("mouseup", handleResizeEnd);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, []);
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -325,8 +385,21 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-[400px] border-l border-border bg-background shadow-2xl flex flex-col"
+                className="fixed right-0 top-0 bottom-0 z-50 w-full border-l border-border bg-background shadow-2xl flex flex-col"
+                style={{ maxWidth: `${assistantWidth}px` }}
               >
+                <button
+                  type="button"
+                  onMouseDown={handleAssistantResizeStart}
+                  aria-label="Resize AI mentor panel"
+                  className="absolute left-0 top-0 hidden h-full w-3 -translate-x-1/2 cursor-ew-resize items-center justify-center md:flex"
+                >
+                  <span
+                    className={`h-16 w-1 rounded-full transition-colors ${
+                      isResizingAssistant ? "bg-[#3182F6]" : "bg-border/80"
+                    }`}
+                  />
+                </button>
                 <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
                   <div className="flex items-center gap-2">
                     <MessageCircle className="h-5 w-5 text-[#3182F6]" />
