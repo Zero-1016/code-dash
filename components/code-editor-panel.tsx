@@ -11,6 +11,7 @@ import { analyzeCodeWithAI, type CodeAnalysis } from "@/lib/analyze-code";
 import { getApiSettings } from "@/lib/local-progress";
 import { ResultFeedback } from "@/components/result-feedback";
 import { AddTestCaseModal } from "@/components/add-test-case-modal";
+import { useAppLanguage } from "@/lib/use-app-language";
 
 interface TestResult {
   passed: boolean;
@@ -118,6 +119,7 @@ export function CodeEditorPanel({
   onSubmissionComplete,
   onRunTests,
 }: CodeEditorPanelProps) {
+  const { language } = useAppLanguage();
   const router = useRouter();
   const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(null);
   const [analysis, setAnalysis] = useState<CodeAnalysis | null>(null);
@@ -259,6 +261,7 @@ export function CodeEditorPanel({
             problemDescription: problem.description,
             testResults: allResults,
             allTestsPassed: allResults.every((r) => r.passed),
+            language,
             aiConfig: getApiSettings(),
           }),
         });
@@ -286,6 +289,7 @@ export function CodeEditorPanel({
     setPendingReview,
     setIsAssistantOpen,
     onRunTests,
+    language,
   ]);
 
   const handleAddCustomTest = useCallback((testCase: CustomTestCase) => {
@@ -323,43 +327,8 @@ export function CodeEditorPanel({
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 relative z-10" style={{ overflow: 'visible' }}>
-        <Editor
-          height="100%"
-          defaultLanguage="javascript"
-          value={code}
-          onChange={(value) => setCode(value || "")}
-          theme="vs"
-          options={{
-            fontSize: 14,
-            fontFamily: "var(--font-jetbrains-mono), monospace",
-            lineHeight: 22,
-            padding: { top: 16, bottom: 16 },
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            renderLineHighlight: "none",
-            overviewRulerBorder: false,
-            hideCursorInOverviewRuler: true,
-            overviewRulerLanes: 0,
-            scrollbar: {
-              vertical: "hidden",
-              horizontal: "hidden",
-            },
-            wordWrap: "on",
-            automaticLayout: true,
-            tabSize: 2,
-            lineNumbers: "on",
-            folding: false,
-            glyphMargin: false,
-            lineDecorationsWidth: 0,
-            lineNumbersMinChars: 3,
-            fixedOverflowWidgets: true,
-          }}
-        />
-      </div>
-
       {/* Test Cases Preview */}
-      <div className="flex-shrink-0 border-t border-border/60 bg-muted/20 p-4 max-h-[320px] overflow-y-auto">
+      <div className="flex-shrink-0 border-b border-border/60 bg-muted/20 p-4 max-h-[320px] overflow-y-auto">
         <div className="mb-3">
           <h3 className="text-xs font-semibold text-muted-foreground">
             Test Cases (
@@ -528,6 +497,41 @@ export function CodeEditorPanel({
             </div>
           </button>
         </div>
+      </div>
+
+      <div className="flex-1 min-h-0 relative z-10" style={{ overflow: "visible" }}>
+        <Editor
+          height="100%"
+          defaultLanguage="javascript"
+          value={code}
+          onChange={(value) => setCode(value || "")}
+          theme="vs"
+          options={{
+            fontSize: 14,
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            lineHeight: 22,
+            padding: { top: 16, bottom: 16 },
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            renderLineHighlight: "none",
+            overviewRulerBorder: false,
+            hideCursorInOverviewRuler: true,
+            overviewRulerLanes: 0,
+            scrollbar: {
+              vertical: "hidden",
+              horizontal: "hidden",
+            },
+            wordWrap: "on",
+            automaticLayout: true,
+            tabSize: 2,
+            lineNumbers: "on",
+            folding: false,
+            glyphMargin: false,
+            lineDecorationsWidth: 0,
+            lineNumbersMinChars: 3,
+            fixedOverflowWidgets: true,
+          }}
+        />
       </div>
 
       <AddTestCaseModal
