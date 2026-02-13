@@ -71,8 +71,20 @@ export function ProblemCard({ problem, index, isSolved = false }: ProblemCardPro
       className="w-full"
     >
       <Link href={`/problem/${problem.id}`} className="group block">
-        <div className="flex items-center gap-3 sm:gap-4 rounded-[24px] border border-border/60 bg-card p-4 transition-all hover:border-primary/30 hover:bg-accent/50 hover:shadow-lg hover:shadow-primary/5 lg:p-5 w-full box-border">
-          <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-accent">
+        <div
+          className={cn(
+            "flex items-center gap-3 sm:gap-4 rounded-[24px] border p-4 transition-all lg:p-5 w-full box-border",
+            isSolved
+              ? "border-[hsl(145,65%,78%)] bg-[hsl(145,65%,97%)] hover:border-[hsl(145,65%,70%)]"
+              : "border-border/60 bg-card hover:border-primary/30 hover:bg-accent/50 hover:shadow-lg hover:shadow-primary/5"
+          )}
+        >
+          <div
+            className={cn(
+              "flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-2xl",
+              isSolved ? "bg-[hsl(145,65%,92%)]" : "bg-accent"
+            )}
+          >
             <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           </div>
 
@@ -90,7 +102,7 @@ export function ProblemCard({ problem, index, isSolved = false }: ProblemCardPro
                 </Badge>
               )}
               {isSolved && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(145,65%,93%)] px-2 py-0.5 text-[10px] font-semibold text-[hsl(145,65%,32%)]">
+                <span className="inline-flex items-center gap-1 rounded-full border border-[hsl(145,65%,78%)] bg-[hsl(145,65%,93%)] px-2 py-0.5 text-[10px] font-semibold text-[hsl(145,65%,32%)]">
                   <CheckCircle2 className="h-3 w-3" />
                   {copy.problemCard.solved}
                 </span>

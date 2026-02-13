@@ -67,14 +67,14 @@ export default function HomePage() {
     const sorted = [...byDifficulty]
     if (sortBy === "difficulty-desc") {
       sorted.sort((a, b) => difficultyRank[b.difficulty] - difficultyRank[a.difficulty])
-      return sorted
-    }
-    if (sortBy === "difficulty-asc") {
+    } else {
       sorted.sort((a, b) => difficultyRank[a.difficulty] - difficultyRank[b.difficulty])
-      return sorted
     }
+
+    // Keep solved problems at the bottom so unsolved work stays prioritized.
+    sorted.sort((a, b) => Number(solvedIds.has(a.id)) - Number(solvedIds.has(b.id)))
     return sorted
-  }, [selectedCategory, selectedDifficulty, sortBy, difficultyRank])
+  }, [selectedCategory, selectedDifficulty, sortBy, difficultyRank, solvedIds])
 
   const getDifficultyCount = (difficulty: "ALL" | Difficulty) => {
     const source: Problem[] = selectedCategory === "ALL"
