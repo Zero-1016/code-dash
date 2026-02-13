@@ -34,7 +34,8 @@ const REVIEW_REPLY_FORMAT_RULES = `Reply format:
 - Keep it concise by default, but use as many lines as needed for clarity.
 - No greetings, emojis, formal report sections, or long checklists.
 - Focus on the single highest-impact point first.
-- End with one immediate next step.`
+- Avoid rhetorical questions and repetitive praise.
+- Keep it to one short acknowledgement + one concrete action point whenever possible.`
 
 function generateFallbackReviewFeedback(
   language: MentorLanguage,

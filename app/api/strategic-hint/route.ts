@@ -26,6 +26,7 @@ const STRATEGIC_HINT_REPLY_RULES = `Reply format:
 - Keep it concise by default, but do not enforce hard line or character limits.
 - No greetings, emojis, markdown headings, or long paragraphs.
 - Give one decisive algorithm insight and one immediate next step.
+- Avoid rhetorical phrasing and filler.
 - Do not provide full solution code.`
 
 function buildStrategicHintPrompt(

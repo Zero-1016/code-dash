@@ -153,6 +153,10 @@ export function CodeAssistantChat({
         /`([^`]+)`/g,
         '<code class="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">$1</code>'
       );
+      formatted = formatted.replace(
+        /([A-Za-z0-9)\]])\^(\d+)/g,
+        "$1<sup>$2</sup>"
+      );
 
       if (line.startsWith("# ")) {
         elements.push(
