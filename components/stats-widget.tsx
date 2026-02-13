@@ -1,33 +1,49 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { Target, Zap, CheckCircle2 } from "lucide-react"
-
-const stats = [
-  {
-    label: "Solved",
-    value: "24",
-    icon: Target,
-    color: "text-primary",
-    bg: "bg-accent",
-  },
-  {
-    label: "Speed Avg",
-    value: "12m",
-    icon: Zap,
-    color: "text-warning",
-    bg: "bg-[hsl(38,92%,92%)]",
-  },
-  {
-    label: "Completion",
-    value: "86%",
-    icon: CheckCircle2,
-    color: "text-success",
-    bg: "bg-[hsl(145,65%,93%)]",
-  },
-]
+import {
+  getDashboardStats,
+  subscribeToProgressUpdates,
+} from "@/lib/local-progress"
 
 export function StatsWidget() {
+  const [stats, setStats] = useState(() => getDashboardStats())
+
+  useEffect(() => {
+    const sync = () => setStats(getDashboardStats())
+    sync()
+    return subscribeToProgressUpdates(sync)
+  }, [])
+
+  const items = useMemo(
+    () => [
+      {
+        label: "Solved",
+        value: String(stats.solvedCount),
+        icon: Target,
+        color: "text-primary",
+        bg: "bg-accent",
+      },
+      {
+        label: "Speed Avg",
+        value: stats.avgMinutes ? `${stats.avgMinutes}m` : "-",
+        icon: Zap,
+        color: "text-warning",
+        bg: "bg-[hsl(38,92%,92%)]",
+      },
+      {
+        label: "Completion",
+        value: `${stats.completion}%`,
+        icon: CheckCircle2,
+        color: "text-success",
+        bg: "bg-[hsl(145,65%,93%)]",
+      },
+    ],
+    [stats]
+  )
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -37,7 +53,7 @@ export function StatsWidget() {
     >
       <h3 className="text-sm font-semibold text-foreground">Your Stats</h3>
       <div className="mt-4 flex flex-col gap-3">
-        {stats.map((stat, i) => (
+        {items.map((stat, i) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, x: -12 }}
