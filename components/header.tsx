@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
 import { Code2, Flame, Settings } from "lucide-react"
 import { getCurrentStreak, subscribeToProgressUpdates } from "@/lib/local-progress"
 import { useAppLanguage } from "@/lib/use-app-language"
@@ -18,12 +17,7 @@ export function Header() {
   }, [])
 
   return (
-    <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl"
-    >
+    <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
@@ -50,6 +44,6 @@ export function Header() {
           </div>
         </div>
       </div>
-    </motion.header>
+    </header>
   )
 }

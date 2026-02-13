@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
-import { Header } from "@/components/header";
 import {
   getApiSettings,
   getLanguagePreference,
@@ -103,9 +102,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -310,7 +307,6 @@ export default function SettingsPage() {
             </div>
           )}
         </motion.section>
-      </main>
-    </div>
+    </main>
   );
 }
