@@ -892,6 +892,172 @@ const generatedTitlePoolKo: Record<Problem["id"], string[]> = {
   ],
 }
 
+const generatedTitleSuffixPool: Record<Problem["id"], string[]> = {
+  "two-sum": [
+    "Cafe Receipt Edition",
+    "Campus Festival Edition",
+    "Server Cost Edition",
+    "Travel Budget Edition",
+    "Night Shift Edition",
+    "Scoreboard Edition",
+    "Marketplace Edition",
+    "Warehouse Edition",
+  ],
+  "valid-parentheses": [
+    "Template Parser Edition",
+    "Log Format Edition",
+    "Compiler Input Edition",
+    "Script Checker Edition",
+    "Query Sanitizer Edition",
+    "Report Validator Edition",
+    "Config Guard Edition",
+    "Batch Job Edition",
+  ],
+  "reverse-linked-list": [
+    "History Undo Edition",
+    "Playlist Recovery Edition",
+    "Navigation Rollback Edition",
+    "Signal Replay Edition",
+    "Service Chain Edition",
+    "Queue Restore Edition",
+    "Archive Trace Edition",
+    "Data Sync Edition",
+  ],
+  "maximum-subarray": [
+    "Quarterly Revenue Edition",
+    "Sensor Peak Edition",
+    "Ad Campaign Edition",
+    "Trading Session Edition",
+    "Training Week Edition",
+    "Traffic Burst Edition",
+    "Energy Cycle Edition",
+    "KPI Analysis Edition",
+  ],
+  "merge-intervals": [
+    "Meeting Calendar Edition",
+    "Clinic Booking Edition",
+    "Downtime Window Edition",
+    "Airport Slot Edition",
+    "Library Room Edition",
+    "Exam Schedule Edition",
+    "Streaming Program Edition",
+    "Parking Reservation Edition",
+  ],
+  "longest-substring": [
+    "User Handle Edition",
+    "Access Token Edition",
+    "Packet Stream Edition",
+    "Chat Filter Edition",
+    "Session Key Edition",
+    "Serial Code Edition",
+    "Device Name Edition",
+    "Input Buffer Edition",
+  ],
+  "binary-tree-level-order": [
+    "Department Chart Edition",
+    "Game Skill Tree Edition",
+    "Building Map Edition",
+    "Routing Table Edition",
+    "Family Registry Edition",
+    "Menu Category Edition",
+    "Warehouse Zone Edition",
+    "School Org Chart Edition",
+  ],
+  "trapping-rain-water": [
+    "Storm Drain Edition",
+    "Rooftop Valley Edition",
+    "City Flood Edition",
+    "Canal Barrier Edition",
+    "Farm Irrigation Edition",
+    "Subway Tunnel Edition",
+    "Dam Safety Edition",
+    "Bridge Deck Edition",
+  ],
+}
+
+const generatedTitleSuffixPoolKo: Record<Problem["id"], string[]> = {
+  "two-sum": [
+    "카페 영수증 편",
+    "축제 정산 편",
+    "서버 비용 편",
+    "여행 예산 편",
+    "야간 근무 편",
+    "전광판 점수 편",
+    "마켓 정산 편",
+    "창고 재고 편",
+  ],
+  "valid-parentheses": [
+    "템플릿 파서 편",
+    "로그 포맷 편",
+    "컴파일러 입력 편",
+    "스크립트 점검 편",
+    "쿼리 검증 편",
+    "리포트 검사 편",
+    "설정 보호 편",
+    "배치 작업 편",
+  ],
+  "reverse-linked-list": [
+    "기록 되돌리기 편",
+    "재생목록 복구 편",
+    "경로 롤백 편",
+    "신호 재생 편",
+    "서비스 체인 편",
+    "큐 복원 편",
+    "추적 로그 편",
+    "동기화 복구 편",
+  ],
+  "maximum-subarray": [
+    "분기 매출 편",
+    "센서 피크 편",
+    "광고 성과 편",
+    "거래 세션 편",
+    "훈련 주간 편",
+    "트래픽 급증 편",
+    "에너지 사이클 편",
+    "지표 분석 편",
+  ],
+  "merge-intervals": [
+    "회의 캘린더 편",
+    "진료 예약 편",
+    "점검 시간 편",
+    "공항 슬롯 편",
+    "열람실 예약 편",
+    "시험 시간표 편",
+    "방송 편성 편",
+    "주차 예약 편",
+  ],
+  "longest-substring": [
+    "사용자 핸들 편",
+    "접근 토큰 편",
+    "패킷 스트림 편",
+    "채팅 필터 편",
+    "세션 키 편",
+    "일련번호 편",
+    "장치 이름 편",
+    "입력 버퍼 편",
+  ],
+  "binary-tree-level-order": [
+    "조직도 편",
+    "스킬 트리 편",
+    "건물 안내 편",
+    "라우팅 표 편",
+    "가계도 편",
+    "메뉴 분류 편",
+    "창고 구역 편",
+    "학교 체계도 편",
+  ],
+  "trapping-rain-water": [
+    "폭우 배수 편",
+    "옥상 골짜기 편",
+    "도시 침수 편",
+    "수로 장벽 편",
+    "농지 관개 편",
+    "지하 터널 편",
+    "댐 안전 편",
+    "교량 상판 편",
+  ],
+}
+
 function buildGeneratedDescription(seed: Problem["id"], title: string): string {
   switch (seed) {
     case "two-sum":
@@ -1129,7 +1295,9 @@ function buildGeneratedTitleByIndex(seedId: Problem["id"], index: number): strin
   if (index < pool.length) {
     return base
   }
-  return `${base} ${index + 1}`
+  const suffixPool = generatedTitleSuffixPool[seedId]
+  const suffix = suffixPool[(index - pool.length) % suffixPool.length]
+  return `${base}: ${suffix}`
 }
 
 function buildGeneratedTitleByIndexKo(seedId: Problem["id"], index: number): string {
@@ -1138,7 +1306,9 @@ function buildGeneratedTitleByIndexKo(seedId: Problem["id"], index: number): str
   if (index < pool.length) {
     return base
   }
-  return `${base} ${index + 1}`
+  const suffixPool = generatedTitleSuffixPoolKo[seedId]
+  const suffix = suffixPool[(index - pool.length) % suffixPool.length]
+  return `${base} (${suffix})`
 }
 
 function buildGeneratedDifficulty(seedId: Problem["id"], index: number, fallback: Difficulty): Difficulty {
