@@ -508,21 +508,21 @@ export function CodeEditorPanel({
 
                     <div className="mb-2">
                       <div className="text-muted-foreground font-semibold mb-1">
-                        Output:
-                      </div>
-                      <code className="block rounded-[12px] bg-muted px-3 py-2 font-mono text-foreground">
-                        {JSON.stringify(testCase.expected)}
-                      </code>
-                    </div>
-
-                    <div className="mb-2">
-                      <div className="text-muted-foreground font-semibold mb-1">
                         Input:
                       </div>
                       <code className="block rounded-[12px] bg-muted px-3 py-2 font-mono text-foreground">
                         {testCase.input
                           .map((val) => JSON.stringify(val))
                           .join(", ")}
+                      </code>
+                    </div>
+
+                    <div className="mb-2">
+                      <div className="text-muted-foreground font-semibold mb-1">
+                        Expected Output:
+                      </div>
+                      <code className="block rounded-[12px] bg-muted px-3 py-2 font-mono text-foreground">
+                        {JSON.stringify(testCase.expected)}
                       </code>
                     </div>
 
@@ -599,19 +599,19 @@ export function CodeEditorPanel({
 
                     <div className="mb-2">
                       <div className="text-muted-foreground font-semibold mb-1">
-                        Output:
+                        Input:
                       </div>
                       <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-foreground">
-                        {testCase.expected}
+                        {testCase.input}
                       </code>
                     </div>
 
                     <div className="mb-2">
                       <div className="text-muted-foreground font-semibold mb-1">
-                        Input:
+                        Expected Output:
                       </div>
                       <code className="block rounded-[12px] bg-background px-3 py-2 font-mono text-foreground">
-                        {testCase.input}
+                        {testCase.expected}
                       </code>
                     </div>
 
