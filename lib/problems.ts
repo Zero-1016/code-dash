@@ -1696,7 +1696,7 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
     ko: {
       title: "두 수의 합",
       category: "해시",
-      description: `정수 배열 \`nums\`와 정수 \`target\`이 주어질 때, 두 수의 합이 \`target\`이 되는 인덱스를 반환하세요.
+      description: `정수 배열 nums와 정수 target이 주어질 때, 두 수의 합이 target이 되는 인덱스를 반환하세요.
 
 각 입력에는 정확히 하나의 정답이 있으며, 같은 원소를 두 번 사용할 수 없습니다.
 
