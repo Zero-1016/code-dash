@@ -335,7 +335,16 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
   },
 ]
 
-const TARGET_PROBLEMS_PER_CATEGORY = 20
+const ADDITIONAL_PROBLEMS_PER_CATEGORY: Record<Problem["id"], number> = {
+  "two-sum": 6,
+  "valid-parentheses": 4,
+  "reverse-linked-list": 7,
+  "maximum-subarray": 5,
+  "merge-intervals": 8,
+  "longest-substring": 4,
+  "binary-tree-level-order": 6,
+  "trapping-rain-water": 5,
+}
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
@@ -1170,14 +1179,29 @@ function buildAutoKoreanText(problem: Problem): ProblemTextBundle | null {
 }
 
 export const problems: Problem[] = (() => {
-  const expanded: Problem[] = [...baseProblems]
-  for (const seed of baseProblems) {
-    const sameCategoryCount = expanded.filter((problem) => problem.category === seed.category).length
-    for (let i = sameCategoryCount; i < TARGET_PROBLEMS_PER_CATEGORY; i += 1) {
-      expanded.push(createGeneratedProblem(seed, i - 1))
+  const grouped = baseProblems.map((seed) => {
+    const count = ADDITIONAL_PROBLEMS_PER_CATEGORY[seed.id]
+    const list: Problem[] = [seed]
+    for (let i = 0; i < count; i += 1) {
+      list.push(createGeneratedProblem(seed, i))
     }
+    return list
+  })
+
+  // Deterministic interleave to avoid category blocks on the home feed.
+  const mixed: Problem[] = []
+  let cursor = 0
+  while (mixed.length < grouped.reduce((sum, list) => sum + list.length, 0)) {
+    for (let i = 0; i < grouped.length; i += 1) {
+      const shifted = (i + cursor) % grouped.length
+      if (cursor < grouped[shifted].length) {
+        mixed.push(grouped[shifted][cursor])
+      }
+    }
+    cursor += 1
   }
-  return expanded
+
+  return mixed
 })()
 
 export function getProblemById(id: string): Problem | undefined {
