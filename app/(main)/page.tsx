@@ -16,13 +16,51 @@ import {
 } from "@/lib/local-progress"
 import { useAppLanguage } from "@/lib/use-app-language"
 import { usePageEntryAnimation } from "@/lib/use-page-entry-animation"
+import { useRestoreScroll } from "@/lib/use-restore-scroll"
+
+interface HomeViewState {
+  selectedCategory: string
+  selectedDifficulty: "ALL" | Difficulty
+  sortBy: "difficulty-asc" | "difficulty-desc"
+}
+
+function parseHomeViewState(value: unknown): HomeViewState | null {
+  if (!value || typeof value !== "object") {
+    return null
+  }
+
+  const parsed = value as Partial<HomeViewState>
+  if (
+    typeof parsed.selectedCategory !== "string" ||
+    (parsed.selectedDifficulty !== "ALL" &&
+      parsed.selectedDifficulty !== "Easy" &&
+      parsed.selectedDifficulty !== "Medium" &&
+      parsed.selectedDifficulty !== "Hard") ||
+    (parsed.sortBy !== "difficulty-asc" && parsed.sortBy !== "difficulty-desc")
+  ) {
+    return null
+  }
+
+  return {
+    selectedCategory: parsed.selectedCategory,
+    selectedDifficulty: parsed.selectedDifficulty,
+    sortBy: parsed.sortBy,
+  }
+}
 
 export default function HomePage() {
   const { language, copy } = useAppLanguage()
   const shouldAnimateOnMount = usePageEntryAnimation()
-  const [selectedCategory, setSelectedCategory] = useState("ALL")
-  const [selectedDifficulty, setSelectedDifficulty] = useState<"ALL" | Difficulty>("ALL")
-  const [sortBy, setSortBy] = useState<"difficulty-asc" | "difficulty-desc">("difficulty-asc")
+  const [viewState, setViewState] = useRestoreScroll<HomeViewState>({
+    storageKey: "codedash.home.view-state.v1",
+    defaultState: {
+      selectedCategory: "ALL",
+      selectedDifficulty: "ALL",
+      sortBy: "difficulty-asc",
+    },
+    parseState: parseHomeViewState,
+  })
+  const { selectedCategory, selectedDifficulty, sortBy } = viewState
   const [solvedIds, setSolvedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -106,7 +144,9 @@ export default function HomePage() {
               {categories.map((category) => (
                 <button
                   key={category.name}
-                  onClick={() => setSelectedCategory(category.name)}
+                  onClick={() =>
+                    setViewState((prev) => ({ ...prev, selectedCategory: category.name }))
+                  }
                   className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                     category.name === selectedCategory
                       ? "bg-[#3182F6] text-white"
@@ -124,7 +164,9 @@ export default function HomePage() {
               {difficultyOptions.map((difficulty) => (
                 <button
                   key={difficulty}
-                  onClick={() => setSelectedDifficulty(difficulty)}
+                  onClick={() =>
+                    setViewState((prev) => ({ ...prev, selectedDifficulty: difficulty }))
+                  }
                   className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                     difficulty === selectedDifficulty
                       ? "bg-[#3182F6] text-white"
@@ -139,7 +181,12 @@ export default function HomePage() {
                 <div className="relative">
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as "difficulty-asc" | "difficulty-desc")}
+                    onChange={(e) =>
+                      setViewState((prev) => ({
+                        ...prev,
+                        sortBy: e.target.value as "difficulty-asc" | "difficulty-desc",
+                      }))
+                    }
                     className="h-8 appearance-none rounded-md border border-border bg-card pl-2 pr-8 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-[#3182F6]"
                   >
                     <option value="difficulty-asc">{sortDifficultyAscLabel}</option>
