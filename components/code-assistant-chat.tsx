@@ -268,14 +268,20 @@ export function CodeAssistantChat({
         error instanceof Error && error.message === "TOKEN_EXPIRED";
       const isTimeout =
         error instanceof DOMException && error.name === "AbortError";
+
+      if (isTokenExpired) {
+        window.alert(
+          language === "ko"
+            ? "토큰이 만료되었습니다. 다시 로그인하거나 API 설정을 확인해주세요."
+            : "Your token has expired. Please sign in again or check API settings."
+        );
+        return;
+      }
+
       const errorMessage: Message = {
         role: "assistant",
         content:
-          isTokenExpired
-            ? language === "ko"
-              ? "토큰이 만료됐어요. 다시 로그인하거나 API 설정을 확인해줘."
-              : "Your token expired. Please sign in again or check API settings."
-            : isTimeout
+          isTimeout
               ? language === "ko"
                 ? "응답이 지연돼 요청을 종료했어요. 다시 시도해줘."
                 : "The request timed out. Please try again."

@@ -310,12 +310,13 @@ export function CodeEditorPanel({
             setIsAssistantOpen(true);
           }, 800);
         } else if (response.status === 401 || response.status === 403) {
-          setPendingReview(
+          setPendingReview(null);
+          setIsAssistantOpen(false);
+          window.alert(
             language === "ko"
-              ? "토큰이 만료됐어요. 다시 로그인하거나 API 설정을 확인해줘."
-              : "Your token expired. Please sign in again or check API settings."
+              ? "토큰이 만료되었습니다. 다시 로그인하거나 API 설정을 확인해주세요."
+              : "Your token has expired. Please sign in again or check API settings."
           );
-          setIsAssistantOpen(true);
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
