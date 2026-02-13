@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Code2, MessageCircle, X } from "lucide-react";
@@ -14,6 +14,13 @@ import { CodeEditorPanel } from "@/components/code-editor-panel";
 import { CodeAssistantChat } from "@/components/code-assistant-chat";
 import { ChallengeTimer } from "@/components/challenge-timer";
 import type { Problem } from "@/lib/problems";
+import {
+  deleteDraft,
+  getDraft,
+  recordActivity,
+  saveDraft,
+  saveSolveRecord,
+} from "@/lib/local-progress";
 
 interface ProblemPageClientProps {
   problem: Problem;
@@ -28,6 +35,42 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [hasTriggered30MinHint, setHasTriggered30MinHint] = useState(false);
   const [showHintNotification, setShowHintNotification] = useState(false);
+
+  useEffect(() => {
+    const draft = getDraft(problem.id);
+    if (draft?.code) {
+      setCode(draft.code);
+      return;
+    }
+    setCode(problem.starterCode);
+  }, [problem.id, problem.starterCode]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (code.trim() && code !== problem.starterCode) {
+        saveDraft(problem.id, code);
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [code, problem.id, problem.starterCode]);
+
+  const handleSubmissionComplete = useCallback(
+    (result: { success: boolean; passed: number; total: number }) => {
+      recordActivity();
+      saveSolveRecord({
+        problemId: problem.id,
+        solvedAt: new Date().toISOString(),
+        passed: result.passed,
+        total: result.total,
+        success: result.success,
+      });
+
+      if (result.success) {
+        deleteDraft(problem.id);
+      }
+    },
+    [problem.id]
+  );
 
   const handleTimeUpdate = useCallback(
     async (seconds: number) => {
@@ -162,6 +205,8 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               setIsAiGenerating={setIsAiGenerating}
               setPendingReview={setPendingReview}
               setIsAssistantOpen={setIsAssistantOpen}
+              onSubmissionComplete={handleSubmissionComplete}
+              onRunTests={recordActivity}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
