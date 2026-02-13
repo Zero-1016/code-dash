@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Loader2, PlugZap, RotateCcw, Save } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, Loader2, PlugZap, RotateCcw, Save } from "lucide-react";
 import {
   getApiSettings,
   saveApiSettings,
@@ -177,23 +177,26 @@ export default function SettingsPage() {
               <label htmlFor="provider" className="mb-2 block text-sm font-semibold text-foreground">
                 {copy.settings.provider}
               </label>
-              <select
-                id="provider"
-                value={settings.provider}
-                onChange={(event) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    provider: event.target.value as AIProvider,
-                  }))
-                }
-                className="h-11 w-full rounded-[16px] border border-input bg-background px-4 pr-10 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
-              >
-                {PROVIDERS.map((provider) => (
-                  <option key={provider.id} value={provider.id}>
-                    {provider.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  id="provider"
+                  value={settings.provider}
+                  onChange={(event) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      provider: event.target.value as AIProvider,
+                    }))
+                  }
+                  className="h-11 w-full appearance-none rounded-[16px] border border-input bg-background px-4 pr-10 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+                >
+                  {PROVIDERS.map((provider) => (
+                    <option key={provider.id} value={provider.id}>
+                      {provider.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
             </div>
 
             <div className="rounded-[20px] border border-[#3182F6]/40 bg-[#3182F6]/5 p-4">
@@ -208,23 +211,26 @@ export default function SettingsPage() {
                   >
                     {copy.settings.model}
                   </label>
-                  <select
-                    id={`model-${active}`}
-                    value={settings.models[active]}
-                    onChange={(event) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        models: { ...prev.models, [active]: event.target.value },
-                      }))
-                    }
-                    className="h-10 w-full rounded-[14px] border border-input bg-background px-3 pr-9 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
-                  >
-                    {MODEL_OPTIONS[active].map((model) => (
-                      <option key={model} value={model}>
-                        {model}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      id={`model-${active}`}
+                      value={settings.models[active]}
+                      onChange={(event) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          models: { ...prev.models, [active]: event.target.value },
+                        }))
+                      }
+                      className="h-10 w-full appearance-none rounded-[14px] border border-input bg-background px-3 pr-9 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+                    >
+                      {MODEL_OPTIONS[active].map((model) => (
+                        <option key={model} value={model}>
+                          {model}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  </div>
                 </div>
 
                 <div>
