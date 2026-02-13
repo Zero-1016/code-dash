@@ -153,7 +153,7 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       titleTop: "환영합니다!",
       titleBottom: "코딩 시작해볼까요?",
       description:
-        "하루 한 문제씩 알고리즘 실력을 키워보세요. 스트릭을 쌓고 꾸준히 성장해요.",
+        "하루 한 문제씩 알고리즘 실력을 키워보세요. 일일 기록을 쌓고 꾸준히 성장해요.",
       startSolving: "문제 풀기 시작",
     },
     home: {
@@ -197,7 +197,7 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       solved: "해결됨",
     },
     streak: {
-      title: "일일 스트릭",
+      title: "일일 기록",
       subtitle: "지금 페이스를 유지해보세요!",
       last12Weeks: "최근 12주",
       activityUnit: "활동",

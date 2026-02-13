@@ -198,7 +198,7 @@ MIT License - feel free to use this project for learning and personal use.
   - 시간 복잡도 (Big O 표기법)
   - 코드 가독성
   - 최적화 제안
-- **진행 상황 추적**: 스트릭과 통계 모니터링
+- **진행 상황 추적**: 일일 기록과 통계 모니터링
 - **아름다운 UI**: 부드러운 애니메이션이 적용된 현대적이고 반응형 디자인
 
 ### 기술 스택
