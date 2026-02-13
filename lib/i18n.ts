@@ -41,6 +41,9 @@ export interface LocaleCopy {
     keyHelpGetLink: string;
     keyHelpFormat: string;
     resetApiKey: string;
+    modelPlaceholder: string;
+    saveRequiresTest: string;
+    saveBlockedNoModel: string;
   };
   problem: {
     back: string;
@@ -51,6 +54,7 @@ export interface LocaleCopy {
     constraints: string;
     translationReady: string;
     fallbackEnglish: string;
+    mentorSetupNotice: string;
   };
   problemCard: {
     solved: string;
@@ -113,6 +117,9 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       keyHelpGetLink: "Get key",
       keyHelpFormat: "Key format",
       resetApiKey: "Reset API Key",
+      modelPlaceholder: "Select a model",
+      saveRequiresTest: "Saving is enabled only after a successful connection test.",
+      saveBlockedNoModel: "Please select a model first.",
     },
     problem: {
       back: "Back",
@@ -123,6 +130,8 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       constraints: "Constraints",
       translationReady: "EN + KO",
       fallbackEnglish: "English (fallback)",
+      mentorSetupNotice:
+        "If you do not add a model, it is difficult to expect accurate mentoring.",
     },
     problemCard: {
       solved: "Solved",
@@ -182,6 +191,9 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       keyHelpGetLink: "발급 링크",
       keyHelpFormat: "키 형식",
       resetApiKey: "API Key 초기화",
+      modelPlaceholder: "모델을 선택하세요",
+      saveRequiresTest: "연결 테스트 성공 후에만 저장할 수 있습니다.",
+      saveBlockedNoModel: "모델을 먼저 선택해주세요.",
     },
     problem: {
       back: "뒤로",
@@ -192,6 +204,7 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       constraints: "제약사항",
       translationReady: "영어 + 한국어",
       fallbackEnglish: "영어 기본값 (fallback)",
+      mentorSetupNotice: "모델을 추가하지 않으면 정확한 멘토링을 기대하기는 어렵습니다.",
     },
     problemCard: {
       solved: "해결됨",

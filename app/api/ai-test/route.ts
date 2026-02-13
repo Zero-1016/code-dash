@@ -12,6 +12,13 @@ interface AiTestRequest {
   aiConfig?: Partial<AIConfigPayload>;
 }
 
+interface GeminiListModelsResponse {
+  models?: Array<{
+    name?: string;
+    supportedGenerationMethods?: string[];
+  }>;
+}
+
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
     return error.message;
@@ -36,6 +43,26 @@ async function runProviderTest(
     maxOutputTokens: Math.max(1, Math.min(maxTokens, 256)),
     temperature: 0,
   });
+}
+
+async function listGeminiGenerateContentModels(apiKey: string): Promise<string[]> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
+    { method: "GET" }
+  );
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const payload = (await response.json()) as GeminiListModelsResponse;
+  const candidates = payload.models ?? [];
+
+  return candidates
+    .filter((model) => model.supportedGenerationMethods?.includes("generateContent"))
+    .map((model) => (model.name ?? "").replace(/^models\//, ""))
+    .filter(Boolean)
+    .slice(0, 20);
 }
 
 export async function POST(req: NextRequest) {
@@ -69,12 +96,28 @@ export async function POST(req: NextRequest) {
     }
 
     if (lastFailedProvider && lastErrorMessage) {
+      let availableModels: string[] | undefined;
+      if (lastFailedProvider === "gemini") {
+        const geminiApiKey = config.apiKeys.gemini?.trim();
+        if (geminiApiKey) {
+          try {
+            const models = await listGeminiGenerateContentModels(geminiApiKey);
+            if (models.length > 0) {
+              availableModels = models;
+            }
+          } catch (error) {
+            console.error("Failed to fetch Gemini model list:", error);
+          }
+        }
+      }
+
       return NextResponse.json(
         {
           ok: false,
           provider: lastFailedProvider,
           message: `Connection failed for ${lastFailedProvider}.`,
           detail: lastErrorMessage,
+          availableModels,
         },
         { status: 502 }
       );

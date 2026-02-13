@@ -7,8 +7,10 @@ import {
   getDashboardStats,
   subscribeToProgressUpdates,
 } from "@/lib/local-progress"
+import { useAppLanguage } from "@/lib/use-app-language"
 
 export function StatsWidget() {
+  const { copy } = useAppLanguage()
   const [stats, setStats] = useState(() => getDashboardStats())
 
   useEffect(() => {
@@ -20,28 +22,28 @@ export function StatsWidget() {
   const items = useMemo(
     () => [
       {
-        label: "Solved",
+        label: copy.stats.solved,
         value: String(stats.solvedCount),
         icon: Target,
         color: "text-primary",
         bg: "bg-accent",
       },
       {
-        label: "Speed Avg",
+        label: copy.stats.speedAvg,
         value: stats.avgMinutes ? `${stats.avgMinutes}m` : "-",
         icon: Zap,
         color: "text-warning",
         bg: "bg-[hsl(38,92%,92%)]",
       },
       {
-        label: "Completion",
+        label: copy.stats.completion,
         value: `${stats.completion}%`,
         icon: CheckCircle2,
         color: "text-success",
         bg: "bg-[hsl(145,65%,93%)]",
       },
     ],
-    [stats]
+    [copy.stats.completion, copy.stats.solved, copy.stats.speedAvg, stats]
   )
 
   return (
@@ -51,7 +53,7 @@ export function StatsWidget() {
       transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
       className="w-full rounded-[24px] border border-border/60 bg-card p-6 box-border"
     >
-      <h3 className="text-sm font-semibold text-foreground">Your Stats</h3>
+      <h3 className="text-sm font-semibold text-foreground">{copy.stats.title}</h3>
       <div className="mt-4 flex flex-col gap-3">
         {items.map((stat, i) => (
           <motion.div

@@ -1,6 +1,7 @@
 "use client";
 
 import { getDefaultAIConfig, type AIConfigPayload } from "@/lib/ai-config";
+import { problems } from "@/lib/problems";
 
 export interface ApiSettings extends AIConfigPayload {}
 
@@ -10,6 +11,7 @@ export interface SolveRecord {
   passed: number;
   total: number;
   success: boolean;
+  elapsedSeconds?: number;
 }
 
 interface DraftRecord {
@@ -287,30 +289,24 @@ export function getDashboardStats() {
   const solvedSet = getSolvedProblemIds();
   const solvedCount = solvedSet.size;
   const successEntries = solves.filter((entry) => entry.success);
-  const completion = solves.length
-    ? Math.round((successEntries.length / solves.length) * 100)
+  const completion = problems.length
+    ? Math.round((solvedCount / problems.length) * 100)
     : 0;
 
   const avgMinutes = (() => {
-    const sorted = [...successEntries].sort((a, b) =>
-      a.solvedAt.localeCompare(b.solvedAt)
-    );
-    if (sorted.length < 2) {
+    const elapsedTimes = successEntries
+      .map((entry) => entry.elapsedSeconds)
+      .filter((value): value is number => typeof value === "number" && value > 0);
+
+    if (!elapsedTimes.length) {
       return null;
     }
 
-    const intervals: number[] = [];
-    for (let i = 1; i < sorted.length; i += 1) {
-      const prev = new Date(sorted[i - 1].solvedAt).getTime();
-      const next = new Date(sorted[i].solvedAt).getTime();
-      const diffMinutes = Math.max(1, Math.round((next - prev) / 60000));
-      intervals.push(diffMinutes);
-    }
+    const averageSeconds =
+      elapsedTimes.reduce((sum, seconds) => sum + seconds, 0) / elapsedTimes.length;
+    const roundedMinutes = Math.max(1, Math.round(averageSeconds / 60));
 
-    if (!intervals.length) {
-      return null;
-    }
-    return Math.round(intervals.reduce((sum, val) => sum + val, 0) / intervals.length);
+    return roundedMinutes;
   })();
 
   return {

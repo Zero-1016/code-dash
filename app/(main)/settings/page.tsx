@@ -12,6 +12,7 @@ import {
 import { getDefaultAIConfig, type AIProvider } from "@/lib/ai-config";
 import { useAppLanguage } from "@/lib/use-app-language";
 import { usePageEntryAnimation } from "@/lib/use-page-entry-animation";
+import { testAiConnectionAction } from "./actions";
 
 type TestState = "idle" | "loading" | "success" | "error";
 
@@ -28,7 +29,13 @@ const MODEL_OPTIONS: Record<AIProvider, string[]> = {
     "claude-3-opus-20240229",
   ],
   gpt: ["gpt-4o", "gpt-4o-mini", "gpt-4.1-mini"],
-  gemini: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"],
+  gemini: [
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-001",
+    "gemini-2.0-flash-exp-image-generation",
+  ],
 };
 
 const PROVIDER_HELP: Record<AIProvider, { url: string; keyHint: string }> = {
@@ -52,6 +59,7 @@ export default function SettingsPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [testState, setTestState] = useState<TestState>("idle");
   const [testMessage, setTestMessage] = useState("");
+  const [lastSuccessfulSignature, setLastSuccessfulSignature] = useState<string | null>(null);
   const { copy } = useAppLanguage();
 
   useEffect(() => {
@@ -59,6 +67,23 @@ export default function SettingsPage() {
   }, []);
 
   const active = useMemo(() => settings.provider, [settings.provider]);
+  const activeModel = settings.models[active]?.trim();
+  const activeApiKey = settings.apiKeys[active]?.trim();
+  const currentConnectionSignature = useMemo(
+    () =>
+      JSON.stringify({
+        provider: active,
+        model: settings.models[active] ?? "",
+        apiKey: settings.apiKeys[active] ?? "",
+        maxTokens: settings.maxTokens[active] ?? 0,
+      }),
+    [active, settings.apiKeys, settings.maxTokens, settings.models]
+  );
+  const canTestConnection = Boolean(activeModel && activeApiKey);
+  const canSave =
+    canTestConnection &&
+    testState === "success" &&
+    lastSuccessfulSignature === currentConnectionSignature;
   const backLinkMotion = shouldAnimateOnMount
     ? {
         initial: { opacity: 0, y: 12 },
@@ -75,6 +100,16 @@ export default function SettingsPage() {
     : {};
 
   const handleSave = () => {
+    if (!canSave) {
+      setTestState("error");
+      if (!activeModel) {
+        setTestMessage(copy.settings.saveBlockedNoModel);
+      } else {
+        setTestMessage(copy.settings.saveRequiresTest);
+      }
+      return;
+    }
+
     saveApiSettings(settings);
     setSavedAt(new Date().toLocaleString());
   };
@@ -92,50 +127,47 @@ export default function SettingsPage() {
     setSavedAt(new Date().toLocaleString());
     setTestState("idle");
     setTestMessage("");
+    setLastSuccessfulSignature(null);
   };
 
   const handleTestConnection = async () => {
     const key = settings.apiKeys[active]?.trim();
-    if (!key) {
+    const model = settings.models[active]?.trim();
+    if (!key || !model) {
       setTestState("error");
-      setTestMessage(`${active.toUpperCase()} ${copy.settings.keyRequired}`);
+      setTestMessage(!model ? copy.settings.saveBlockedNoModel : `${active.toUpperCase()} ${copy.settings.keyRequired}`);
       return;
     }
 
     setTestState("loading");
     setTestMessage(copy.settings.testingConnection);
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-
     try {
-      const response = await fetch("/api/ai-test", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          aiConfig: settings,
-        }),
-        signal: controller.signal,
+      const payload = await testAiConnectionAction({
+        provider: active,
+        model,
+        apiKey: key,
+        maxTokens: settings.maxTokens[active],
       });
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          message?: string;
-          detail?: string;
-        } | null;
+      if (!payload.ok) {
         const serverMessage =
-          payload?.detail?.trim() || payload?.message?.trim() || "Unknown error";
+          payload.detail?.trim() || payload.message?.trim() || "Unknown error";
+        const availableModels = payload.availableModels ?? [];
+        const modelHint =
+          availableModels.length > 0
+            ? ` ${copy.settings.model}: ${availableModels.slice(0, 5).join(", ")}`
+            : "";
         setTestState("error");
         setTestMessage(
-          `${copy.settings.connectionFailed} (${response.status}): ${serverMessage.slice(0, 180)}`
+          `${copy.settings.connectionFailed}: ${serverMessage.slice(0, 180)}${modelHint}`
         );
         return;
       }
 
       setTestState("success");
       setTestMessage(copy.settings.connectionSuccess);
+      setLastSuccessfulSignature(currentConnectionSignature);
     } catch (error) {
       setTestState("error");
       setTestMessage(
@@ -143,8 +175,6 @@ export default function SettingsPage() {
           ? `${copy.settings.connectionFailed}: ${error.message}`
           : copy.settings.connectionFailed
       );
-    } finally {
-      clearTimeout(timeout);
     }
   };
 
@@ -181,12 +211,15 @@ export default function SettingsPage() {
                 <select
                   id="provider"
                   value={settings.provider}
-                  onChange={(event) =>
+                  onChange={(event) => {
                     setSettings((prev) => ({
                       ...prev,
                       provider: event.target.value as AIProvider,
-                    }))
-                  }
+                    }));
+                    setTestState("idle");
+                    setTestMessage("");
+                    setLastSuccessfulSignature(null);
+                  }}
                   className="h-11 w-full appearance-none rounded-[16px] border border-input bg-background px-4 pr-10 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
                 >
                   {PROVIDERS.map((provider) => (
@@ -216,13 +249,20 @@ export default function SettingsPage() {
                       id={`model-${active}`}
                       value={settings.models[active]}
                       onChange={(event) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          models: { ...prev.models, [active]: event.target.value },
-                        }))
+                        {
+                          const nextValue = event.target.value;
+                          setSettings((prev) => ({
+                            ...prev,
+                            models: { ...prev.models, [active]: nextValue },
+                          }));
+                          setTestState("idle");
+                          setTestMessage("");
+                          setLastSuccessfulSignature(null);
+                        }
                       }
                       className="h-10 w-full appearance-none rounded-[14px] border border-input bg-background px-3 pr-9 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
                     >
+                      <option value="">{copy.settings.modelPlaceholder}</option>
                       {MODEL_OPTIONS[active].map((model) => (
                         <option key={model} value={model}>
                           {model}
@@ -247,13 +287,19 @@ export default function SettingsPage() {
                     max={16000}
                     value={settings.maxTokens[active]}
                     onChange={(event) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        maxTokens: {
-                          ...prev.maxTokens,
-                          [active]: Math.max(1, Number(event.target.value) || 1),
-                        },
-                      }))
+                      {
+                        const nextValue = Math.max(1, Number(event.target.value) || 1);
+                        setSettings((prev) => ({
+                          ...prev,
+                          maxTokens: {
+                            ...prev.maxTokens,
+                            [active]: nextValue,
+                          },
+                        }));
+                        setTestState("idle");
+                        setTestMessage("");
+                        setLastSuccessfulSignature(null);
+                      }
                     }
                     className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
                   />
@@ -271,10 +317,16 @@ export default function SettingsPage() {
                     type="password"
                     value={settings.apiKeys[active]}
                     onChange={(event) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        apiKeys: { ...prev.apiKeys, [active]: event.target.value },
-                      }))
+                      {
+                        const nextValue = event.target.value;
+                        setSettings((prev) => ({
+                          ...prev,
+                          apiKeys: { ...prev.apiKeys, [active]: nextValue },
+                        }));
+                        setTestState("idle");
+                        setTestMessage("");
+                        setLastSuccessfulSignature(null);
+                      }
                     }
                     placeholder={
                       active === "claude"
@@ -310,7 +362,8 @@ export default function SettingsPage() {
           <div className="mt-7 flex flex-wrap gap-3">
             <button
               onClick={handleSave}
-              className="inline-flex items-center gap-2 rounded-[18px] bg-[#3182F6] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#3182F6]/20 transition-all hover:bg-[#2870d8]"
+              disabled={!canSave}
+              className="inline-flex items-center gap-2 rounded-[18px] bg-[#3182F6] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#3182F6]/20 transition-all hover:bg-[#2870d8] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
             >
               <Save className="h-4 w-4" />
               {copy.settings.save}
@@ -318,8 +371,8 @@ export default function SettingsPage() {
 
             <button
               onClick={handleTestConnection}
-              disabled={testState === "loading"}
-              className="inline-flex items-center gap-2 rounded-[18px] border border-[#3182F6]/30 bg-[#3182F6]/5 px-5 py-2.5 text-sm font-semibold text-[#3182F6] transition-colors hover:bg-[#3182F6]/10 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={testState === "loading" || !canTestConnection}
+              className="inline-flex items-center gap-2 rounded-[18px] border border-[#3182F6]/30 bg-[#3182F6]/5 px-5 py-2.5 text-sm font-semibold text-[#3182F6] transition-colors hover:bg-[#3182F6]/10 disabled:cursor-not-allowed disabled:border-border/60 disabled:bg-muted disabled:text-muted-foreground"
             >
               {testState === "loading" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -337,6 +390,12 @@ export default function SettingsPage() {
               {copy.settings.resetApiKey}
             </button>
           </div>
+
+          {!canSave && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              {!activeModel ? copy.settings.saveBlockedNoModel : copy.settings.saveRequiresTest}
+            </p>
+          )}
 
           {savedAt && (
             <p className="mt-4 text-xs text-muted-foreground">

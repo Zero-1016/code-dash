@@ -72,10 +72,8 @@ export default function HomePage() {
       sorted.sort((a, b) => difficultyRank[a.difficulty] - difficultyRank[b.difficulty])
     }
 
-    // Keep solved problems at the bottom so unsolved work stays prioritized.
-    sorted.sort((a, b) => Number(solvedIds.has(a.id)) - Number(solvedIds.has(b.id)))
     return sorted
-  }, [selectedCategory, selectedDifficulty, sortBy, difficultyRank, solvedIds])
+  }, [selectedCategory, selectedDifficulty, sortBy, difficultyRank])
 
   const getDifficultyCount = (difficulty: "ALL" | Difficulty) => {
     const source: Problem[] = selectedCategory === "ALL"

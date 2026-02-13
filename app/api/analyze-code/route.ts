@@ -6,6 +6,11 @@ import {
   type AIConfigPayload,
 } from "@/lib/ai-config"
 import { getLanguageModel } from "@/lib/server/ai-model"
+import {
+  getMentorLanguageInstruction,
+  resolveMentorLanguage,
+  type MentorLanguage,
+} from "@/lib/mentor-language"
 
 interface AnalyzeRequest {
   code: string
@@ -18,6 +23,7 @@ interface AnalyzeRequest {
     expected: string
     actual: string
   }>
+  language?: MentorLanguage
   aiConfig?: Partial<AIConfigPayload>
 }
 
@@ -32,6 +38,33 @@ interface CodeAnalysis {
   detailedFeedback: string
 }
 
+function parseAnalysisJson(content: string): CodeAnalysis {
+  const jsonMatch =
+    content.match(/```json\s*([\s\S]*?)\s*```/i) ||
+    content.match(/\{[\s\S]*\}/)
+  const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content
+  const parsed = JSON.parse(jsonText) as Partial<CodeAnalysis>
+
+  const efficiencyLevelRaw = String(parsed.efficiencyLevel ?? "").toLowerCase()
+  const efficiencyLevel: CodeAnalysis["efficiencyLevel"] =
+    efficiencyLevelRaw === "high"
+      ? "High"
+      : efficiencyLevelRaw === "medium"
+      ? "Medium"
+      : "Low"
+
+  return {
+    correctness: Number(parsed.correctness ?? 0),
+    efficiency: Number(parsed.efficiency ?? 0),
+    readability: Number(parsed.readability ?? 0),
+    totalScore: Number(parsed.totalScore ?? 0),
+    bigO: String(parsed.bigO ?? "-"),
+    efficiencyLevel,
+    suggestion: String(parsed.suggestion ?? ""),
+    detailedFeedback: String(parsed.detailedFeedback ?? ""),
+  }
+}
+
 // Helper to call Anthropic Claude API
 async function analyzeWithClaude(
   code: string,
@@ -39,6 +72,7 @@ async function analyzeWithClaude(
   allTestsPassed: boolean,
   passedRatio: number,
   testResults: AnalyzeRequest["testResults"],
+  language: MentorLanguage,
   apiKey: string,
   model: string,
   maxOutputTokens: number
@@ -78,6 +112,9 @@ Rules:
 - Readability: 0-20 points. Consider variable names, spacing, comments
 - Be encouraging but honest
 - Focus on concrete improvements
+- Keep "efficiencyLevel" strictly one of: High, Medium, Low.
+- Keep JSON keys and numeric fields exactly as requested.
+- ${getMentorLanguageInstruction(language)}
 
 Return ONLY the JSON object, no other text.`
 
@@ -90,8 +127,7 @@ Return ONLY the JSON object, no other text.`
   const content = result.text
 
   try {
-    const analysis = JSON.parse(content)
-    return analysis
+    return parseAnalysisJson(content)
   } catch (e) {
     throw new Error(`Failed to parse Claude response: ${content}`)
   }
@@ -104,6 +140,7 @@ async function analyzeWithGPT(
   allTestsPassed: boolean,
   passedRatio: number,
   testResults: AnalyzeRequest["testResults"],
+  language: MentorLanguage,
   apiKey: string,
   model: string,
   maxOutputTokens: number
@@ -143,6 +180,9 @@ Rules:
 - Readability: 0-20 points. Consider variable names, spacing, comments
 - Be encouraging but honest
 - Focus on concrete improvements
+- Keep "efficiencyLevel" strictly one of: High, Medium, Low.
+- Keep JSON keys and numeric fields exactly as requested.
+- ${getMentorLanguageInstruction(language)}
 
 Return ONLY the JSON object, no other text.`
 
@@ -156,8 +196,7 @@ Return ONLY the JSON object, no other text.`
   const content = result.text
 
   try {
-    const analysis = JSON.parse(content)
-    return analysis
+    return parseAnalysisJson(content)
   } catch (e) {
     throw new Error(`Failed to parse GPT response: ${content}`)
   }
@@ -170,6 +209,7 @@ async function analyzeWithGemini(
   allTestsPassed: boolean,
   passedRatio: number,
   testResults: AnalyzeRequest["testResults"],
+  language: MentorLanguage,
   apiKey: string,
   model: string,
   maxOutputTokens: number
@@ -209,6 +249,9 @@ Rules:
 - Readability: 0-20 points. Consider variable names, spacing, comments
 - Be encouraging but honest
 - Focus on concrete improvements
+- Keep "efficiencyLevel" strictly one of: High, Medium, Low.
+- Keep JSON keys and numeric fields exactly as requested.
+- ${getMentorLanguageInstruction(language)}
 
 Return ONLY the JSON object, no other text.`
 
@@ -221,100 +264,9 @@ Return ONLY the JSON object, no other text.`
   const content = result.text
 
   try {
-    // Gemini might wrap JSON in markdown code blocks
-    const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/\{[\s\S]*\}/)
-    const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content
-    const analysis = JSON.parse(jsonText)
-    return analysis
+    return parseAnalysisJson(content)
   } catch (e) {
     throw new Error(`Failed to parse Gemini response: ${content}`)
-  }
-}
-
-// Fallback mock analysis (same as original)
-function getMockAnalysis(
-  code: string,
-  allTestsPassed: boolean,
-  passedRatio: number
-): CodeAnalysis {
-  const correctness = Math.round(passedRatio * 60)
-
-  const hasNestedLoop = /for\s*\(.*\)[\s\S]*?for\s*\(/.test(code)
-  const hasWhileInLoop =
-    /for\s*\(.*\)[\s\S]*?while\s*\(/.test(code) ||
-    /while\s*\(.*\)[\s\S]*?while\s*\(/.test(code)
-  const usesMap = /new\s+Map|\.has\(|\.get\(|\.set\(/.test(code)
-  const usesSet = /new\s+Set/.test(code)
-  const usesHashStructure = usesMap || usesSet
-
-  let efficiency: number
-  let bigO: string
-  let efficiencyLevel: "High" | "Medium" | "Low"
-  let suggestion: string
-
-  if (hasNestedLoop || hasWhileInLoop) {
-    efficiency = 6
-    bigO = "O(n^2)"
-    efficiencyLevel = "Low"
-    suggestion =
-      "You used nested loops resulting in O(n^2) time complexity. Consider using a Hash Map to reduce it to O(n)."
-  } else if (usesHashStructure) {
-    efficiency = 19
-    bigO = "O(n)"
-    efficiencyLevel = "High"
-    suggestion =
-      "Great job using a hash-based structure! Your solution runs in O(n) time."
-  } else {
-    efficiency = 13
-    bigO = "O(n)"
-    efficiencyLevel = "Medium"
-    suggestion =
-      "Your approach uses a single pass, but consider leveraging a Map or Set for clearer intent."
-  }
-
-  let readability = 14
-
-  const varNames = code.match(/(?:let|const|var)\s+([a-zA-Z_$]\w*)/g) || []
-  const meaningfulVars = varNames.filter((v) => {
-    const name = v.replace(/^(?:let|const|var)\s+/, "")
-    return name.length > 2
-  })
-  if (meaningfulVars.length >= 2) readability += 2
-  if (/\/\/|\/\*/.test(code)) readability += 2
-
-  const lines = code.split("\n")
-  const longLines = lines.filter((l) => l.length > 100)
-  if (longLines.length > 2) readability -= 3
-  if (!/\)\{/.test(code)) readability += 2
-
-  readability = Math.max(0, Math.min(20, readability))
-
-  const totalScore = correctness + efficiency + readability
-
-  let detailedFeedback: string
-  if (totalScore >= 90) {
-    detailedFeedback =
-      "Excellent work! Your solution demonstrates strong problem-solving skills with clean, efficient code."
-  } else if (totalScore >= 70) {
-    detailedFeedback =
-      "Solid solution! You've covered the core logic well. Focus on optimizing your approach for better results."
-  } else if (totalScore >= 50) {
-    detailedFeedback =
-      "Good attempt! Review edge cases and consider more efficient data structures to improve your score."
-  } else {
-    detailedFeedback =
-      "Keep practicing! Review the problem constraints and try breaking it into smaller steps."
-  }
-
-  return {
-    correctness,
-    efficiency,
-    readability,
-    totalScore,
-    bigO,
-    efficiencyLevel,
-    suggestion,
-    detailedFeedback,
   }
 }
 
@@ -322,11 +274,12 @@ export async function POST(req: NextRequest) {
   try {
     const body: AnalyzeRequest = await req.json()
     const { code, allTestsPassed, passedRatio, problemTitle, testResults } = body
+    const language = resolveMentorLanguage(body.language)
 
     // Determine which AI provider to use based on available API keys
     const config = resolveAIConfig(body.aiConfig)
 
-    let analysis: CodeAnalysis
+    let analysis: CodeAnalysis | null = null
 
     try {
       let providerError: Error | null = null
@@ -346,6 +299,7 @@ export async function POST(req: NextRequest) {
               allTestsPassed,
               passedRatio,
               testResults,
+              language,
               apiKey,
               config.models.claude,
               config.maxTokens.claude
@@ -360,6 +314,7 @@ export async function POST(req: NextRequest) {
               allTestsPassed,
               passedRatio,
               testResults,
+              language,
               apiKey,
               config.models.gpt,
               config.maxTokens.gpt
@@ -373,6 +328,7 @@ export async function POST(req: NextRequest) {
             allTestsPassed,
             passedRatio,
             testResults,
+            language,
             apiKey,
             config.models.gemini,
             config.maxTokens.gemini
@@ -386,17 +342,26 @@ export async function POST(req: NextRequest) {
 
       if (resolved) {
         analysis = resolved
+      } else if (providerError) {
+        console.error("AI API error:", providerError)
       } else {
-        if (providerError) {
-          console.error("AI API error, falling back to mock analysis:", providerError)
-        } else {
-          console.warn("No AI API keys configured, using mock analysis")
-        }
-        analysis = getMockAnalysis(code, allTestsPassed, passedRatio)
+        console.warn("No AI API keys configured for analysis")
       }
     } catch (error) {
-      console.error("AI API error, falling back to mock analysis:", error)
-      analysis = getMockAnalysis(code, allTestsPassed, passedRatio)
+      console.error("AI API error:", error)
+    }
+
+    if (!analysis) {
+      return NextResponse.json(
+        {
+          error: "AI analysis is unavailable.",
+          detail:
+            language === "ko"
+              ? "AI 연결에 실패하여 분석을 생성하지 못했습니다."
+              : "Failed to generate AI analysis due to provider or configuration issues.",
+        },
+        { status: 503 }
+      )
     }
 
     return NextResponse.json(analysis)

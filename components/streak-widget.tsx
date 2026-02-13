@@ -8,10 +8,10 @@ import {
   getHeatmap,
   subscribeToProgressUpdates,
 } from "@/lib/local-progress"
-
-const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+import { useAppLanguage } from "@/lib/use-app-language"
 
 export function StreakWidget() {
+  const { copy } = useAppLanguage()
   const [streak, setStreak] = useState(0)
   const [weeklyStatus, setWeeklyStatus] = useState<boolean[]>([])
   const [heatmap, setHeatmap] = useState<Array<{ date: string; count: number }>>(
@@ -54,9 +54,9 @@ export function StreakWidget() {
     >
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h3 className="text-sm font-bold text-foreground">Daily Streak</h3>
+          <h3 className="text-sm font-bold text-foreground">{copy.streak.title}</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Keep it going!
+            {copy.streak.subtitle}
           </p>
         </div>
         <div className="flex items-center gap-1 rounded-full bg-[hsl(38,92%,92%)] px-2.5 py-1 flex-shrink-0">
@@ -68,7 +68,7 @@ export function StreakWidget() {
       </div>
 
       <div className="mt-4 flex items-end justify-between gap-1 sm:gap-1.5">
-        {days.map((day, i) => (
+        {copy.streak.weekdays.map((day, i) => (
           <motion.div
             key={day}
             initial={{ scale: 0 }}
@@ -101,7 +101,7 @@ export function StreakWidget() {
 
       <div className="mt-4">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Last 12 Weeks
+          {copy.streak.last12Weeks}
         </p>
         <div className="grid grid-cols-12 gap-1">
           {heatmapWeeks.map((week, weekIndex) => (
@@ -109,7 +109,7 @@ export function StreakWidget() {
               {week.map((entry) => (
                 <div
                   key={entry.date}
-                  title={`${entry.date}: ${entry.count} activities`}
+                  title={`${entry.date}: ${entry.count} ${copy.streak.activityUnit}`}
                   className={`h-2.5 w-2.5 rounded-[4px] ${heatColor(entry.count)}`}
                 />
               ))}

@@ -129,6 +129,7 @@ export function CodeEditorPanel({
   const [showResult, setShowResult] = useState(false);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [customTestCases, setCustomTestCases] = useState<CustomTestCase[]>([]);
   const [isAddTestModalOpen, setIsAddTestModalOpen] = useState(false);
   const [testPanelHeight, setTestPanelHeight] = useState(220);
@@ -141,6 +142,7 @@ export function CodeEditorPanel({
   const handleSubmit = useCallback(async () => {
     setIsJudging(true);
     setShowResult(false);
+    setSubmitError(null);
 
     // Add a small delay for UX
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -158,26 +160,39 @@ export function CodeEditorPanel({
       });
     }
 
-    // Call AI API for analysis
-    const codeAnalysis = await analyzeCodeWithAI(
-      code,
-      problem.title,
-      result.success,
-      passedRatio,
-      result.results
-    );
-
     setJudgeResult(result);
-    setAnalysis(codeAnalysis);
-    setIsJudging(false);
-    setShowResult(true);
-  }, [code, onSubmissionComplete, problem]);
+    try {
+      // Call AI API for analysis (AI-only, no fixed fallback text)
+      const codeAnalysis = await analyzeCodeWithAI(
+        code,
+        problem.title,
+        result.success,
+        passedRatio,
+        result.results,
+        language
+      );
+      setAnalysis(codeAnalysis);
+      setShowResult(true);
+    } catch (error) {
+      console.error("AI analysis failed:", error);
+      setAnalysis(null);
+      setShowResult(false);
+      setSubmitError(
+        language === "ko"
+          ? "AI 평가를 가져오지 못했습니다. 모델/키/연결 상태를 확인한 뒤 다시 제출해주세요."
+          : "Failed to fetch AI evaluation. Check model/key/connection and submit again."
+      );
+    } finally {
+      setIsJudging(false);
+    }
+  }, [code, language, onSubmissionComplete, problem]);
 
   const handleReset = useCallback(() => {
     setCode(problem.starterCode);
     setJudgeResult(null);
     setAnalysis(null);
     setShowResult(false);
+    setSubmitError(null);
     setTestResults([]);
     if (onTestResultsUpdate) {
       onTestResultsUpdate([]);
@@ -656,6 +671,11 @@ export function CodeEditorPanel({
       />
 
       <div className="flex-shrink-0 border-t border-border/60 p-4">
+        {submitError && (
+          <p className="mb-3 rounded-[12px] border border-[hsl(0,72%,85%)] bg-[hsl(0,72%,96%)] px-3 py-2 text-xs text-[hsl(0,72%,38%)]">
+            {submitError}
+          </p>
+        )}
         <div className="flex gap-3">
           <motion.button
             whileTap={{ scale: 0.98 }}

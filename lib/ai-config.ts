@@ -13,7 +13,7 @@ export interface ResolvedAIConfig extends AIConfigPayload {}
 const DEFAULT_MODELS: Record<ConcreteAIProvider, string> = {
   claude: "claude-3-5-sonnet-20241022",
   gpt: "gpt-4o",
-  gemini: "gemini-pro",
+  gemini: "gemini-2.5-flash",
 };
 
 export function getDefaultAIConfig(): ResolvedAIConfig {

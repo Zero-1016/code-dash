@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
+import { useAppLanguage } from "@/lib/use-app-language"
 
 interface ScoreGaugeProps {
   score: number
@@ -15,7 +16,14 @@ function getScoreColor(score: number) {
   return "hsl(0, 72%, 55%)"
 }
 
-function getScoreLabel(score: number) {
+function getScoreLabel(score: number, language: "en" | "ko") {
+  if (language === "ko") {
+    if (score >= 90) return "매우 우수"
+    if (score >= 70) return "좋음"
+    if (score >= 50) return "보통"
+    return "개선 필요"
+  }
+
   if (score >= 90) return "Excellent"
   if (score >= 70) return "Great"
   if (score >= 50) return "Good"
@@ -23,6 +31,7 @@ function getScoreLabel(score: number) {
 }
 
 export function ScoreGauge({ score, size = 200 }: ScoreGaugeProps) {
+  const { language } = useAppLanguage()
   const [animatedScore, setAnimatedScore] = useState(0)
 
   const strokeWidth = 14
@@ -30,7 +39,7 @@ export function ScoreGauge({ score, size = 200 }: ScoreGaugeProps) {
   // Semi-circle: half circumference
   const circumference = Math.PI * radius
   const color = getScoreColor(score)
-  const label = getScoreLabel(score)
+  const label = getScoreLabel(score, language)
 
   useEffect(() => {
     const delay = setTimeout(() => {
