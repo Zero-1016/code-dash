@@ -1255,6 +1255,8 @@ function buildGeneratedConstraintsKo(seed: Problem["id"]): string[] {
 }
 
 function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Problem["examples"] {
+  // Example explanation rule:
+  // Always explain "why this output is correct for this input" in one concrete sentence.
   const buildExplanationEn = (testCase: TestCase): string => {
     if (seed === "two-sum") {
       const nums = Array.isArray(testCase.input[0]) ? (testCase.input[0] as number[]) : []
@@ -1277,7 +1279,7 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
         : "A bracket type or closing order mismatch occurs, so the result is false."
     }
     if (seed === "reverse-linked-list") {
-      return `Reversing the node direction makes the values appear in reverse order, so the output is ${JSON.stringify(testCase.expected)}.`
+      return `reversing the node direction makes the values appear in reverse order, so the output is ${JSON.stringify(testCase.expected)}.`
     }
     if (seed === "maximum-subarray") {
       const nums = Array.isArray(testCase.input[0]) ? (testCase.input[0] as number[]) : []
@@ -1300,10 +1302,10 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
         }
       }
       const bestSlice = nums.slice(bestStart, bestEnd + 1)
-      return `The contiguous subarray ${JSON.stringify(bestSlice)} gives the maximum sum ${JSON.stringify(testCase.expected)}.`
+      return `the contiguous subarray ${JSON.stringify(bestSlice)} gives the maximum sum ${JSON.stringify(testCase.expected)}.`
     }
     if (seed === "merge-intervals") {
-      return `Overlapping ranges are combined, which produces the merged result ${JSON.stringify(testCase.expected)}.`
+      return `overlapping ranges are combined, which produces the merged result ${JSON.stringify(testCase.expected)}.`
     }
     if (seed === "longest-substring") {
       const s = typeof testCase.input[0] === "string" ? testCase.input[0] : ""
@@ -1325,73 +1327,91 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
         }
       }
       const example = s.slice(bestStart, bestStart + bestLen)
-      return `A longest substring without duplicate characters is ${JSON.stringify(example)}, so the length is ${JSON.stringify(testCase.expected)}.`
+      return `a longest substring without duplicate characters is ${JSON.stringify(example)}, so the length is ${JSON.stringify(testCase.expected)}.`
     }
     if (seed === "binary-tree-level-order") {
-      return `Nodes are grouped by depth from top to bottom, yielding ${JSON.stringify(testCase.expected)}.`
+      return `nodes are grouped by depth from top to bottom, yielding ${JSON.stringify(testCase.expected)}.`
     }
-    return `By summing trapped water over each position, the total becomes ${JSON.stringify(testCase.expected)}.`
+    return `summing trapped water over each position gives ${JSON.stringify(testCase.expected)}.`
   }
 
   return testCases.slice(0, 2).map((testCase) => {
     if (seed === "two-sum") {
+      const inputText = `nums = ${JSON.stringify(testCase.input[0])}, target = ${JSON.stringify(testCase.input[1])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `nums = ${JSON.stringify(testCase.input[0])}, target = ${JSON.stringify(testCase.input[1])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationEn(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
       }
     }
     if (seed === "valid-parentheses") {
+      const inputText = `s = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `s = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationEn(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
       }
     }
     if (seed === "reverse-linked-list") {
+      const inputText = `head = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `head = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationEn(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
       }
     }
     if (seed === "maximum-subarray") {
+      const inputText = `nums = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `nums = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationEn(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
       }
     }
     if (seed === "merge-intervals") {
+      const inputText = `intervals = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `intervals = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationEn(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
       }
     }
     if (seed === "longest-substring") {
+      const inputText = `s = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `s = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationEn(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
       }
     }
     if (seed === "binary-tree-level-order") {
+      const inputText = `root = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `root = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationEn(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
       }
     }
+    const inputText = `height = ${JSON.stringify(testCase.input[0])}`
+    const outputText = JSON.stringify(testCase.expected)
     return {
-      input: `height = ${JSON.stringify(testCase.input[0])}`,
-      output: JSON.stringify(testCase.expected),
-      explanation: buildExplanationEn(testCase),
+      input: inputText,
+      output: outputText,
+      explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
     }
   })
 }
 
 function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Problem["examples"] {
+  // 예시 설명 규칙:
+  // 항상 "이 입력에서 왜 이 출력이 되는지"를 한 문장으로 설명합니다.
   const buildExplanationKo = (testCase: TestCase): string => {
     if (seed === "two-sum") {
       const nums = Array.isArray(testCase.input[0]) ? (testCase.input[0] as number[]) : []
@@ -1414,7 +1434,7 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
         : "괄호 종류가 맞지 않거나 닫히는 순서가 잘못된 구간이 있어 결과는 false입니다."
     }
     if (seed === "reverse-linked-list") {
-      return `노드 연결 방향을 뒤집으면 값의 순서가 반대로 바뀌므로 출력은 ${JSON.stringify(testCase.expected)} 입니다.`
+      return `노드 연결 방향을 뒤집으면 값의 순서가 반대로 바뀝니다.`
     }
     if (seed === "maximum-subarray") {
       const nums = Array.isArray(testCase.input[0]) ? (testCase.input[0] as number[]) : []
@@ -1437,10 +1457,10 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
         }
       }
       const bestSlice = nums.slice(bestStart, bestEnd + 1)
-      return `연속 부분배열 ${JSON.stringify(bestSlice)} 의 합이 최대이며, 그 값이 ${JSON.stringify(testCase.expected)} 입니다.`
+      return `연속 부분배열 ${JSON.stringify(bestSlice)} 의 합이 최대입니다.`
     }
     if (seed === "merge-intervals") {
-      return `서로 겹치는 구간들을 하나로 합치면 ${JSON.stringify(testCase.expected)} 가 됩니다.`
+      return "서로 겹치는 구간들을 하나로 합칠 수 있습니다."
     }
     if (seed === "longest-substring") {
       const s = typeof testCase.input[0] === "string" ? testCase.input[0] : ""
@@ -1462,68 +1482,84 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
         }
       }
       const example = s.slice(bestStart, bestStart + bestLen)
-      return `중복이 없는 최장 부분 문자열의 한 예는 ${JSON.stringify(example)} 이고, 길이는 ${JSON.stringify(testCase.expected)} 입니다.`
+      return `중복이 없는 최장 부분 문자열의 한 예는 ${JSON.stringify(example)} 입니다.`
     }
     if (seed === "binary-tree-level-order") {
-      return `노드를 깊이(레벨)별로 묶으면 ${JSON.stringify(testCase.expected)} 가 됩니다.`
+      return "노드를 깊이(레벨)별로 묶어 순서대로 나열할 수 있습니다."
     }
-    return `각 위치에 고이는 물을 합산하면 총 ${JSON.stringify(testCase.expected)} 이 됩니다.`
+    return "각 위치에 고이는 물의 양을 모두 합산할 수 있습니다."
   }
 
   return testCases.slice(0, 2).map((testCase) => {
     if (seed === "two-sum") {
+      const inputText = `nums = ${JSON.stringify(testCase.input[0])}, target = ${JSON.stringify(testCase.input[1])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `nums = ${JSON.stringify(testCase.input[0])}, target = ${JSON.stringify(testCase.input[1])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationKo(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
       }
     }
     if (seed === "valid-parentheses") {
+      const inputText = `s = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `s = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationKo(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
       }
     }
     if (seed === "reverse-linked-list") {
+      const inputText = `head = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `head = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationKo(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
       }
     }
     if (seed === "maximum-subarray") {
+      const inputText = `nums = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `nums = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationKo(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
       }
     }
     if (seed === "merge-intervals") {
+      const inputText = `intervals = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `intervals = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationKo(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
       }
     }
     if (seed === "longest-substring") {
+      const inputText = `s = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `s = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationKo(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
       }
     }
     if (seed === "binary-tree-level-order") {
+      const inputText = `root = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
       return {
-        input: `root = ${JSON.stringify(testCase.input[0])}`,
-        output: JSON.stringify(testCase.expected),
-        explanation: buildExplanationKo(testCase),
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
       }
     }
+    const inputText = `height = ${JSON.stringify(testCase.input[0])}`
+    const outputText = JSON.stringify(testCase.expected)
     return {
-      input: `height = ${JSON.stringify(testCase.input[0])}`,
-      output: JSON.stringify(testCase.expected),
-      explanation: buildExplanationKo(testCase),
+      input: inputText,
+      output: outputText,
+      explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
     }
   })
 }
