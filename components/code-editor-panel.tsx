@@ -121,6 +121,7 @@ export function CodeEditorPanel({
   onRunTests,
   onTestResultsUpdate,
 }: CodeEditorPanelProps) {
+  const REQUEST_TIMEOUT_MS = 20000;
   const { language } = useAppLanguage();
   const defaultCaseLabel = language === "ko" ? "예시" : "Test Case";
   const customCaseLabel = language === "ko" ? "커스텀 테스트" : "Custom Test";
@@ -279,6 +280,8 @@ export function CodeEditorPanel({
     // Trigger AI code review
     if (setIsAiGenerating && setPendingReview && setIsAssistantOpen) {
       setIsAiGenerating(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
       try {
         const response = await fetch("/api/review-code", {
@@ -286,6 +289,7 @@ export function CodeEditorPanel({
           headers: {
             "Content-Type": "application/json",
           },
+          signal: controller.signal,
           body: JSON.stringify({
             code,
             problemTitle: problem.title,
@@ -305,10 +309,27 @@ export function CodeEditorPanel({
           setTimeout(() => {
             setIsAssistantOpen(true);
           }, 800);
+        } else if (response.status === 401 || response.status === 403) {
+          setPendingReview(
+            language === "ko"
+              ? "토큰이 만료됐어요. 다시 로그인하거나 API 설정을 확인해줘."
+              : "Your token expired. Please sign in again or check API settings."
+          );
+          setIsAssistantOpen(true);
         }
       } catch (error) {
-        console.error("Failed to get AI review:", error);
+        if (error instanceof DOMException && error.name === "AbortError") {
+          setPendingReview(
+            language === "ko"
+              ? "응답이 지연돼 요청을 종료했어요. 다시 시도해줘."
+              : "The request timed out. Please try again."
+          );
+          setIsAssistantOpen(true);
+        } else {
+          console.error("Failed to get AI review:", error);
+        }
       } finally {
+        clearTimeout(timeoutId);
         setIsAiGenerating(false);
       }
     }

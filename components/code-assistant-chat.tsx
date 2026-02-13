@@ -39,6 +39,7 @@ export function CodeAssistantChat({
   strategicHint = null,
   elapsedMinutes = 0,
 }: CodeAssistantChatProps) {
+  const REQUEST_TIMEOUT_MS = 20000;
   const { language } = useAppLanguage();
   const text =
     language === "ko"
@@ -226,6 +227,8 @@ export function CodeAssistantChat({
     }
 
     setIsLoading(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     try {
       const response = await fetch("/api/chat", {
@@ -233,6 +236,7 @@ export function CodeAssistantChat({
         headers: {
           "Content-Type": "application/json",
         },
+        signal: controller.signal,
         body: JSON.stringify({
           messages: [...messages, userMessage],
           code,
@@ -246,6 +250,9 @@ export function CodeAssistantChat({
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("TOKEN_EXPIRED");
+        }
         throw new Error("Failed to get response");
       }
 
@@ -257,15 +264,28 @@ export function CodeAssistantChat({
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error("Chat error:", error);
+      const isTokenExpired =
+        error instanceof Error && error.message === "TOKEN_EXPIRED";
+      const isTimeout =
+        error instanceof DOMException && error.name === "AbortError";
       const errorMessage: Message = {
         role: "assistant",
         content:
-          language === "ko"
-            ? "요청을 처리하지 못했습니다. 다시 시도해주세요."
-            : "Sorry, I couldn't process your request. Please try again.",
+          isTokenExpired
+            ? language === "ko"
+              ? "토큰이 만료됐어요. 다시 로그인하거나 API 설정을 확인해줘."
+              : "Your token expired. Please sign in again or check API settings."
+            : isTimeout
+              ? language === "ko"
+                ? "응답이 지연돼 요청을 종료했어요. 다시 시도해줘."
+                : "The request timed out. Please try again."
+              : language === "ko"
+                ? "요청을 처리하지 못했습니다. 다시 시도해주세요."
+                : "Sorry, I couldn't process your request. Please try again.",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };

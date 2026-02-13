@@ -49,6 +49,7 @@ interface MentorTestResult {
 }
 
 export function ProblemPageClient({ problem }: ProblemPageClientProps) {
+  const REQUEST_TIMEOUT_MS = 20000;
   const router = useRouter();
   const { language, copy } = useAppLanguage();
   const localized = getLocalizedProblemText(problem, language);
@@ -133,6 +134,8 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
         setHasTriggered30MinHint(true);
         setIsAiGenerating(true);
         setShowHintNotification(true);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
         try {
           const response = await fetch("/api/strategic-hint", {
@@ -140,6 +143,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
             headers: {
               "Content-Type": "application/json",
             },
+            signal: controller.signal,
             body: JSON.stringify({
               problemTitle: localizedProblem.title,
               problemDescription: localizedProblem.description,
@@ -154,10 +158,25 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
             const data = await response.json();
             setStrategicHint(data.hint);
             // Don't auto-open - let the user click when ready
+          } else if (response.status === 401 || response.status === 403) {
+            setStrategicHint(
+              language === "ko"
+                ? "토큰이 만료됐어요. 다시 로그인하거나 API 설정을 확인해줘."
+                : "Your token expired. Please sign in again or check API settings."
+            );
           }
         } catch (error) {
-          console.error("Failed to get strategic hint:", error);
+          if (error instanceof DOMException && error.name === "AbortError") {
+            setStrategicHint(
+              language === "ko"
+                ? "응답이 지연돼 요청을 종료했어요. 다시 시도해줘."
+                : "The request timed out. Please try again."
+            );
+          } else {
+            console.error("Failed to get strategic hint:", error);
+          }
         } finally {
+          clearTimeout(timeoutId);
           setIsAiGenerating(false);
         }
       }
