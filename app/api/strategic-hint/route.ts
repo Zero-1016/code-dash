@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
   try {
     const body: StrategicHintRequest = await req.json()
     const { problemTitle, problemDescription, code, elapsedMinutes } = body
-    const language = resolveMentorLanguage(body.language)
+    const language = resolveMentorLanguage(body.language, [problemTitle, problemDescription])
 
     const config = resolveAIConfig(body.aiConfig)
 

@@ -280,7 +280,7 @@ export async function POST(req: NextRequest) {
   try {
     const body: ReviewRequest = await req.json()
     const { code, problemTitle, problemDescription, testResults, allTestsPassed } = body
-    const language = resolveMentorLanguage(body.language)
+    const language = resolveMentorLanguage(body.language, [problemTitle, problemDescription])
 
     const config = resolveAIConfig(body.aiConfig)
 

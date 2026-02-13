@@ -278,7 +278,14 @@ export async function POST(req: NextRequest) {
   try {
     const body: ChatRequest = await req.json()
     const { messages, code, problemTitle, problemDescription } = body
-    const language = resolveMentorLanguage(body.language)
+    const learnerMessages = messages
+      .filter((msg) => msg.role === "user")
+      .map((msg) => msg.content)
+    const language = resolveMentorLanguage(body.language, [
+      ...learnerMessages,
+      problemTitle,
+      problemDescription,
+    ])
 
     // Determine which AI provider to use
     const config = resolveAIConfig(body.aiConfig)

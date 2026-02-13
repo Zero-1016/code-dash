@@ -1,7 +1,50 @@
 export type MentorLanguage = "en" | "ko"
 
-export function resolveMentorLanguage(language?: string): MentorLanguage {
-  return language === "ko" ? "ko" : "en"
+function hasKoreanText(text: string): boolean {
+  return /[가-힣]/.test(text)
+}
+
+function hasEnglishSentenceLikeText(text: string): boolean {
+  const words = text.match(/\b[a-zA-Z]{2,}\b/g)
+  return (words?.length ?? 0) >= 3
+}
+
+function inferMentorLanguage(samples: Array<string | undefined | null>): MentorLanguage | null {
+  let koreanHits = 0
+  let englishHits = 0
+
+  for (const sample of samples) {
+    const text = (sample ?? "").trim()
+    if (!text) {
+      continue
+    }
+    if (hasKoreanText(text)) {
+      koreanHits += 1
+      continue
+    }
+    if (hasEnglishSentenceLikeText(text)) {
+      englishHits += 1
+    }
+  }
+
+  if (koreanHits > 0) {
+    return "ko"
+  }
+  if (englishHits > 0) {
+    return "en"
+  }
+  return null
+}
+
+export function resolveMentorLanguage(
+  preferredLanguage?: string,
+  samples: Array<string | undefined | null> = []
+): MentorLanguage {
+  const inferred = inferMentorLanguage(samples)
+  if (inferred) {
+    return inferred
+  }
+  return preferredLanguage === "ko" ? "ko" : "en"
 }
 
 export function getMentorLanguageInstruction(language: MentorLanguage) {
