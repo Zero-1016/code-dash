@@ -41,6 +41,48 @@ function resolveResponseTokenLimit(maxOutputTokens: number): number {
   return Math.max(320, maxOutputTokens)
 }
 
+function finalizeMentorResponse(
+  text: string,
+  language: MentorLanguage,
+  allTestsPassed: boolean
+): string {
+  const trimmed = text.trim()
+  if (!trimmed) {
+    return language === "ko"
+      ? allTestsPassed
+        ? "테스트는 통과했습니다. 다음 단계로 성능 개선 포인트 한 가지를 적용해보세요."
+        : "아직 테스트가 통과되지 않았습니다. 실패 케이스 1개부터 분기 흐름을 점검해보세요."
+      : allTestsPassed
+        ? "Your solution passes tests. Next, apply one performance improvement."
+        : "Your solution is not passing yet. Start by tracing one failing case."
+  }
+
+  const danglingKo =
+    /(다만|그리고|또한|하지만|근데|즉|예를 들어|예를들어|우선|먼저|결론적으로)\s*[,，:]?\s*$/u
+  const danglingEn =
+    /(however|but|and|so|for example|first|next|then)\s*[,:\-]?\s*$/iu
+
+  let normalized = trimmed
+  if (danglingKo.test(normalized) || danglingEn.test(normalized)) {
+    normalized = normalized.replace(danglingKo, "").replace(danglingEn, "").trim()
+    const completion =
+      language === "ko"
+        ? allTestsPassed
+          ? "다음 단계는 중복 순회를 줄이는 개선 한 가지만 적용해보세요."
+          : "다음 단계로 실패 케이스 1개를 기준으로 분기 흐름을 다시 확인해보세요."
+        : allTestsPassed
+          ? "Next, apply one improvement to reduce repeated scans."
+          : "Next, re-check branch flow with one failing case."
+    normalized = normalized ? `${normalized}\n${completion}` : completion
+  }
+
+  if (!/[.!?…]$/.test(normalized) && !/[다요죠까네]$/.test(normalized)) {
+    normalized = `${normalized}.`
+  }
+
+  return normalized
+}
+
 function generateFallbackReviewFeedback(
   language: MentorLanguage,
   passedCount: number,
@@ -280,24 +322,32 @@ export async function POST(req: NextRequest) {
       }
 
       if (resolved) {
-        feedback = resolved
+        feedback = finalizeMentorResponse(resolved, language, allTestsPassed)
       } else {
-        feedback = generateFallbackReviewFeedback(
+        feedback = finalizeMentorResponse(
+          generateFallbackReviewFeedback(
+            language,
+            testResults.filter((r) => r.passed).length,
+            testResults.length,
+            allTestsPassed,
+            "no-key"
+          ),
           language,
-          testResults.filter((r) => r.passed).length,
-          testResults.length,
-          allTestsPassed,
-          "no-key"
+          allTestsPassed
         )
       }
     } catch (error) {
       console.error("AI API error:", error)
-      feedback = generateFallbackReviewFeedback(
+      feedback = finalizeMentorResponse(
+        generateFallbackReviewFeedback(
+          language,
+          testResults.filter((r) => r.passed).length,
+          testResults.length,
+          allTestsPassed,
+          "service-error"
+        ),
         language,
-        testResults.filter((r) => r.passed).length,
-        testResults.length,
-        allTestsPassed,
-        "service-error"
+        allTestsPassed
       )
     }
 

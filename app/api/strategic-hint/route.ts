@@ -34,6 +34,36 @@ function resolveResponseTokenLimit(maxOutputTokens: number): number {
   return Math.max(320, maxOutputTokens)
 }
 
+function finalizeHintResponse(text: string, language: MentorLanguage): string {
+  const trimmed = text.trim()
+  if (!trimmed) {
+    return language === "ko"
+      ? "핵심 아이디어 1개를 고르고, 그 아이디어로 다음 한 단계만 바로 적용해보세요."
+      : "Pick one core idea and apply one immediate next step."
+  }
+
+  const danglingKo =
+    /(다만|그리고|또한|하지만|근데|즉|예를 들어|예를들어|우선|먼저|결론적으로)\s*[,，:]?\s*$/u
+  const danglingEn =
+    /(however|but|and|so|for example|first|next|then)\s*[,:\-]?\s*$/iu
+
+  let normalized = trimmed
+  if (danglingKo.test(normalized) || danglingEn.test(normalized)) {
+    normalized = normalized.replace(danglingKo, "").replace(danglingEn, "").trim()
+    const completion =
+      language === "ko"
+        ? "다음 단계로 바로 적용할 한 줄 계획을 정해보세요."
+        : "Set one immediate action and apply it now."
+    normalized = normalized ? `${normalized}\n${completion}` : completion
+  }
+
+  if (!/[.!?…]$/.test(normalized) && !/[다요죠까네]$/.test(normalized)) {
+    normalized = `${normalized}.`
+  }
+
+  return normalized
+}
+
 function buildStrategicHintPrompt(
   problemTitle: string,
   problemDescription: string,
@@ -219,23 +249,27 @@ export async function POST(req: NextRequest) {
       }
 
       if (resolved) {
-        hint = resolved
+        hint = finalizeHintResponse(resolved, language)
       } else {
-        hint =
+        hint = finalizeHintResponse(
           language === "ko"
             ? `핵심은 "이미 본 값을 즉시 조회"하는 구조를 쓰는 거야. 중첩 루프 대신 Hash Map으로 한 번 순회를 시도해봐.
 안내: AI 힌트가 비활성화되어 있어. 마이페이지에서 API Key를 설정해줘.`
             : `The key is instant lookup of previously seen values. Try a one-pass Hash Map approach instead of nested loops.
-Note: AI hints are unavailable right now. Configure an API key in My Page.`
+Note: AI hints are unavailable right now. Configure an API key in My Page.`,
+          language
+        )
       }
     } catch (error) {
       console.error("AI API error:", error)
-      hint =
+      hint = finalizeHintResponse(
         language === "ko"
           ? `핵심은 "이미 본 값을 즉시 조회"하는 구조야. Hash Map으로 한 번 순회가 가능한지 먼저 점검해봐.
 안내: AI 서비스 연결이 불안정해. 잠시 후 다시 시도해줘.`
           : `The core insight is instant lookup of seen values. Check whether a one-pass Hash Map fits this case.
-Note: AI service is temporarily unstable. Please try again shortly.`
+Note: AI service is temporarily unstable. Please try again shortly.`,
+        language
+      )
     }
 
     return NextResponse.json({ hint })

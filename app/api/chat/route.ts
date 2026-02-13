@@ -55,6 +55,48 @@ function resolveResponseTokenLimit(maxOutputTokens: number): number {
   return Math.max(320, maxOutputTokens)
 }
 
+function finalizeMentorResponse(
+  text: string,
+  language: MentorLanguage,
+  allTestsPassed?: boolean
+): string {
+  const trimmed = text.trim()
+  if (!trimmed) {
+    return language === "ko"
+      ? allTestsPassed === false
+        ? "실패 케이스 1개부터 같이 확인해보자."
+        : "핵심 포인트 한 가지부터 바로 정리해볼게."
+      : allTestsPassed === false
+        ? "Let's start with one failing case."
+        : "Let's focus on one key point first."
+  }
+
+  const danglingKo =
+    /(다만|그리고|또한|하지만|근데|즉|예를 들어|예를들어|우선|먼저|결론적으로)\s*[,，:]?\s*$/u
+  const danglingEn =
+    /(however|but|and|so|for example|first|next|then)\s*[,:\-]?\s*$/iu
+
+  let normalized = trimmed
+  if (danglingKo.test(normalized) || danglingEn.test(normalized)) {
+    normalized = normalized.replace(danglingKo, "").replace(danglingEn, "").trim()
+    const completion =
+      language === "ko"
+        ? allTestsPassed === false
+          ? "다음으로 실패 케이스 1개를 기준으로 분기 흐름을 확인해보자."
+          : "다음으로 적용할 개선 포인트 1개만 선택해보자."
+        : allTestsPassed === false
+          ? "Next, trace one failing case through branch flow."
+          : "Next, pick one concrete improvement."
+    normalized = normalized ? `${normalized}\n${completion}` : completion
+  }
+
+  if (!/[.!?…]$/.test(normalized) && !/[다요죠까네]$/.test(normalized)) {
+    normalized = `${normalized}.`
+  }
+
+  return normalized
+}
+
 function buildTestResultsContext(testResults: ChatTestResult[] = [], allTestsPassed?: boolean): string {
   if (!testResults.length) {
     return "No recent test output context was provided."
@@ -479,23 +521,31 @@ export async function POST(req: NextRequest) {
       }
 
       if (resolved) {
-        responseText = resolved
+        responseText = finalizeMentorResponse(resolved, language, body.allTestsPassed)
       } else {
-        responseText = generateFallbackMentorResponse(
+        responseText = finalizeMentorResponse(
+          generateFallbackMentorResponse(
+            language,
+            code,
+            messages,
+            body.testResults ?? [],
+            body.allTestsPassed
+          ),
           language,
-          code,
-          messages,
-          body.testResults ?? [],
           body.allTestsPassed
         )
       }
     } catch (error) {
       console.error("AI API error:", error)
-      responseText = generateFallbackMentorResponse(
+      responseText = finalizeMentorResponse(
+        generateFallbackMentorResponse(
+          language,
+          code,
+          messages,
+          body.testResults ?? [],
+          body.allTestsPassed
+        ),
         language,
-        code,
-        messages,
-        body.testResults ?? [],
         body.allTestsPassed
       )
     }
