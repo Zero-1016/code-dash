@@ -15,9 +15,13 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import type { Problem } from "@/lib/problems"
+import {
+  getLocalizedProblemText,
+  getAvailableProblemLanguages,
+  type Problem,
+} from "@/lib/problems"
 import { cn } from "@/lib/utils"
+import { useAppLanguage } from "@/lib/use-app-language"
 
 const iconMap: Record<string, React.ElementType> = {
   Hash,
@@ -55,8 +59,12 @@ interface ProblemCardProps {
 }
 
 export function ProblemCard({ problem, index, isSolved = false }: ProblemCardProps) {
+  const { language, copy } = useAppLanguage()
   const Icon = iconMap[problem.categoryIcon] || Hash
   const diffStyle = difficultyConfig[problem.difficulty]
+  const localized = getLocalizedProblemText(problem, language)
+  const availableLanguages = getAvailableProblemLanguages(problem)
+  const isMultilingual = availableLanguages.length > 1
 
   return (
     <motion.div
@@ -74,12 +82,22 @@ export function ProblemCard({ problem, index, isSolved = false }: ProblemCardPro
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="truncate text-sm font-semibold text-foreground lg:text-base">
-                {problem.title}
+                {localized.text.title}
               </h3>
+              <Badge
+                variant="secondary"
+                className="border-0 text-[10px] font-semibold bg-[#eef4ff] text-[#2f66d0]"
+              >
+                {isMultilingual
+                  ? copy.problem.translationReady
+                  : localized.isFallback
+                  ? copy.problem.fallbackEnglish
+                  : "EN"}
+              </Badge>
               {isSolved && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(145,65%,93%)] px-2 py-0.5 text-[10px] font-semibold text-[hsl(145,65%,32%)]">
                   <CheckCircle2 className="h-3 w-3" />
-                  Solved
+                  {copy.problemCard.solved}
                 </span>
               )}
               <Badge
@@ -95,18 +113,8 @@ export function ProblemCard({ problem, index, isSolved = false }: ProblemCardPro
             </div>
 
             <p className="mt-0.5 text-xs text-muted-foreground truncate">
-              {problem.category}
+              {localized.text.category}
             </p>
-
-            <div className="mt-2 flex items-center gap-2 sm:gap-3">
-              <Progress
-                value={problem.successRate}
-                className="h-1.5 flex-1 bg-muted min-w-0"
-              />
-              <span className="flex-shrink-0 text-xs font-medium text-muted-foreground">
-                {problem.successRate}%
-              </span>
-            </div>
           </div>
 
           <ArrowRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary hidden sm:block" />
