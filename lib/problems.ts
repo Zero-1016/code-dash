@@ -52,6 +52,8 @@ You can return the answer in any order.`,
       {
         input: "nums = [3,2,4], target = 6",
         output: "[1,2]",
+        explanation:
+          "Because nums[1] + nums[2] == 6, we return [1, 2].",
       },
     ],
     constraints: [
@@ -89,14 +91,20 @@ An input string is valid if:
       {
         input: 's = "()"',
         output: "true",
+        explanation:
+          "The opening parenthesis is closed by the same type in the correct order.",
       },
       {
         input: 's = "()[]{}"',
         output: "true",
+        explanation:
+          "All three bracket pairs are valid and properly ordered.",
       },
       {
         input: 's = "(]"',
         output: "false",
+        explanation:
+          "The opening '(' is closed by ']', so the bracket types do not match.",
       },
     ],
     constraints: [
@@ -129,10 +137,14 @@ Implement the solution iteratively.`,
       {
         input: "head = [1,2,3,4,5]",
         output: "[5,4,3,2,1]",
+        explanation:
+          "Reversing the linked direction changes the node order from left-to-right to right-to-left.",
       },
       {
         input: "head = [1,2]",
         output: "[2,1]",
+        explanation:
+          "After reversal, node 2 points to node 1, so the array form becomes [2,1].",
       },
     ],
     constraints: [
@@ -275,10 +287,14 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
       {
         input: "root = [3,9,20,null,null,15,7]",
         output: "[[3],[9,20],[15,7]]",
+        explanation:
+          "Level 0 is [3], level 1 is [9,20], and level 2 is [15,7].",
       },
       {
         input: "root = [1]",
         output: "[[1]]",
+        explanation:
+          "There is only one node at depth 0, so the traversal is [[1]].",
       },
     ],
     constraints: [
@@ -316,6 +332,8 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
       {
         input: "height = [4,2,0,3,2,5]",
         output: "9",
+        explanation:
+          "Adding trapped water at each index in this elevation map gives a total of 9.",
       },
     ],
     constraints: [
@@ -1237,58 +1255,277 @@ function buildGeneratedConstraintsKo(seed: Problem["id"]): string[] {
 }
 
 function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Problem["examples"] {
+  const buildExplanationEn = (testCase: TestCase): string => {
+    if (seed === "two-sum") {
+      const nums = Array.isArray(testCase.input[0]) ? (testCase.input[0] as number[]) : []
+      const target = testCase.input[1]
+      const pair = Array.isArray(testCase.expected) ? (testCase.expected as number[]) : []
+      const [i, j] = pair
+      if (
+        typeof i === "number" &&
+        typeof j === "number" &&
+        typeof nums[i] === "number" &&
+        typeof nums[j] === "number"
+      ) {
+        return `Indices [${i},${j}] are correct because nums[${i}] + nums[${j}] = ${nums[i]} + ${nums[j]} = ${target}.`
+      }
+      return "The returned two indices point to values whose sum equals target."
+    }
+    if (seed === "valid-parentheses") {
+      return testCase.expected === true
+        ? "Each opening bracket is closed by the correct type in the correct order, so the result is true."
+        : "A bracket type or closing order mismatch occurs, so the result is false."
+    }
+    if (seed === "reverse-linked-list") {
+      return `Reversing the node direction makes the values appear in reverse order, so the output is ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "maximum-subarray") {
+      const nums = Array.isArray(testCase.input[0]) ? (testCase.input[0] as number[]) : []
+      let bestSum = -Infinity
+      let bestStart = 0
+      let bestEnd = 0
+      let currentSum = 0
+      let currentStart = 0
+      for (let i = 0; i < nums.length; i += 1) {
+        if (currentSum <= 0) {
+          currentSum = nums[i]
+          currentStart = i
+        } else {
+          currentSum += nums[i]
+        }
+        if (currentSum > bestSum) {
+          bestSum = currentSum
+          bestStart = currentStart
+          bestEnd = i
+        }
+      }
+      const bestSlice = nums.slice(bestStart, bestEnd + 1)
+      return `The contiguous subarray ${JSON.stringify(bestSlice)} gives the maximum sum ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "merge-intervals") {
+      return `Overlapping ranges are combined, which produces the merged result ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "longest-substring") {
+      const s = typeof testCase.input[0] === "string" ? testCase.input[0] : ""
+      const seen = new Map<string, number>()
+      let left = 0
+      let bestStart = 0
+      let bestLen = 0
+      for (let right = 0; right < s.length; right += 1) {
+        const ch = s[right]
+        const last = seen.get(ch)
+        if (last !== undefined && last >= left) {
+          left = last + 1
+        }
+        seen.set(ch, right)
+        const len = right - left + 1
+        if (len > bestLen) {
+          bestLen = len
+          bestStart = left
+        }
+      }
+      const example = s.slice(bestStart, bestStart + bestLen)
+      return `A longest substring without duplicate characters is ${JSON.stringify(example)}, so the length is ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "binary-tree-level-order") {
+      return `Nodes are grouped by depth from top to bottom, yielding ${JSON.stringify(testCase.expected)}.`
+    }
+    return `By summing trapped water over each position, the total becomes ${JSON.stringify(testCase.expected)}.`
+  }
+
   return testCases.slice(0, 2).map((testCase) => {
     if (seed === "two-sum") {
       return {
         input: `nums = ${JSON.stringify(testCase.input[0])}, target = ${JSON.stringify(testCase.input[1])}`,
         output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationEn(testCase),
       }
     }
     if (seed === "valid-parentheses") {
       return {
         input: `s = ${JSON.stringify(testCase.input[0])}`,
         output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationEn(testCase),
       }
     }
     if (seed === "reverse-linked-list") {
       return {
         input: `head = ${JSON.stringify(testCase.input[0])}`,
         output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationEn(testCase),
       }
     }
     if (seed === "maximum-subarray") {
       return {
         input: `nums = ${JSON.stringify(testCase.input[0])}`,
         output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationEn(testCase),
       }
     }
     if (seed === "merge-intervals") {
       return {
         input: `intervals = ${JSON.stringify(testCase.input[0])}`,
         output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationEn(testCase),
       }
     }
     if (seed === "longest-substring") {
       return {
         input: `s = ${JSON.stringify(testCase.input[0])}`,
         output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationEn(testCase),
       }
     }
     if (seed === "binary-tree-level-order") {
       return {
         input: `root = ${JSON.stringify(testCase.input[0])}`,
         output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationEn(testCase),
       }
     }
     return {
       input: `height = ${JSON.stringify(testCase.input[0])}`,
       output: JSON.stringify(testCase.expected),
+      explanation: buildExplanationEn(testCase),
     }
   })
 }
 
 function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Problem["examples"] {
-  return buildExamplesForSeed(seed, testCases)
+  const buildExplanationKo = (testCase: TestCase): string => {
+    if (seed === "two-sum") {
+      const nums = Array.isArray(testCase.input[0]) ? (testCase.input[0] as number[]) : []
+      const target = testCase.input[1]
+      const pair = Array.isArray(testCase.expected) ? (testCase.expected as number[]) : []
+      const [i, j] = pair
+      if (
+        typeof i === "number" &&
+        typeof j === "number" &&
+        typeof nums[i] === "number" &&
+        typeof nums[j] === "number"
+      ) {
+        return `인덱스 [${i},${j}]를 고르면 nums[${i}] + nums[${j}] = ${nums[i]} + ${nums[j]} = ${target} 이므로 정답입니다.`
+      }
+      return "반환된 두 인덱스가 가리키는 값의 합이 target과 같습니다."
+    }
+    if (seed === "valid-parentheses") {
+      return testCase.expected === true
+        ? "모든 열린 괄호가 올바른 종류의 닫는 괄호와 순서로 짝지어지므로 결과는 true입니다."
+        : "괄호 종류가 맞지 않거나 닫히는 순서가 잘못된 구간이 있어 결과는 false입니다."
+    }
+    if (seed === "reverse-linked-list") {
+      return `노드 연결 방향을 뒤집으면 값의 순서가 반대로 바뀌므로 출력은 ${JSON.stringify(testCase.expected)} 입니다.`
+    }
+    if (seed === "maximum-subarray") {
+      const nums = Array.isArray(testCase.input[0]) ? (testCase.input[0] as number[]) : []
+      let bestSum = -Infinity
+      let bestStart = 0
+      let bestEnd = 0
+      let currentSum = 0
+      let currentStart = 0
+      for (let i = 0; i < nums.length; i += 1) {
+        if (currentSum <= 0) {
+          currentSum = nums[i]
+          currentStart = i
+        } else {
+          currentSum += nums[i]
+        }
+        if (currentSum > bestSum) {
+          bestSum = currentSum
+          bestStart = currentStart
+          bestEnd = i
+        }
+      }
+      const bestSlice = nums.slice(bestStart, bestEnd + 1)
+      return `연속 부분배열 ${JSON.stringify(bestSlice)} 의 합이 최대이며, 그 값이 ${JSON.stringify(testCase.expected)} 입니다.`
+    }
+    if (seed === "merge-intervals") {
+      return `서로 겹치는 구간들을 하나로 합치면 ${JSON.stringify(testCase.expected)} 가 됩니다.`
+    }
+    if (seed === "longest-substring") {
+      const s = typeof testCase.input[0] === "string" ? testCase.input[0] : ""
+      const seen = new Map<string, number>()
+      let left = 0
+      let bestStart = 0
+      let bestLen = 0
+      for (let right = 0; right < s.length; right += 1) {
+        const ch = s[right]
+        const last = seen.get(ch)
+        if (last !== undefined && last >= left) {
+          left = last + 1
+        }
+        seen.set(ch, right)
+        const len = right - left + 1
+        if (len > bestLen) {
+          bestLen = len
+          bestStart = left
+        }
+      }
+      const example = s.slice(bestStart, bestStart + bestLen)
+      return `중복이 없는 최장 부분 문자열의 한 예는 ${JSON.stringify(example)} 이고, 길이는 ${JSON.stringify(testCase.expected)} 입니다.`
+    }
+    if (seed === "binary-tree-level-order") {
+      return `노드를 깊이(레벨)별로 묶으면 ${JSON.stringify(testCase.expected)} 가 됩니다.`
+    }
+    return `각 위치에 고이는 물을 합산하면 총 ${JSON.stringify(testCase.expected)} 이 됩니다.`
+  }
+
+  return testCases.slice(0, 2).map((testCase) => {
+    if (seed === "two-sum") {
+      return {
+        input: `nums = ${JSON.stringify(testCase.input[0])}, target = ${JSON.stringify(testCase.input[1])}`,
+        output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationKo(testCase),
+      }
+    }
+    if (seed === "valid-parentheses") {
+      return {
+        input: `s = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationKo(testCase),
+      }
+    }
+    if (seed === "reverse-linked-list") {
+      return {
+        input: `head = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationKo(testCase),
+      }
+    }
+    if (seed === "maximum-subarray") {
+      return {
+        input: `nums = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationKo(testCase),
+      }
+    }
+    if (seed === "merge-intervals") {
+      return {
+        input: `intervals = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationKo(testCase),
+      }
+    }
+    if (seed === "longest-substring") {
+      return {
+        input: `s = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationKo(testCase),
+      }
+    }
+    if (seed === "binary-tree-level-order") {
+      return {
+        input: `root = ${JSON.stringify(testCase.input[0])}`,
+        output: JSON.stringify(testCase.expected),
+        explanation: buildExplanationKo(testCase),
+      }
+    }
+    return {
+      input: `height = ${JSON.stringify(testCase.input[0])}`,
+      output: JSON.stringify(testCase.expected),
+      explanation: buildExplanationKo(testCase),
+    }
+  })
 }
 
 function buildGeneratedTitleByIndex(seedId: Problem["id"], index: number): string {
@@ -1437,6 +1674,7 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
         {
           input: "nums = [3,2,4], target = 6",
           output: "[1,2]",
+          explanation: "nums[1] + nums[2] == 6 이므로 [1, 2]를 반환합니다.",
         },
       ],
       constraints: [
@@ -1459,9 +1697,21 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
 2. 괄호는 올바른 순서로 닫혀야 합니다.
 3. 모든 닫힌 괄호는 대응되는 열린 괄호가 있어야 합니다.`,
       examples: [
-        { input: 's = "()"', output: "true" },
-        { input: 's = "()[]{}"', output: "true" },
-        { input: 's = "(]"', output: "false" },
+        {
+          input: 's = "()"',
+          output: "true",
+          explanation: "열린 괄호 '('가 올바른 닫는 괄호 ')'로 닫혀 true입니다.",
+        },
+        {
+          input: 's = "()[]{}"',
+          output: "true",
+          explanation: "모든 괄호 쌍이 종류와 순서 모두 올바르므로 true입니다.",
+        },
+        {
+          input: 's = "(]"',
+          output: "false",
+          explanation: "'(' 다음에 ']'가 닫히므로 괄호 종류가 맞지 않아 false입니다.",
+        },
       ],
       constraints: [
         "1 <= s.length <= 10^4",
@@ -1477,8 +1727,16 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
 
 반복문(Iterative) 방식으로 구현하세요.`,
       examples: [
-        { input: "head = [1,2,3,4,5]", output: "[5,4,3,2,1]" },
-        { input: "head = [1,2]", output: "[2,1]" },
+        {
+          input: "head = [1,2,3,4,5]",
+          output: "[5,4,3,2,1]",
+          explanation: "연결 방향을 뒤집으면 노드 순서가 역순이 되어 [5,4,3,2,1]이 됩니다.",
+        },
+        {
+          input: "head = [1,2]",
+          output: "[2,1]",
+          explanation: "2 -> 1 형태로 반전되므로 배열 표현은 [2,1]입니다.",
+        },
       ],
       constraints: [
         "노드 수 범위는 [0, 5000]입니다.",
@@ -1564,8 +1822,16 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
       category: "트리",
       description: `이진 트리의 \`root\`가 주어질 때, 노드 값을 레벨 순서(왼쪽에서 오른쪽, 위에서 아래)로 반환하세요.`,
       examples: [
-        { input: "root = [3,9,20,null,null,15,7]", output: "[[3],[9,20],[15,7]]" },
-        { input: "root = [1]", output: "[[1]]" },
+        {
+          input: "root = [3,9,20,null,null,15,7]",
+          output: "[[3],[9,20],[15,7]]",
+          explanation: "깊이별로 묶으면 0레벨 [3], 1레벨 [9,20], 2레벨 [15,7]입니다.",
+        },
+        {
+          input: "root = [1]",
+          output: "[[1]]",
+          explanation: "루트 노드 하나만 있으므로 레벨 순회 결과는 [[1]]입니다.",
+        },
       ],
       constraints: [
         "트리의 노드 수 범위는 [0, 2000]입니다.",
@@ -1584,7 +1850,11 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
           output: "6",
           explanation: "해당 지형에서는 총 6만큼의 빗물이 고입니다.",
         },
-        { input: "height = [4,2,0,3,2,5]", output: "9" },
+        {
+          input: "height = [4,2,0,3,2,5]",
+          output: "9",
+          explanation: "각 칸에 고이는 물의 양을 합치면 총 9입니다.",
+        },
       ],
       constraints: [
         "n == height.length",
