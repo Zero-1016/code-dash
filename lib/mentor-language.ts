@@ -84,3 +84,19 @@ Interaction:
 - If user asks for a first hint, provide a concrete first hint immediately, not meta-guidance.
 ${languageGuidance}`
 }
+
+export function getMentorConversationSkillInstruction(language: MentorLanguage) {
+  const languageNote =
+    language === "ko"
+      ? "When speaking Korean, keep it casual and clear, like a real teammate in chat."
+      : "Keep it casual and clear, like a real teammate in chat."
+
+  return `Conversation Skills:
+- Answer the user's latest intent directly first; avoid generic prefaces.
+- For yes/no intent, start with a clear yes/no, then one short reason.
+- Do not repeat the same canned sentence across consecutive turns.
+- If user sounds frustrated, acknowledge briefly and pivot to a concrete answer.
+- If context is missing, ask only one minimal clarifying question.
+- Prefer concrete examples over abstract meta guidance.
+${languageNote}`
+}

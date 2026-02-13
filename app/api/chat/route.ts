@@ -7,6 +7,7 @@ import {
 } from "@/lib/ai-config"
 import { getLanguageModel } from "@/lib/server/ai-model"
 import {
+  getMentorConversationSkillInstruction,
   getMentorPersonaInstruction,
   getMentorLanguageInstruction,
   resolveMentorLanguage,
@@ -66,6 +67,8 @@ function generateFallbackMentorResponse(
   allTestsPassed?: boolean
 ): string {
   const latestUserMessage = [...messages].reverse().find((msg) => msg.role === "user")?.content.trim() ?? ""
+  const latestAssistantMessage =
+    [...messages].reverse().find((msg) => msg.role === "assistant")?.content.trim() ?? ""
   const hasCode = code.trim().length > 0
   const normalized = latestUserMessage.toLowerCase()
   const hasFailingTests = testResults.length > 0 && allTestsPassed === false
@@ -98,6 +101,10 @@ function generateFallbackMentorResponse(
   const shouldUseDebugFlow = hasFailingTests || asksDebug
 
   if (language === "ko") {
+    const shouldAvoidRepeatingContext =
+      latestAssistantMessage.includes("지금은 코드 전체보다 문제 조건 1개만 먼저 확인하면 돼") ||
+      latestAssistantMessage.includes("코드가 없으면 예시 입력 1개를 손으로 먼저 추적해보자.")
+
     if (asksRelationally) {
       return `맞아, 방금은 내가 질문 의도를 제대로 못 잡았어.
 지금부터는 네 마지막 질문에만 바로 답할게. 지금 기준이면 Map으로 중복 체크하는 방향은 좋은 선택이야.`
@@ -126,6 +133,7 @@ Set/Map으로 이미 본 값인지 확인하고, 중복을 만났을 때 바로 
     const context = hasCode
       ? "지금은 코드 전체보다 문제 조건 1개만 먼저 확인하면 돼. 예를 들면 빈 입력, 중복 값, 최소/최대 경계 같은 조건."
       : "코드가 없으면 예시 입력 1개를 손으로 먼저 추적해보자."
+    const contextLine = shouldAvoidRepeatingContext ? "" : `${context}\n`
     const failingContext =
       hasFailingTests
         ? `실패 케이스부터 보자. (${testResults.filter((r) => r.passed).length}/${testResults.length} 통과)`
@@ -138,12 +146,12 @@ Set/Map으로 이미 본 값인지 확인하고, 중복을 만났을 때 바로 
 원하면 실패 케이스 1개를 보내줘. 그 케이스 기준으로 다음 힌트를 바로 줄게.`
       }
 
-      return `좋아, 첫 힌트만 바로 줄게.
+      return `${contextLine}좋아, 첫 힌트만 바로 줄게.
 먼저 중복/빈 입력/경계값 중 하나를 고르고, 그 경우에 정답이 어떻게 나와야 하는지 기준을 딱 정해봐.`
     }
 
     if (requestType === "review") {
-      return `${context}
+      return `${contextLine}
 의도한 알고리즘을 한 줄로 적어줘. 실제 동작과 어긋나는 지점을 바로 짚어줄게.`
     }
 
@@ -162,7 +170,7 @@ Set/Map으로 이미 본 값인지 확인하고, 중복을 만났을 때 바로 
 오류 메시지나 실패 테스트 1개만 보내줘. 그 지점만 바로 같이 디버깅하자.`
     }
 
-    return `${context}
+    return `${contextLine}
 아직 코드를 안 써도 괜찮아. 접근 아이디어(자료구조 후보 1-2개)만 적어주면 맞는 방향인지 바로 피드백해줄게.`
   }
 
@@ -289,11 +297,12 @@ async function chatWithClaude(
   )
 
   const mentorPersonaInstruction = getMentorPersonaInstruction(language)
+  const mentorConversationSkillInstruction = getMentorConversationSkillInstruction(language)
   const languageInstruction = getMentorLanguageInstruction(language)
 
   const result = await generateText({
     model: getLanguageModel("claude", model, apiKey),
-    system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${languageInstruction}`,
+    system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${mentorConversationSkillInstruction}\n\n${languageInstruction}`,
     messages: messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
@@ -324,11 +333,12 @@ async function chatWithGPT(
   )
 
   const mentorPersonaInstruction = getMentorPersonaInstruction(language)
+  const mentorConversationSkillInstruction = getMentorConversationSkillInstruction(language)
   const languageInstruction = getMentorLanguageInstruction(language)
 
   const result = await generateText({
     model: getLanguageModel("gpt", model, apiKey),
-    system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${languageInstruction}`,
+    system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${mentorConversationSkillInstruction}\n\n${languageInstruction}`,
     messages,
     maxOutputTokens,
     temperature: 0.7,
@@ -356,11 +366,12 @@ async function chatWithGemini(
   )
 
   const mentorPersonaInstruction = getMentorPersonaInstruction(language)
+  const mentorConversationSkillInstruction = getMentorConversationSkillInstruction(language)
   const languageInstruction = getMentorLanguageInstruction(language)
 
   const result = await generateText({
     model: getLanguageModel("gemini", model, apiKey),
-    system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${languageInstruction}`,
+    system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${mentorConversationSkillInstruction}\n\n${languageInstruction}`,
     messages,
     maxOutputTokens,
     temperature: 0.7,
