@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Plus } from "lucide-react"
 
@@ -18,16 +18,57 @@ interface AddTestCaseModalProps {
 export function AddTestCaseModal({ isOpen, onClose, onAdd }: AddTestCaseModalProps) {
   const [input, setInput] = useState("")
   const [expected, setExpected] = useState("")
+  const inputId = useId()
+  const expectedId = useId()
+  const inputRef = useRef<HTMLTextAreaElement | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (input.trim() && expected.trim()) {
-      onAdd({ input: input.trim(), expected: expected.trim() })
-      setInput("")
-      setExpected("")
-      onClose()
+  const resetForm = useCallback(() => {
+    setInput("")
+    setExpected("")
+  }, [])
+
+  const handleClose = useCallback(() => {
+    resetForm()
+    onClose()
+  }, [onClose, resetForm])
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
     }
-  }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    inputRef.current?.focus()
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        handleClose()
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener("keydown", onKeyDown)
+    }
+  }, [handleClose, isOpen])
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault()
+      const trimmedInput = input.trim()
+      const trimmedExpected = expected.trim()
+
+      if (!trimmedInput || !trimmedExpected) {
+        return
+      }
+
+      onAdd({ input: trimmedInput, expected: trimmedExpected })
+      handleClose()
+    },
+    [expected, handleClose, input, onAdd]
+  )
 
   return (
     <AnimatePresence>
@@ -38,7 +79,7 @@ export function AddTestCaseModal({ isOpen, onClose, onAdd }: AddTestCaseModalPro
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
           />
 
@@ -48,12 +89,19 @@ export function AddTestCaseModal({ isOpen, onClose, onAdd }: AddTestCaseModalPro
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-background rounded-[24px] shadow-2xl z-50 overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-custom-test-case-title"
+            className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[24px] bg-background shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
-              <h2 className="text-lg font-bold text-foreground">Add Custom Test Case</h2>
+              <h2 id="add-custom-test-case-title" className="text-lg font-bold text-foreground">
+                Add Custom Test Case
+              </h2>
               <button
-                onClick={onClose}
+                type="button"
+                onClick={handleClose}
+                aria-label="Close add test case modal"
                 className="flex h-8 w-8 items-center justify-center rounded-[12px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -63,10 +111,12 @@ export function AddTestCaseModal({ isOpen, onClose, onAdd }: AddTestCaseModalPro
             <form onSubmit={handleSubmit} className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-foreground">
+                  <label htmlFor={inputId} className="mb-2 block text-sm font-semibold text-foreground">
                     Input
                   </label>
                   <textarea
+                    id={inputId}
+                    ref={inputRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder='e.g., [2, 7, 11, 15], 9'
@@ -79,10 +129,11 @@ export function AddTestCaseModal({ isOpen, onClose, onAdd }: AddTestCaseModalPro
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-foreground">
+                  <label htmlFor={expectedId} className="mb-2 block text-sm font-semibold text-foreground">
                     Expected Output
                   </label>
                   <textarea
+                    id={expectedId}
                     value={expected}
                     onChange={(e) => setExpected(e.target.value)}
                     placeholder='e.g., [0, 1]'
@@ -98,7 +149,7 @@ export function AddTestCaseModal({ isOpen, onClose, onAdd }: AddTestCaseModalPro
               <div className="mt-6 flex gap-3">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="flex-1 rounded-[20px] border border-border bg-background px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
                 >
                   Cancel
