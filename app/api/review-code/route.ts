@@ -31,10 +31,60 @@ interface ReviewRequest {
 }
 
 const REVIEW_REPLY_FORMAT_RULES = `Reply format:
-- Default 1-2 short lines, max 4 lines only if necessary.
+- Write like a real KakaoTalk/Slack teammate chat message: natural and appropriately sized for context.
+- Keep it concise by default, but use as many lines as needed for clarity.
 - No greetings, emojis, formal report sections, or long checklists.
 - Focus on the single highest-impact point first.
-- End with one immediate next step.`
+- Avoid rhetorical questions and repetitive praise.
+- Keep it to one short acknowledgement + one concrete action point whenever possible.`
+
+function resolveResponseTokenLimit(maxOutputTokens: number): number {
+  return Math.max(256, maxOutputTokens)
+}
+
+function finalizeMentorResponse(
+  text: string,
+  language: MentorLanguage,
+  allTestsPassed: boolean
+): string {
+  const trimmed = text.trim()
+  if (!trimmed) {
+    return language === "ko"
+      ? allTestsPassed
+        ? "테스트는 통과했습니다. 다음 단계로 성능 개선 포인트 한 가지를 적용해보세요."
+        : "아직 테스트가 통과되지 않았습니다. 실패 케이스 1개부터 분기 흐름을 점검해보세요."
+      : allTestsPassed
+        ? "Your solution passes tests. Next, apply one performance improvement."
+        : "Your solution is not passing yet. Start by tracing one failing case."
+  }
+
+  const danglingKo =
+    /(다만|그리고|또한|하지만|근데|즉|예를 들어|예를들어|우선|먼저|결론적으로)\s*[,，:]?\s*$/u
+  const danglingEn =
+    /(however|but|and|so|for example|first|next|then)\s*[,:\-]?\s*$/iu
+  const danglingListMarker = /(?:[:\-]\s*|\*\s*|•\s*|\d+\.\s*)$/u
+
+  let normalized = trimmed
+  if (danglingKo.test(normalized) || danglingEn.test(normalized) || danglingListMarker.test(normalized)) {
+    normalized = normalized.replace(danglingKo, "").replace(danglingEn, "").trim()
+    normalized = normalized.replace(danglingListMarker, "").trim()
+    const completion =
+      language === "ko"
+        ? allTestsPassed
+          ? "다음 단계는 중복 순회를 줄이는 개선 한 가지만 적용해보세요."
+          : "다음 단계로 실패 케이스 1개를 기준으로 분기 흐름을 다시 확인해보세요."
+        : allTestsPassed
+          ? "Next, apply one improvement to reduce repeated scans."
+          : "Next, re-check branch flow with one failing case."
+    normalized = normalized ? `${normalized}\n${completion}` : completion
+  }
+
+  if (!/[.!?…]$/.test(normalized) && !/[다요죠까네]$/.test(normalized)) {
+    normalized = `${normalized}.`
+  }
+
+  return normalized
+}
 
 function generateFallbackReviewFeedback(
   language: MentorLanguage,
@@ -103,7 +153,11 @@ ${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual
 
 **Mentoring Mode:**
 - Use test output as the first source of truth.
-- ${allTestsPassed ? "All tests passed: brief congrats, then suggest one optimization/refactor." : "Tests failed: only debug root cause first; do not discuss complexity yet."}
+- ${
+    allTestsPassed
+      ? "All tests passed: explicitly confirm the solution is currently correct first, then suggest one optimization/refactor."
+      : "Tests failed: clearly state it is not correct yet, then debug root cause first; do not discuss complexity yet."
+  }
 - Suggest algorithm alternatives naturally when relevant.
 - Do not dump a full solution unless explicitly requested.
 - ${REVIEW_REPLY_FORMAT_RULES}
@@ -137,7 +191,7 @@ async function reviewWithClaude(
   const result = await generateText({
     model: getLanguageModel("claude", model, apiKey),
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -168,7 +222,7 @@ async function reviewWithGPT(
     system:
       "You are a helpful coding mentor who provides constructive feedback and guides students to learn.",
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -197,7 +251,7 @@ async function reviewWithGemini(
   const result = await generateText({
     model: getLanguageModel("gemini", model, apiKey),
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -270,24 +324,32 @@ export async function POST(req: NextRequest) {
       }
 
       if (resolved) {
-        feedback = resolved
+        feedback = finalizeMentorResponse(resolved, language, allTestsPassed)
       } else {
-        feedback = generateFallbackReviewFeedback(
+        feedback = finalizeMentorResponse(
+          generateFallbackReviewFeedback(
+            language,
+            testResults.filter((r) => r.passed).length,
+            testResults.length,
+            allTestsPassed,
+            "no-key"
+          ),
           language,
-          testResults.filter((r) => r.passed).length,
-          testResults.length,
-          allTestsPassed,
-          "no-key"
+          allTestsPassed
         )
       }
     } catch (error) {
       console.error("AI API error:", error)
-      feedback = generateFallbackReviewFeedback(
+      feedback = finalizeMentorResponse(
+        generateFallbackReviewFeedback(
+          language,
+          testResults.filter((r) => r.passed).length,
+          testResults.length,
+          allTestsPassed,
+          "service-error"
+        ),
         language,
-        testResults.filter((r) => r.passed).length,
-        testResults.length,
-        allTestsPassed,
-        "service-error"
+        allTestsPassed
       )
     }
 

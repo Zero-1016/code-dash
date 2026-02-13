@@ -49,6 +49,65 @@ interface CodeEditorPanelProps {
   onTestResultsUpdate?: (results: TestResult[]) => void;
 }
 
+function isValidTwoSumAnswer(actual: unknown, input: unknown[]): boolean {
+  if (!Array.isArray(actual) || actual.length !== 2) {
+    return false;
+  }
+
+  if (!Array.isArray(input) || input.length < 2) {
+    return false;
+  }
+
+  const nums = input[0];
+  const target = input[1];
+  if (!Array.isArray(nums) || typeof target !== "number") {
+    return false;
+  }
+
+  const [a, b] = actual;
+  if (
+    typeof a !== "number" ||
+    typeof b !== "number" ||
+    !Number.isInteger(a) ||
+    !Number.isInteger(b)
+  ) {
+    return false;
+  }
+
+  if (a === b || a < 0 || b < 0 || a >= nums.length || b >= nums.length) {
+    return false;
+  }
+
+  return typeof nums[a] === "number" && typeof nums[b] === "number" && nums[a] + nums[b] === target;
+}
+
+function isOutputMatch(problem: Problem, actual: unknown, expected: unknown, input: unknown[]): boolean {
+  if (problem.id === "two-sum") {
+    return isValidTwoSumAnswer(actual, input);
+  }
+  return JSON.stringify(actual) === JSON.stringify(expected);
+}
+
+function toDisplayText(value: unknown): string {
+  if (value === undefined) {
+    return "undefined";
+  }
+  if (value === null) {
+    return "null";
+  }
+
+  try {
+    const serialized = JSON.stringify(value);
+    if (typeof serialized === "string") {
+      return serialized;
+    }
+  } catch {
+    // Fallback below for non-serializable values.
+  }
+
+  return String(value);
+}
+
 function judgeCode(code: string, problem: Problem): JudgeResult {
   const results: TestResult[] = [];
 
@@ -76,21 +135,20 @@ function judgeCode(code: string, problem: Problem): JudgeResult {
           `${code}\nreturn ${problem.functionName};`
         )(mockConsole);
         const actual = fn(...structuredClone(testCase.input));
-        const passed =
-          JSON.stringify(actual) === JSON.stringify(testCase.expected);
+        const passed = isOutputMatch(problem, actual, testCase.expected, testCase.input);
 
         results.push({
           passed,
-          input: testCase.input.map((val) => JSON.stringify(val)).join(", "),
-          expected: JSON.stringify(testCase.expected),
-          actual: JSON.stringify(actual),
+          input: testCase.input.map((val) => toDisplayText(val)).join(", "),
+          expected: toDisplayText(testCase.expected),
+          actual: toDisplayText(actual),
           consoleLogs: consoleLogs.length > 0 ? consoleLogs : undefined,
         });
       } catch (err) {
         results.push({
           passed: false,
-          input: testCase.input.map((val) => JSON.stringify(val)).join(", "),
-          expected: JSON.stringify(testCase.expected),
+          input: testCase.input.map((val) => toDisplayText(val)).join(", "),
+          expected: toDisplayText(testCase.expected),
           actual: `Runtime Error: ${(err as Error).message}`,
           consoleLogs: consoleLogs.length > 0 ? consoleLogs : undefined,
         });
@@ -121,6 +179,7 @@ export function CodeEditorPanel({
   onRunTests,
   onTestResultsUpdate,
 }: CodeEditorPanelProps) {
+  const REQUEST_TIMEOUT_MS = 20000;
   const { language } = useAppLanguage();
   const defaultCaseLabel = language === "ko" ? "예시" : "Test Case";
   const customCaseLabel = language === "ko" ? "커스텀 테스트" : "Custom Test";
@@ -246,14 +305,13 @@ export function CodeEditorPanel({
           `${code}\nreturn ${problem.functionName};`
         )(mockConsole);
         const actual = fn(...parsedInput);
-        const passed =
-          JSON.stringify(actual) === JSON.stringify(parsedExpected);
+        const passed = isOutputMatch(problem, actual, parsedExpected, parsedInput);
 
         return {
           passed,
           input: testCase.input,
           expected: testCase.expected,
-          actual: JSON.stringify(actual),
+          actual: toDisplayText(actual),
           isCustom: true,
           consoleLogs: consoleLogs.length > 0 ? consoleLogs : undefined,
         };
@@ -279,6 +337,8 @@ export function CodeEditorPanel({
     // Trigger AI code review
     if (setIsAiGenerating && setPendingReview && setIsAssistantOpen) {
       setIsAiGenerating(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
       try {
         const response = await fetch("/api/review-code", {
@@ -286,6 +346,7 @@ export function CodeEditorPanel({
           headers: {
             "Content-Type": "application/json",
           },
+          signal: controller.signal,
           body: JSON.stringify({
             code,
             problemTitle: problem.title,
@@ -305,10 +366,28 @@ export function CodeEditorPanel({
           setTimeout(() => {
             setIsAssistantOpen(true);
           }, 800);
+        } else if (response.status === 401 || response.status === 403) {
+          setPendingReview(null);
+          setIsAssistantOpen(false);
+          window.alert(
+            language === "ko"
+              ? "토큰이 만료되었습니다. 다시 로그인하거나 API 설정을 확인해주세요."
+              : "Your token has expired. Please sign in again or check API settings."
+          );
         }
       } catch (error) {
-        console.error("Failed to get AI review:", error);
+        if (error instanceof DOMException && error.name === "AbortError") {
+          setPendingReview(
+            language === "ko"
+              ? "응답이 지연돼 요청을 종료했어요. 다시 시도해줘."
+              : "The request timed out. Please try again."
+          );
+          setIsAssistantOpen(true);
+        } else {
+          console.error("Failed to get AI review:", error);
+        }
       } finally {
+        clearTimeout(timeoutId);
         setIsAiGenerating(false);
       }
     }
@@ -738,6 +817,8 @@ export function CodeEditorPanel({
           <ResultFeedback
             result={judgeResult}
             analysis={analysis}
+            problemId={problem.id}
+            problemTitle={problem.title}
             onClose={() => setShowResult(false)}
             onNextChallenge={handleNextChallenge}
           />

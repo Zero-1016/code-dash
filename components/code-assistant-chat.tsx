@@ -39,6 +39,7 @@ export function CodeAssistantChat({
   strategicHint = null,
   elapsedMinutes = 0,
 }: CodeAssistantChatProps) {
+  const REQUEST_TIMEOUT_MS = 20000;
   const { language } = useAppLanguage();
   const text =
     language === "ko"
@@ -55,7 +56,6 @@ export function CodeAssistantChat({
           dismiss: "닫기",
           emptyTitle: "AI 멘토가 기다리고 있어요!",
           emptyDesc: "힌트, 설명, 코드 리뷰를 요청해보세요",
-          loading: "AI가 코드를 분석 중이에요...",
           clearChat: "채팅 지우기",
           placeholder: "힌트, 설명, 코드 리뷰를 요청해보세요...",
         }
@@ -72,7 +72,6 @@ export function CodeAssistantChat({
           dismiss: "Dismiss",
           emptyTitle: "Your AI Mentor is here!",
           emptyDesc: "Get hints, explanations, or code review",
-          loading: "AI is analyzing your code...",
           clearChat: "Clear chat",
           placeholder: "Ask for hints, explanations, or code review...",
         };
@@ -153,6 +152,10 @@ export function CodeAssistantChat({
         /`([^`]+)`/g,
         '<code class="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">$1</code>'
       );
+      formatted = formatted.replace(
+        /([A-Za-z0-9)\]])\^(\d+)/g,
+        "$1<sup>$2</sup>"
+      );
 
       if (line.startsWith("# ")) {
         elements.push(
@@ -224,6 +227,8 @@ export function CodeAssistantChat({
     }
 
     setIsLoading(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     try {
       const response = await fetch("/api/chat", {
@@ -231,6 +236,7 @@ export function CodeAssistantChat({
         headers: {
           "Content-Type": "application/json",
         },
+        signal: controller.signal,
         body: JSON.stringify({
           messages: [...messages, userMessage],
           code,
@@ -244,6 +250,9 @@ export function CodeAssistantChat({
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("TOKEN_EXPIRED");
+        }
         throw new Error("Failed to get response");
       }
 
@@ -255,15 +264,34 @@ export function CodeAssistantChat({
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error("Chat error:", error);
+      const isTokenExpired =
+        error instanceof Error && error.message === "TOKEN_EXPIRED";
+      const isTimeout =
+        error instanceof DOMException && error.name === "AbortError";
+
+      if (isTokenExpired) {
+        window.alert(
+          language === "ko"
+            ? "토큰이 만료되었습니다. 다시 로그인하거나 API 설정을 확인해주세요."
+            : "Your token has expired. Please sign in again or check API settings."
+        );
+        return;
+      }
+
       const errorMessage: Message = {
         role: "assistant",
         content:
-          language === "ko"
-            ? "요청을 처리하지 못했습니다. 다시 시도해주세요."
-            : "Sorry, I couldn't process your request. Please try again.",
+          isTimeout
+              ? language === "ko"
+                ? "응답이 지연돼 요청을 종료했어요. 다시 시도해줘."
+                : "The request timed out. Please try again."
+              : language === "ko"
+                ? "요청을 처리하지 못했습니다. 다시 시도해주세요."
+                : "Sorry, I couldn't process your request. Please try again.",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };
@@ -396,7 +424,7 @@ export function CodeAssistantChat({
             ))}
             {(isLoading || isAiGenerating) && (
               <div className="flex justify-start">
-                <div className="flex items-center gap-3 rounded-[20px] bg-[#3182F6]/10 px-5 py-3 text-sm text-[#3182F6] font-medium">
+                <div className="flex items-center rounded-[20px] bg-[#3182F6]/10 px-5 py-3">
                   <div className="flex gap-1">
                     <motion.div
                       className="h-2 w-2 rounded-full bg-[#3182F6]"
@@ -414,7 +442,6 @@ export function CodeAssistantChat({
                       transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
                     />
                   </div>
-                  <span>{text.loading}</span>
                 </div>
               </div>
             )}

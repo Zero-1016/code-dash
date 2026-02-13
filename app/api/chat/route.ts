@@ -39,14 +39,65 @@ interface ChatRequest {
 
 const MENTOR_REPLY_FORMAT_RULES = `Conversational Flow:
 - Start from the user's latest intent and answer it directly.
-- Keep replies concise but natural (usually 2-4 short lines) and end with one practical next step.
+- Write like a real KakaoTalk/Slack teammate chat message: natural and appropriately sized for context.
+- Keep replies concise and natural; no hard line or character limits.
+- Prefer one compact paragraph unless structure is truly needed.
 - Use a supportive teammate tone, not a formal report tone.
+- Avoid rhetorical questions unless the user explicitly asks for brainstorming.
 - If recent test context is HAS_FAIL:
   - Prioritize emotional support + debugging clarity first ("you're close", "let's isolate one failing path").
   - Focus on root-cause tracing from failing input/output.
   - Defer optimization/complexity discussions until the failing case is stabilized.
 - If recent test context is ALL_PASS:
-  - Briefly acknowledge progress, then suggest one optimization/refactor opportunity.`
+  - Explicitly acknowledge the current solution is correct, then suggest one optimization/refactor opportunity.`
+
+function resolveResponseTokenLimit(maxOutputTokens: number): number {
+  return Math.max(256, maxOutputTokens)
+}
+
+function finalizeMentorResponse(
+  text: string,
+  language: MentorLanguage,
+  allTestsPassed?: boolean
+): string {
+  const trimmed = text.trim()
+  if (!trimmed) {
+    return language === "ko"
+      ? allTestsPassed === false
+        ? "실패 케이스 1개부터 같이 확인해보자."
+        : "핵심 포인트 한 가지부터 바로 정리해볼게."
+      : allTestsPassed === false
+        ? "Let's start with one failing case."
+        : "Let's focus on one key point first."
+  }
+
+  const danglingKo =
+    /(다만|그리고|또한|하지만|근데|즉|예를 들어|예를들어|우선|먼저|결론적으로)\s*[,，:]?\s*$/u
+  const danglingEn =
+    /(however|but|and|so|for example|first|next|then)\s*[,:\-]?\s*$/iu
+  const danglingListMarker = /(?:[:\-]\s*|\*\s*|•\s*|\d+\.\s*)$/u
+
+  let normalized = trimmed
+  if (danglingKo.test(normalized) || danglingEn.test(normalized) || danglingListMarker.test(normalized)) {
+    normalized = normalized.replace(danglingKo, "").replace(danglingEn, "").trim()
+    normalized = normalized.replace(danglingListMarker, "").trim()
+    const completion =
+      language === "ko"
+        ? allTestsPassed === false
+          ? "다음으로 실패 케이스 1개를 기준으로 분기 흐름을 확인해보자."
+          : "다음으로 적용할 개선 포인트 1개만 선택해보자."
+        : allTestsPassed === false
+          ? "Next, trace one failing case through branch flow."
+          : "Next, pick one concrete improvement."
+    normalized = normalized ? `${normalized}\n${completion}` : completion
+  }
+
+  if (!/[.!?…]$/.test(normalized) && !/[다요죠까네]$/.test(normalized)) {
+    normalized = `${normalized}.`
+  }
+
+  return normalized
+}
 
 function buildTestResultsContext(testResults: ChatTestResult[] = [], allTestsPassed?: boolean): string {
   if (!testResults.length) {
@@ -324,7 +375,7 @@ async function chatWithClaude(
       role: msg.role,
       content: msg.content,
     })),
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -357,7 +408,7 @@ async function chatWithGPT(
     model: getLanguageModel("gpt", model, apiKey),
     system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${mentorConversationSkillInstruction}\n\n${languageInstruction}`,
     messages,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -390,7 +441,7 @@ async function chatWithGemini(
     model: getLanguageModel("gemini", model, apiKey),
     system: `${systemPrompt}\n\n${mentorPersonaInstruction}\n\n${mentorConversationSkillInstruction}\n\n${languageInstruction}`,
     messages,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -472,23 +523,31 @@ export async function POST(req: NextRequest) {
       }
 
       if (resolved) {
-        responseText = resolved
+        responseText = finalizeMentorResponse(resolved, language, body.allTestsPassed)
       } else {
-        responseText = generateFallbackMentorResponse(
+        responseText = finalizeMentorResponse(
+          generateFallbackMentorResponse(
+            language,
+            code,
+            messages,
+            body.testResults ?? [],
+            body.allTestsPassed
+          ),
           language,
-          code,
-          messages,
-          body.testResults ?? [],
           body.allTestsPassed
         )
       }
     } catch (error) {
       console.error("AI API error:", error)
-      responseText = generateFallbackMentorResponse(
+      responseText = finalizeMentorResponse(
+        generateFallbackMentorResponse(
+          language,
+          code,
+          messages,
+          body.testResults ?? [],
+          body.allTestsPassed
+        ),
         language,
-        code,
-        messages,
-        body.testResults ?? [],
         body.allTestsPassed
       )
     }
