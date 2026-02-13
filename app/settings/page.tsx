@@ -1,32 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, Loader2, PlugZap, Save } from "lucide-react";
 import { Header } from "@/components/header";
-import {
-  getApiSettings,
-  saveApiSettings,
-  type ApiSettings,
-} from "@/lib/local-progress";
+import { getApiSettings, saveApiSettings, type ApiSettings } from "@/lib/local-progress";
+import { getDefaultAIConfig, type AIProvider } from "@/lib/ai-config";
 
 type TestState = "idle" | "loading" | "success" | "error";
 
+const PROVIDERS: Array<{ id: AIProvider; label: string }> = [
+  { id: "claude", label: "Anthropic Claude" },
+  { id: "gpt", label: "OpenAI GPT" },
+  { id: "gemini", label: "Google Gemini" },
+];
+
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<ApiSettings>({
-    provider: "openai",
-    model: "gpt-4o-mini",
-    apiKey: "",
-  });
+  const [settings, setSettings] = useState<ApiSettings>(getDefaultAIConfig());
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [testState, setTestState] = useState<TestState>("idle");
   const [testMessage, setTestMessage] = useState("");
 
   useEffect(() => {
-    const stored = getApiSettings();
-    setSettings(stored);
+    setSettings(getApiSettings());
   }, []);
+
+  const active = useMemo(() => settings.provider, [settings.provider]);
 
   const handleSave = () => {
     saveApiSettings(settings);
@@ -34,9 +34,10 @@ export default function SettingsPage() {
   };
 
   const handleTestConnection = async () => {
-    if (!settings.apiKey.trim()) {
+    const key = settings.apiKeys[active]?.trim();
+    if (!key) {
       setTestState("error");
-      setTestMessage("API Key를 먼저 입력해주세요.");
+      setTestMessage(`${active.toUpperCase()} API Key를 먼저 입력해주세요.`);
       return;
     }
 
@@ -47,17 +48,13 @@ export default function SettingsPage() {
     const timeout = setTimeout(() => controller.abort(), 15000);
 
     try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch("/api/ai-test", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${settings.apiKey}`,
         },
         body: JSON.stringify({
-          model: settings.model,
-          messages: [{ role: "user", content: "ping" }],
-          max_tokens: 5,
-          temperature: 0,
+          aiConfig: settings,
         }),
         signal: controller.signal,
       });
@@ -65,19 +62,15 @@ export default function SettingsPage() {
       if (!response.ok) {
         const errorText = await response.text();
         setTestState("error");
-        setTestMessage(
-          `연결 실패 (${response.status}): ${errorText.slice(0, 120)}`
-        );
+        setTestMessage(`연결 실패 (${response.status}): ${errorText.slice(0, 120)}`);
         return;
       }
 
       setTestState("success");
-      setTestMessage("연결 성공. 이 모델을 사용할 수 있습니다.");
+      setTestMessage("연결 성공. 현재 선택한 모델로 사용할 수 있습니다.");
     } catch (error) {
       setTestState("error");
-      setTestMessage(
-        error instanceof Error ? `연결 실패: ${error.message}` : "연결 실패"
-      );
+      setTestMessage(error instanceof Error ? `연결 실패: ${error.message}` : "연결 실패");
     } finally {
       clearTimeout(timeout);
     }
@@ -110,61 +103,128 @@ export default function SettingsPage() {
         >
           <h1 className="text-2xl font-bold text-foreground">My Page</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            API 모델/키는 브라우저 로컬 저장소(localStorage)에만 저장됩니다.
+            Provider, model, token, API key는 브라우저 localStorage에만 저장됩니다.
           </p>
 
           <div className="mt-6 grid gap-5">
             <div>
-              <label
-                htmlFor="provider"
-                className="mb-2 block text-sm font-semibold text-foreground"
-              >
-                Provider
+              <label htmlFor="provider" className="mb-2 block text-sm font-semibold text-foreground">
+                Active Provider
               </label>
-              <input
+              <select
                 id="provider"
-                value="OpenAI"
-                disabled
-                className="h-11 w-full rounded-[16px] border border-input bg-muted px-4 text-sm text-muted-foreground"
-              />
+                value={settings.provider}
+                onChange={(event) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    provider: event.target.value as AIProvider,
+                  }))
+                }
+                className="h-11 w-full rounded-[16px] border border-input bg-background px-4 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+              >
+                {PROVIDERS.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div>
-              <label
-                htmlFor="model"
-                className="mb-2 block text-sm font-semibold text-foreground"
-              >
-                Model
-              </label>
-              <input
-                id="model"
-                value={settings.model}
-                onChange={(event) =>
-                  setSettings((prev) => ({ ...prev, model: event.target.value }))
-                }
-                placeholder="gpt-4o-mini"
-                className="h-11 w-full rounded-[16px] border border-input bg-background px-4 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
-              />
-            </div>
+            {PROVIDERS.map((provider) => {
+              const isActive = provider.id === active;
+              return (
+                <div
+                  key={provider.id}
+                  className={`rounded-[20px] border p-4 ${
+                    isActive ? "border-[#3182F6]/40 bg-[#3182F6]/5" : "border-border/60 bg-background"
+                  }`}
+                >
+                  <h3 className="mb-3 text-sm font-bold text-foreground">{provider.label}</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <label
+                        htmlFor={`model-${provider.id}`}
+                        className="mb-1 block text-xs font-semibold text-muted-foreground"
+                      >
+                        Model
+                      </label>
+                      <input
+                        id={`model-${provider.id}`}
+                        value={settings.models[provider.id]}
+                        onChange={(event) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            models: { ...prev.models, [provider.id]: event.target.value },
+                          }))
+                        }
+                        placeholder={
+                          provider.id === "claude"
+                            ? "claude-3-5-sonnet-20241022"
+                            : provider.id === "gpt"
+                            ? "gpt-4o"
+                            : "gemini-pro"
+                        }
+                        className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+                      />
+                    </div>
 
-            <div>
-              <label
-                htmlFor="api-key"
-                className="mb-2 block text-sm font-semibold text-foreground"
-              >
-                API Key
-              </label>
-              <input
-                id="api-key"
-                type="password"
-                value={settings.apiKey}
-                onChange={(event) =>
-                  setSettings((prev) => ({ ...prev, apiKey: event.target.value }))
-                }
-                placeholder="sk-..."
-                className="h-11 w-full rounded-[16px] border border-input bg-background px-4 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
-              />
-            </div>
+                    <div>
+                      <label
+                        htmlFor={`tokens-${provider.id}`}
+                        className="mb-1 block text-xs font-semibold text-muted-foreground"
+                      >
+                        Max Tokens
+                      </label>
+                      <input
+                        id={`tokens-${provider.id}`}
+                        type="number"
+                        min={1}
+                        max={16000}
+                        value={settings.maxTokens[provider.id]}
+                        onChange={(event) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            maxTokens: {
+                              ...prev.maxTokens,
+                              [provider.id]: Math.max(1, Number(event.target.value) || 1),
+                            },
+                          }))
+                        }
+                        className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor={`api-key-${provider.id}`}
+                        className="mb-1 block text-xs font-semibold text-muted-foreground"
+                      >
+                        API Key
+                      </label>
+                      <input
+                        id={`api-key-${provider.id}`}
+                        type="password"
+                        value={settings.apiKeys[provider.id]}
+                        onChange={(event) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            apiKeys: { ...prev.apiKeys, [provider.id]: event.target.value },
+                          }))
+                        }
+                        placeholder={
+                          provider.id === "claude"
+                            ? "sk-ant-..."
+                            : provider.id === "gpt"
+                            ? "sk-..."
+                            : "AIza..."
+                        }
+                        className="h-10 w-full rounded-[14px] border border-input bg-background px-3 text-sm outline-none transition-colors focus:border-[#3182F6] focus:ring-2 focus:ring-[#3182F6]/20"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="mt-7 flex flex-wrap gap-3">
@@ -190,11 +250,7 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          {savedAt && (
-            <p className="mt-4 text-xs text-muted-foreground">
-              마지막 저장: {savedAt}
-            </p>
-          )}
+          {savedAt && <p className="mt-4 text-xs text-muted-foreground">마지막 저장: {savedAt}</p>}
 
           {testState !== "idle" && (
             <div

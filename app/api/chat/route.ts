@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { generateText } from "ai"
+import {
+  providerCandidates,
+  resolveAIConfig,
+  type AIConfigPayload,
+} from "@/lib/ai-config"
+import { getLanguageModel } from "@/lib/server/ai-model"
 
 interface ChatMessage {
   role: "user" | "assistant"
@@ -10,6 +17,7 @@ interface ChatRequest {
   code: string
   problemTitle: string
   problemDescription: string
+  aiConfig?: Partial<AIConfigPayload>
 }
 
 // Helper to call Anthropic Claude API
@@ -17,14 +25,11 @@ async function chatWithClaude(
   messages: ChatMessage[],
   code: string,
   problemTitle: string,
-  problemDescription: string
+  problemDescription: string,
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
 ): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-
-  if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY not configured")
-  }
-
   const systemPrompt = `You are a **Supportive Coding Mentor** helping a student work through: "${problemTitle}".
 
 **Problem Description:**
@@ -52,31 +57,17 @@ You're here to guide the student to **think like a developer** and build problem
 
 Remember: Your job is to make them better developers, not just solve this one problem for them.`
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: messages.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      })),
-    }),
+  const result = await generateText({
+    model: getLanguageModel("claude", model, apiKey),
+    system: systemPrompt,
+    messages: messages.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    })),
+    maxOutputTokens,
+    temperature: 0.7,
   })
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Claude API error: ${error}`)
-  }
-
-  const data = await response.json()
-  return data.content[0].text
+  return result.text
 }
 
 // Helper to call OpenAI GPT API
@@ -84,14 +75,11 @@ async function chatWithGPT(
   messages: ChatMessage[],
   code: string,
   problemTitle: string,
-  problemDescription: string
+  problemDescription: string,
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
 ): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY
-
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY not configured")
-  }
-
   const systemPrompt = `You are a **Supportive Coding Mentor** helping a student work through: "${problemTitle}".
 
 **Problem Description:**
@@ -119,33 +107,14 @@ You're here to guide the student to **think like a developer** and build problem
 
 Remember: Your job is to make them better developers, not just solve this one problem for them.`
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        ...messages,
-      ],
-      temperature: 0.7,
-      max_tokens: 500,
-    }),
+  const result = await generateText({
+    model: getLanguageModel("gpt", model, apiKey),
+    system: systemPrompt,
+    messages,
+    maxOutputTokens,
+    temperature: 0.7,
   })
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`OpenAI API error: ${error}`)
-  }
-
-  const data = await response.json()
-  return data.choices[0].message.content
+  return result.text
 }
 
 // Helper to call Google Gemini API
@@ -153,14 +122,11 @@ async function chatWithGemini(
   messages: ChatMessage[],
   code: string,
   problemTitle: string,
-  problemDescription: string
+  problemDescription: string,
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
 ): Promise<string> {
-  const apiKey = process.env.GOOGLE_API_KEY
-
-  if (!apiKey) {
-    throw new Error("GOOGLE_API_KEY not configured")
-  }
-
   const systemPrompt = `You are a **Supportive Coding Mentor** helping a student work through: "${problemTitle}".
 
 **Problem Description:**
@@ -188,39 +154,14 @@ You're here to guide the student to **think like a developer** and build problem
 
 Remember: Your job is to make them better developers, not just solve this one problem for them.`
 
-  // Convert messages to Gemini format
-  const conversationHistory = messages.map((msg) => ({
-    role: msg.role === "assistant" ? "model" : "user",
-    parts: [{ text: msg.content }],
-  }))
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: systemPrompt }],
-        },
-        contents: conversationHistory,
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 500,
-        },
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Gemini API error: ${error}`)
-  }
-
-  const data = await response.json()
-  return data.candidates[0].content.parts[0].text
+  const result = await generateText({
+    model: getLanguageModel("gemini", model, apiKey),
+    system: systemPrompt,
+    messages,
+    maxOutputTokens,
+    temperature: 0.7,
+  })
+  return result.text
 }
 
 export async function POST(req: NextRequest) {
@@ -229,22 +170,67 @@ export async function POST(req: NextRequest) {
     const { messages, code, problemTitle, problemDescription } = body
 
     // Determine which AI provider to use
-    const provider = process.env.AI_PROVIDER || "auto"
+    const config = resolveAIConfig(body.aiConfig)
 
     let responseText: string
 
     try {
-      if (provider === "claude" || (provider === "auto" && process.env.ANTHROPIC_API_KEY)) {
-        responseText = await chatWithClaude(messages, code, problemTitle, problemDescription)
-      } else if (provider === "gpt" || (provider === "auto" && process.env.OPENAI_API_KEY)) {
-        responseText = await chatWithGPT(messages, code, problemTitle, problemDescription)
-      } else if (provider === "gemini" || (provider === "auto" && process.env.GOOGLE_API_KEY)) {
-        responseText = await chatWithGemini(messages, code, problemTitle, problemDescription)
+      let resolved: string | null = null
+      for (const provider of providerCandidates(config)) {
+        const apiKey = config.apiKeys[provider]?.trim()
+        if (!apiKey) {
+          continue
+        }
+
+        try {
+          if (provider === "claude") {
+            resolved = await chatWithClaude(
+              messages,
+              code,
+              problemTitle,
+              problemDescription,
+              apiKey,
+              config.models.claude,
+              config.maxTokens.claude
+            )
+            break
+          }
+
+          if (provider === "gpt") {
+            resolved = await chatWithGPT(
+              messages,
+              code,
+              problemTitle,
+              problemDescription,
+              apiKey,
+              config.models.gpt,
+              config.maxTokens.gpt
+            )
+            break
+          }
+
+          resolved = await chatWithGemini(
+            messages,
+            code,
+            problemTitle,
+            problemDescription,
+            apiKey,
+            config.models.gemini,
+            config.maxTokens.gemini
+          )
+          break
+        } catch (error) {
+          console.error(`AI API error (${provider}):`, error)
+        }
+      }
+
+      if (resolved) {
+        responseText = resolved
       } else {
         return NextResponse.json(
           {
             message:
-              "AI chat is not available. Please configure at least one AI API key in your .env.local file.",
+              "AI chat is not available. Please configure at least one AI API key in My Page.",
           },
           { status: 503 }
         )

@@ -1,10 +1,8 @@
 "use client";
 
-export interface ApiSettings {
-  provider: "openai";
-  model: string;
-  apiKey: string;
-}
+import { getDefaultAIConfig, type AIConfigPayload } from "@/lib/ai-config";
+
+export interface ApiSettings extends AIConfigPayload {}
 
 export interface SolveRecord {
   problemId: string;
@@ -24,16 +22,13 @@ type ActivityMap = Record<string, number>;
 
 const STORAGE_KEYS = {
   settings: "codedash.settings.v1",
+  language: "codedash.language.v1",
   drafts: "codedash.drafts.v1",
   solves: "codedash.solves.v1",
   activity: "codedash.activity.v1",
 } as const;
 
-const DEFAULT_SETTINGS: ApiSettings = {
-  provider: "openai",
-  model: "gpt-4o-mini",
-  apiKey: "",
-};
+const DEFAULT_SETTINGS: ApiSettings = getDefaultAIConfig();
 
 const STORAGE_EVENT = "codedash:storage-updated";
 
@@ -85,14 +80,84 @@ export function subscribeToProgressUpdates(listener: () => void) {
 }
 
 export function getApiSettings(): ApiSettings {
-  return {
-    ...DEFAULT_SETTINGS,
-    ...safeRead<ApiSettings>(STORAGE_KEYS.settings, DEFAULT_SETTINGS),
-  };
+  const raw = safeRead<unknown>(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
+
+  if (raw && typeof raw === "object") {
+    const candidate = raw as Partial<ApiSettings> & {
+      model?: string;
+      apiKey?: string;
+      provider?: string;
+    };
+
+    // Backward compatibility for old settings shape.
+    if (typeof candidate.model === "string" || typeof candidate.apiKey === "string") {
+      return {
+        ...DEFAULT_SETTINGS,
+        provider:
+          candidate.provider === "claude" ||
+          candidate.provider === "gpt" ||
+          candidate.provider === "gemini"
+            ? candidate.provider
+            : "gpt",
+        models: {
+          ...DEFAULT_SETTINGS.models,
+          gpt: candidate.model || DEFAULT_SETTINGS.models.gpt,
+        },
+        apiKeys: {
+          ...DEFAULT_SETTINGS.apiKeys,
+          gpt: candidate.apiKey || "",
+        },
+        maxTokens: {
+          ...DEFAULT_SETTINGS.maxTokens,
+        },
+      };
+    }
+
+    return {
+      ...DEFAULT_SETTINGS,
+      provider:
+        candidate.provider === "claude" ||
+        candidate.provider === "gpt" ||
+        candidate.provider === "gemini"
+          ? candidate.provider
+          : DEFAULT_SETTINGS.provider,
+      models: {
+        ...DEFAULT_SETTINGS.models,
+        ...(candidate.models || {}),
+      },
+      apiKeys: {
+        ...DEFAULT_SETTINGS.apiKeys,
+        ...(candidate.apiKeys || {}),
+      },
+      maxTokens: {
+        ...DEFAULT_SETTINGS.maxTokens,
+        ...(candidate.maxTokens || {}),
+      },
+    };
+  }
+
+  return DEFAULT_SETTINGS;
 }
 
 export function saveApiSettings(settings: ApiSettings) {
   safeWrite(STORAGE_KEYS.settings, settings);
+}
+
+export type AppLanguage = "en" | "ko";
+
+const DEFAULT_LANGUAGE: AppLanguage = "en";
+
+function isAppLanguage(value: unknown): value is AppLanguage {
+  return value === "en" || value === "ko";
+}
+
+export function getLanguagePreference(): AppLanguage {
+  const language = safeRead<unknown>(STORAGE_KEYS.language, DEFAULT_LANGUAGE);
+  return isAppLanguage(language) ? language : DEFAULT_LANGUAGE;
+}
+
+export function saveLanguagePreference(language: AppLanguage) {
+  safeWrite(STORAGE_KEYS.language, language);
 }
 
 export function getDraft(problemId: string): DraftRecord | null {
@@ -226,4 +291,3 @@ export function getDashboardStats() {
     avgMinutes,
   };
 }
-

@@ -8,6 +8,7 @@ import { Play, RotateCcw, Loader2, Plus, Trash2 } from "lucide-react";
 import type { Problem } from "@/lib/problems";
 import { problems } from "@/lib/problems";
 import { analyzeCodeWithAI, type CodeAnalysis } from "@/lib/analyze-code";
+import { getApiSettings } from "@/lib/local-progress";
 import { ResultFeedback } from "@/components/result-feedback";
 import { AddTestCaseModal } from "@/components/add-test-case-modal";
 
@@ -258,6 +259,7 @@ export function CodeEditorPanel({
             problemDescription: problem.description,
             testResults: allResults,
             allTestsPassed: allResults.every((r) => r.passed),
+            aiConfig: getApiSettings(),
           }),
         });
 

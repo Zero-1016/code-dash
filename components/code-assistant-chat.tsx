@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, Send, Loader2, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { getApiSettings } from "@/lib/local-progress";
 
 interface Message {
   role: "user" | "assistant";
@@ -130,6 +131,7 @@ export function CodeAssistantChat({
           code,
           problemTitle,
           problemDescription,
+          aiConfig: getApiSettings(),
         }),
       });
 

@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { generateText } from "ai"
+import {
+  providerCandidates,
+  resolveAIConfig,
+  type AIConfigPayload,
+} from "@/lib/ai-config"
+import { getLanguageModel } from "@/lib/server/ai-model"
 
 interface AnalyzeRequest {
   code: string
@@ -11,6 +18,7 @@ interface AnalyzeRequest {
     expected: string
     actual: string
   }>
+  aiConfig?: Partial<AIConfigPayload>
 }
 
 interface CodeAnalysis {
@@ -30,14 +38,11 @@ async function analyzeWithClaude(
   problemTitle: string,
   allTestsPassed: boolean,
   passedRatio: number,
-  testResults: AnalyzeRequest["testResults"]
+  testResults: AnalyzeRequest["testResults"],
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
 ): Promise<CodeAnalysis> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-
-  if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY not configured")
-  }
-
   const prompt = `You are a coding mentor analyzing a student's solution to the problem: "${problemTitle}".
 
 Code submitted:
@@ -76,32 +81,13 @@ Rules:
 
 Return ONLY the JSON object, no other text.`
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    }),
+  const result = await generateText({
+    model: getLanguageModel("claude", model, apiKey),
+    prompt,
+    maxOutputTokens,
+    temperature: 0.7,
   })
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Claude API error: ${error}`)
-  }
-
-  const data = await response.json()
-  const content = data.content[0].text
+  const content = result.text
 
   try {
     const analysis = JSON.parse(content)
@@ -117,14 +103,11 @@ async function analyzeWithGPT(
   problemTitle: string,
   allTestsPassed: boolean,
   passedRatio: number,
-  testResults: AnalyzeRequest["testResults"]
+  testResults: AnalyzeRequest["testResults"],
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
 ): Promise<CodeAnalysis> {
-  const apiKey = process.env.OPENAI_API_KEY
-
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY not configured")
-  }
-
   const prompt = `You are a coding mentor analyzing a student's solution to the problem: "${problemTitle}".
 
 Code submitted:
@@ -163,37 +146,14 @@ Rules:
 
 Return ONLY the JSON object, no other text.`
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a helpful coding mentor. Always respond with valid JSON only.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      response_format: { type: "json_object" },
-    }),
+  const result = await generateText({
+    model: getLanguageModel("gpt", model, apiKey),
+    system: "You are a helpful coding mentor. Always respond with valid JSON only.",
+    prompt,
+    maxOutputTokens,
+    temperature: 0.7,
   })
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`OpenAI API error: ${error}`)
-  }
-
-  const data = await response.json()
-  const content = data.choices[0].message.content
+  const content = result.text
 
   try {
     const analysis = JSON.parse(content)
@@ -209,14 +169,11 @@ async function analyzeWithGemini(
   problemTitle: string,
   allTestsPassed: boolean,
   passedRatio: number,
-  testResults: AnalyzeRequest["testResults"]
+  testResults: AnalyzeRequest["testResults"],
+  apiKey: string,
+  model: string,
+  maxOutputTokens: number
 ): Promise<CodeAnalysis> {
-  const apiKey = process.env.GOOGLE_API_KEY
-
-  if (!apiKey) {
-    throw new Error("GOOGLE_API_KEY not configured")
-  }
-
   const prompt = `You are a coding mentor analyzing a student's solution to the problem: "${problemTitle}".
 
 Code submitted:
@@ -255,38 +212,13 @@ Rules:
 
 Return ONLY the JSON object, no other text.`
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1024,
-        },
-      }),
-    }
-  )
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`Gemini API error: ${error}`)
-  }
-
-  const data = await response.json()
-  const content = data.candidates[0].content.parts[0].text
+  const result = await generateText({
+    model: getLanguageModel("gemini", model, apiKey),
+    prompt,
+    maxOutputTokens,
+    temperature: 0.7,
+  })
+  const content = result.text
 
   try {
     // Gemini might wrap JSON in markdown code blocks
@@ -392,38 +324,74 @@ export async function POST(req: NextRequest) {
     const { code, allTestsPassed, passedRatio, problemTitle, testResults } = body
 
     // Determine which AI provider to use based on available API keys
-    const provider = process.env.AI_PROVIDER || "auto"
+    const config = resolveAIConfig(body.aiConfig)
 
     let analysis: CodeAnalysis
 
     try {
-      if (provider === "claude" || (provider === "auto" && process.env.ANTHROPIC_API_KEY)) {
-        analysis = await analyzeWithClaude(
-          code,
-          problemTitle,
-          allTestsPassed,
-          passedRatio,
-          testResults
-        )
-      } else if (provider === "gpt" || (provider === "auto" && process.env.OPENAI_API_KEY)) {
-        analysis = await analyzeWithGPT(
-          code,
-          problemTitle,
-          allTestsPassed,
-          passedRatio,
-          testResults
-        )
-      } else if (provider === "gemini" || (provider === "auto" && process.env.GOOGLE_API_KEY)) {
-        analysis = await analyzeWithGemini(
-          code,
-          problemTitle,
-          allTestsPassed,
-          passedRatio,
-          testResults
-        )
+      let providerError: Error | null = null
+      let resolved: CodeAnalysis | null = null
+
+      for (const provider of providerCandidates(config)) {
+        const apiKey = config.apiKeys[provider]?.trim()
+        if (!apiKey) {
+          continue
+        }
+
+        try {
+          if (provider === "claude") {
+            resolved = await analyzeWithClaude(
+              code,
+              problemTitle,
+              allTestsPassed,
+              passedRatio,
+              testResults,
+              apiKey,
+              config.models.claude,
+              config.maxTokens.claude
+            )
+            break
+          }
+
+          if (provider === "gpt") {
+            resolved = await analyzeWithGPT(
+              code,
+              problemTitle,
+              allTestsPassed,
+              passedRatio,
+              testResults,
+              apiKey,
+              config.models.gpt,
+              config.maxTokens.gpt
+            )
+            break
+          }
+
+          resolved = await analyzeWithGemini(
+            code,
+            problemTitle,
+            allTestsPassed,
+            passedRatio,
+            testResults,
+            apiKey,
+            config.models.gemini,
+            config.maxTokens.gemini
+          )
+          break
+        } catch (error) {
+          providerError = error as Error
+          console.error(`AI API error (${provider}):`, error)
+        }
+      }
+
+      if (resolved) {
+        analysis = resolved
       } else {
-        // No API keys configured, use mock analysis
-        console.warn("No AI API keys configured, using mock analysis")
+        if (providerError) {
+          console.error("AI API error, falling back to mock analysis:", providerError)
+        } else {
+          console.warn("No AI API keys configured, using mock analysis")
+        }
         analysis = getMockAnalysis(code, allTestsPassed, passedRatio)
       }
     } catch (error) {

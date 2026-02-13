@@ -5,9 +5,11 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { Code2, Flame, Settings } from "lucide-react"
 import { getCurrentStreak, subscribeToProgressUpdates } from "@/lib/local-progress"
+import { useAppLanguage } from "@/lib/use-app-language"
 
 export function Header() {
   const [streak, setStreak] = useState(0)
+  const { copy } = useAppLanguage()
 
   useEffect(() => {
     const sync = () => setStreak(getCurrentStreak())
@@ -38,7 +40,7 @@ export function Header() {
             className="flex items-center gap-2 rounded-xl bg-muted px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">My Page</span>
+            <span className="hidden sm:inline">{copy.header.myPage}</span>
           </Link>
           <div className="flex items-center gap-1.5 rounded-xl bg-accent px-3 py-1.5">
             <Flame className="h-4 w-4 text-warning" />

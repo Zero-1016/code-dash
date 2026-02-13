@@ -17,6 +17,7 @@ import type { Problem } from "@/lib/problems";
 import {
   deleteDraft,
   getDraft,
+  getApiSettings,
   recordActivity,
   saveDraft,
   saveSolveRecord,
@@ -93,6 +94,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               problemDescription: problem.description,
               code,
               elapsedMinutes: 30,
+              aiConfig: getApiSettings(),
             }),
           });
 

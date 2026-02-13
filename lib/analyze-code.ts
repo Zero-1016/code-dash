@@ -1,3 +1,5 @@
+import { getApiSettings } from "@/lib/local-progress"
+
 export interface CodeAnalysis {
   correctness: number
   efficiency: number
@@ -39,6 +41,7 @@ export async function analyzeCodeWithAI(
         allTestsPassed,
         passedRatio,
         testResults,
+        aiConfig: getApiSettings(),
       }),
     })
 
