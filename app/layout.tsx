@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
-import { ProblemLanguageSwitcher } from '@/components/problem-language-switcher'
 
 import './globals.css'
 
@@ -95,7 +94,6 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         {children}
-        <ProblemLanguageSwitcher />
       </body>
     </html>
   )
