@@ -27,7 +27,12 @@ const STRATEGIC_HINT_REPLY_RULES = `Reply format:
 - No greetings, emojis, markdown headings, or long paragraphs.
 - Give one decisive algorithm insight and one immediate next step.
 - Avoid rhetorical phrasing and filler.
+- Target around 4 sentences unless the user asks for more detail.
 - Do not provide full solution code.`
+
+function resolveResponseTokenLimit(maxOutputTokens: number): number {
+  return Math.max(320, maxOutputTokens)
+}
 
 function buildStrategicHintPrompt(
   problemTitle: string,
@@ -88,7 +93,7 @@ async function generateHintWithClaude(
   const result = await generateText({
     model: getLanguageModel("claude", model, apiKey),
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -117,7 +122,7 @@ async function generateHintWithGPT(
     system:
       "You are a supportive coding mentor who provides strategic hints and guides students to think like developers. You never give away complete solutions.",
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
@@ -144,7 +149,7 @@ async function generateHintWithGemini(
   const result = await generateText({
     model: getLanguageModel("gemini", model, apiKey),
     prompt,
-    maxOutputTokens,
+    maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
     temperature: 0.7,
   })
   return result.text
