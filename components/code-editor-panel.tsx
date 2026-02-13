@@ -88,6 +88,26 @@ function isOutputMatch(problem: Problem, actual: unknown, expected: unknown, inp
   return JSON.stringify(actual) === JSON.stringify(expected);
 }
 
+function toDisplayText(value: unknown): string {
+  if (value === undefined) {
+    return "undefined";
+  }
+  if (value === null) {
+    return "null";
+  }
+
+  try {
+    const serialized = JSON.stringify(value);
+    if (typeof serialized === "string") {
+      return serialized;
+    }
+  } catch {
+    // Fallback below for non-serializable values.
+  }
+
+  return String(value);
+}
+
 function judgeCode(code: string, problem: Problem): JudgeResult {
   const results: TestResult[] = [];
 
@@ -119,16 +139,16 @@ function judgeCode(code: string, problem: Problem): JudgeResult {
 
         results.push({
           passed,
-          input: testCase.input.map((val) => JSON.stringify(val)).join(", "),
-          expected: JSON.stringify(testCase.expected),
-          actual: JSON.stringify(actual),
+          input: testCase.input.map((val) => toDisplayText(val)).join(", "),
+          expected: toDisplayText(testCase.expected),
+          actual: toDisplayText(actual),
           consoleLogs: consoleLogs.length > 0 ? consoleLogs : undefined,
         });
       } catch (err) {
         results.push({
           passed: false,
-          input: testCase.input.map((val) => JSON.stringify(val)).join(", "),
-          expected: JSON.stringify(testCase.expected),
+          input: testCase.input.map((val) => toDisplayText(val)).join(", "),
+          expected: toDisplayText(testCase.expected),
           actual: `Runtime Error: ${(err as Error).message}`,
           consoleLogs: consoleLogs.length > 0 ? consoleLogs : undefined,
         });
@@ -291,7 +311,7 @@ export function CodeEditorPanel({
           passed,
           input: testCase.input,
           expected: testCase.expected,
-          actual: JSON.stringify(actual),
+          actual: toDisplayText(actual),
           isCustom: true,
           consoleLogs: consoleLogs.length > 0 ? consoleLogs : undefined,
         };
