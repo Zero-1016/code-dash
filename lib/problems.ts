@@ -703,6 +703,185 @@ const generatedTitlePool: Record<Problem["id"], string[]> = {
   ],
 }
 
+const generatedTitlePoolKo: Record<Problem["id"], string[]> = {
+  "two-sum": [
+    "쿠폰 짝 매칭",
+    "배달 예산 페어",
+    "영수증 두 가격 찾기",
+    "랠리 점수 페어",
+    "배터리 셀 매칭",
+    "기프트카드 정확한 합",
+    "프로모션 묶음 페어",
+    "재고 합계 점검",
+    "경매 목표값 페어",
+    "교통 요금 페어",
+    "지출 페어 탐색",
+    "라운드 점수 페어",
+    "코인박스 페어",
+    "주문 페어 검증",
+    "할인 페어 인덱스",
+    "창고 페어 검색",
+    "미팅 시간 페어",
+    "피크 부하 페어",
+    "경로 비용 페어",
+    "세션 토큰 페어",
+  ],
+  "valid-parentheses": [
+    "괄호 스트림 검증",
+    "템플릿 태그 균형",
+    "매크로 괄호 점검",
+    "표현식 안전 필터",
+    "블록 스코프 검증",
+    "수식 괄호 감사",
+    "설정 래퍼 점검",
+    "중첩 토큰 검증",
+    "스크립트 구분자 보호",
+    "쿼리 그룹 검증",
+    "텍스트 파서 괄호",
+    "스니펫 페어 확인",
+    "스택 입력 유효성",
+    "괄호 순서 점검",
+    "명령 래퍼 검증",
+    "코드 펜스 검증",
+    "수학 입력 균형",
+    "로그 구분자 점검",
+    "문법 페어 탐지",
+    "프로그램 블록 검증",
+  ],
+  "reverse-linked-list": [
+    "최근 이벤트 되감기",
+    "작업 큐 뒤집기",
+    "내비게이션 체인 반전",
+    "재생목록 노드 반전",
+    "메시지 체인 뒤집기",
+    "배송 경로 역순",
+    "접속 기록 반전",
+    "커밋 체인 롤백",
+    "센서 스트림 반전",
+    "서비스 링크 경로 반전",
+    "통화 기록 되돌리기",
+    "노드 방향 전환",
+    "긴급 경로 반전",
+    "작업 파이프라인 반전",
+    "백오더 체인 반전",
+    "티켓 체인 반전",
+    "고객 경로 역방향",
+    "감사 추적 반전",
+    "인바운드 링크 반전",
+    "노드 되감기 연산",
+  ],
+  "maximum-subarray": [
+    "최고 매출 구간",
+    "에너지 피크 구간",
+    "최대 이익 연속 구간",
+    "캠페인 성과 구간",
+    "신호 강도 버스트",
+    "최고 모멘텀 슬라이스",
+    "매출 상승 구간",
+    "플레이어 콤보 최대",
+    "히트맵 최고 구간",
+    "성장률 최고 범위",
+    "시장 급등 시퀀스",
+    "최대 상승 구간",
+    "시즌 점수 연속 구간",
+    "핵심 윈도우 이득",
+    "비용 대비 이득 구간",
+    "펄스 피크 부분배열",
+    "광고 트렌드 최대",
+    "트래픽 급증 구간",
+    "가치 연속 구간 최적화",
+    "최상위 구간 찾기",
+  ],
+  "merge-intervals": [
+    "회의실 시간 병합",
+    "예약 시간 통합",
+    "점검 윈도우 병합",
+    "배송 슬롯 병합",
+    "센서 활성 구간 병합",
+    "일정 겹침 압축",
+    "캠페인 시간 병합",
+    "서비스 중단 구간 병합",
+    "진료 예약 병합",
+    "근무 시간 통합",
+    "방송 시간 병합",
+    "경로 통제 구간 병합",
+    "예매 구간 정리",
+    "여행 구간 병합",
+    "교육 세션 병합",
+    "알림 시간 병합",
+    "오피스 출입 시간 병합",
+    "티켓 윈도우 병합",
+    "장비 가동 구간 병합",
+    "강의실 블록 병합",
+  ],
+  "longest-substring": [
+    "고유 채팅 구간",
+    "최장 고유 키 구간",
+    "중복 없는 신호 길이",
+    "패스워드 구간 스캔",
+    "중복 없는 문자 윈도우",
+    "클린 토큰 최장 구간",
+    "고유 이벤트 버스트",
+    "입력 고유 구간 탐지",
+    "키 스트림 고유 범위",
+    "세션 고유 구간",
+    "마커 최장 시퀀스",
+    "경로 고유 구간",
+    "무중복 윈도우 길이",
+    "고유 단어 스트림",
+    "패킷 ID 윈도우",
+    "태그 고유 추적",
+    "커서 고유 구간",
+    "신규 문자 최장 구간",
+    "메시지 다양성 윈도우",
+    "고유 조각 탐색",
+  ],
+  "binary-tree-level-order": [
+    "조직도 레벨 순회",
+    "서버 랙 레벨 스캔",
+    "가계도 레이어 출력",
+    "경로 트리 너비 순회",
+    "메뉴 트리 레벨 목록",
+    "클러스터 노드 레벨 추적",
+    "의사결정 트리 레이어 순회",
+    "브랜치 깊이 스냅샷",
+    "사이트맵 레벨 순회",
+    "계층 레벨 수집",
+    "이진 레이어 수집기",
+    "너비 우선 큐 순회",
+    "노드 레벨 그룹화",
+    "트리 층별 열거",
+    "웨이브프론트 트리 스캔",
+    "노드 레벨 집계",
+    "레이어 브랜치 출력",
+    "팀 계층 순회",
+    "명령 트리 레벨",
+    "시스템 트리 너비 탐색",
+  ],
+  "trapping-rain-water": [
+    "옥상 물 고임 계산",
+    "도로 웅덩이 계산기",
+    "지형 물웅덩이 추정",
+    "침수 포켓 카운터",
+    "빗물 버킷 배치",
+    "도시 배수량 추정",
+    "장벽 사이 물의 양",
+    "수로 벽 물 저장량",
+    "우수 저류량 계산",
+    "골짜기 채움 측정",
+    "막힌 배수로 누적량",
+    "타워 사이 물의 양",
+    "댐 구간 수용량",
+    "도심 빗물 포집량",
+    "함몰 구간 부피 계산",
+    "강우 보유량 계산기",
+    "홈통 물의 양 계산",
+    "저수 구간 추정",
+    "플랫폼 물 저장량",
+    "웅덩이 용량 스캔",
+  ],
+}
+
 function buildGeneratedDescription(seed: Problem["id"], title: string): string {
   switch (seed) {
     case "two-sum":
@@ -737,6 +916,45 @@ Return node values grouped by depth from top to bottom and left to right.`
 Compute how many total units of rainwater are trapped after rainfall.`
     default:
       return "Solve the problem using an efficient algorithm."
+  }
+}
+
+function buildGeneratedDescriptionKo(seed: Problem["id"], title: string): string {
+  switch (seed) {
+    case "two-sum":
+      return `"${title}" 문제에서는 정수 배열과 목표값이 주어집니다. 합이 목표값이 되는 서로 다른 두 인덱스를 찾으세요.
+
+정답은 정확히 하나 존재하며, 인덱스 순서는 자유입니다.`
+    case "valid-parentheses":
+      return `"${title}" 문제에서는 괄호 문자로 이루어진 문자열이 입력됩니다.
+
+열린 괄호가 올바른 종류로 닫히고, 닫히는 순서도 올바른지 판별하세요.`
+    case "reverse-linked-list":
+      return `"${title}" 문제에서는 단일 연결 리스트를 배열 형태로 전달합니다.
+
+연결 방향을 뒤집은 결과를 배열로 반환하세요.`
+    case "maximum-subarray":
+      return `"${title}" 문제에서는 각 위치의 값이 손익을 의미합니다.
+
+연속된 구간 중 합이 최대가 되는 부분배열의 합을 구하세요.`
+    case "merge-intervals":
+      return `"${title}" 문제에서는 \`[start, end]\` 형태의 구간 목록이 주어집니다.
+
+겹치는 구간을 모두 병합해 최소 개수의 비겹침 구간으로 반환하세요.`
+    case "longest-substring":
+      return `"${title}" 문제에서는 문자열 \`s\`가 주어집니다.
+
+중복 문자가 없는 연속 부분 문자열의 최대 길이를 구하세요.`
+    case "binary-tree-level-order":
+      return `"${title}" 문제에서는 이진 트리가 레벨 순서 배열(빈 노드는 \`null\`)로 주어집니다.
+
+루트부터 깊이별로 노드 값을 묶어 반환하세요.`
+    case "trapping-rain-water":
+      return `"${title}" 문제에서는 막대 높이 배열이 주어집니다.
+
+비가 온 뒤 막대 사이에 고이는 빗물의 총량을 계산하세요.`
+    default:
+      return "효율적인 알고리즘으로 문제를 해결하세요."
   }
 }
 
@@ -778,6 +996,56 @@ function buildGeneratedConstraints(seed: Problem["id"]): string[] {
     case "binary-tree-level-order":
       return [
         "0 <= number of nodes <= 2000",
+        "-1000 <= Node.val <= 1000",
+      ]
+    case "trapping-rain-water":
+      return [
+        "1 <= height.length <= 2 * 10^4",
+        "0 <= height[i] <= 10^5",
+      ]
+    default:
+      return []
+  }
+}
+
+function buildGeneratedConstraintsKo(seed: Problem["id"]): string[] {
+  switch (seed) {
+    case "two-sum":
+      return [
+        "2 <= nums.length <= 10^4",
+        "-10^9 <= nums[i] <= 10^9",
+        "-10^9 <= target <= 10^9",
+        "정답이 되는 인덱스 쌍은 정확히 하나입니다.",
+      ]
+    case "valid-parentheses":
+      return [
+        "1 <= s.length <= 10^4",
+        "s는 ()[]{} 문자로만 구성됩니다.",
+      ]
+    case "reverse-linked-list":
+      return [
+        "0 <= head.length <= 5000",
+        "-5000 <= head[i] <= 5000",
+      ]
+    case "maximum-subarray":
+      return [
+        "1 <= nums.length <= 10^5",
+        "-10^4 <= nums[i] <= 10^4",
+      ]
+    case "merge-intervals":
+      return [
+        "1 <= intervals.length <= 10^4",
+        "intervals[i].length == 2",
+        "0 <= start <= end <= 10^5",
+      ]
+    case "longest-substring":
+      return [
+        "0 <= s.length <= 5 * 10^4",
+        "s는 영문자, 숫자, 기호, 공백을 포함할 수 있습니다.",
+      ]
+    case "binary-tree-level-order":
+      return [
+        "노드 수는 0 이상 2000 이하입니다.",
         "-1000 <= Node.val <= 1000",
       ]
     case "trapping-rain-water":
@@ -841,6 +1109,10 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
   })
 }
 
+function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Problem["examples"] {
+  return buildExamplesForSeed(seed, testCases)
+}
+
 function createGeneratedProblem(seed: Problem, index: number): Problem {
   const generatedTitle = generatedTitlePool[seed.id][index % generatedTitlePool[seed.id].length]
   const generatedId = `${toKebabCase(generatedTitle)}-${index + 2}`
@@ -859,6 +1131,41 @@ function createGeneratedProblem(seed: Problem, index: number): Problem {
     functionName: generatedFunctionName,
     testCases,
     examples: buildExamplesForSeed(seed.id, testCases),
+  }
+}
+
+function getGeneratedSeedId(problem: Problem): Problem["id"] | null {
+  for (const seed of baseProblems) {
+    if (problem.functionName.startsWith(`${seed.functionName}Set`)) {
+      return seed.id
+    }
+  }
+  return null
+}
+
+function getGeneratedIndex(problem: Problem): number {
+  const match = problem.functionName.match(/Set(\d+)$/)
+  if (!match) {
+    return 0
+  }
+  const index = Number(match[1]) - 2
+  return Number.isNaN(index) || index < 0 ? 0 : index
+}
+
+function buildAutoKoreanText(problem: Problem): ProblemTextBundle | null {
+  const seedId = getGeneratedSeedId(problem)
+  if (!seedId) {
+    return null
+  }
+  const index = getGeneratedIndex(problem)
+  const titlePool = generatedTitlePoolKo[seedId]
+  const title = titlePool[index % titlePool.length] ?? problem.title
+  return {
+    title,
+    category: localizeCategory(problem.category, "ko"),
+    description: buildGeneratedDescriptionKo(seedId, title),
+    examples: buildExamplesForSeedKo(seedId, problem.testCases),
+    constraints: buildGeneratedConstraintsKo(seedId),
   }
 }
 
@@ -1074,7 +1381,7 @@ export function localizeCategory(category: string, language: ProblemLanguage): s
 
 export function getAvailableProblemLanguages(problem: Problem): ProblemLanguage[] {
   const available: ProblemLanguage[] = ["en"]
-  if (problemTranslations[problem.id]?.ko) {
+  if (problemTranslations[problem.id]?.ko || buildAutoKoreanText(problem)) {
     available.push("ko")
   }
   return available
@@ -1101,6 +1408,13 @@ export function getLocalizedProblemText(problem: Problem, language: ProblemLangu
   const translated = problemTranslations[problem.id]?.[language]
   if (translated) {
     return { text: translated, isFallback: false, availableLanguages }
+  }
+
+  if (language === "ko") {
+    const autoTranslated = buildAutoKoreanText(problem)
+    if (autoTranslated) {
+      return { text: autoTranslated, isFallback: false, availableLanguages }
+    }
   }
 
   return { text: base, isFallback: true, availableLanguages }
