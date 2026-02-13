@@ -22,6 +22,7 @@ type ActivityMap = Record<string, number>;
 
 const STORAGE_KEYS = {
   settings: "codedash.settings.v1",
+  sessionApiKeys: "codedash.session.api-keys.v1",
   language: "codedash.language.v1",
   drafts: "codedash.drafts.v1",
   solves: "codedash.solves.v1",
@@ -36,13 +37,26 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
-function safeRead<T>(key: string, fallback: T): T {
+type StorageScope = "local" | "session";
+
+function getStorage(scope: StorageScope): Storage | null {
+  if (!isBrowser()) {
+    return null;
+  }
+  return scope === "session" ? window.sessionStorage : window.localStorage;
+}
+
+function safeRead<T>(key: string, fallback: T, scope: StorageScope = "local"): T {
   if (!isBrowser()) {
     return fallback;
   }
 
   try {
-    const raw = window.localStorage.getItem(key);
+    const storage = getStorage(scope);
+    if (!storage) {
+      return fallback;
+    }
+    const raw = storage.getItem(key);
     if (!raw) {
       return fallback;
     }
@@ -52,13 +66,17 @@ function safeRead<T>(key: string, fallback: T): T {
   }
 }
 
-function safeWrite<T>(key: string, value: T) {
+function safeWrite<T>(key: string, value: T, scope: StorageScope = "local") {
   if (!isBrowser()) {
     return;
   }
 
   try {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    const storage = getStorage(scope);
+    if (!storage) {
+      return;
+    }
+    storage.setItem(key, JSON.stringify(value));
     window.dispatchEvent(new Event(STORAGE_EVENT));
   } catch {
     // noop
@@ -81,6 +99,11 @@ export function subscribeToProgressUpdates(listener: () => void) {
 
 export function getApiSettings(): ApiSettings {
   const raw = safeRead<unknown>(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
+  const sessionApiKeys = safeRead<ApiSettings["apiKeys"]>(
+    STORAGE_KEYS.sessionApiKeys,
+    DEFAULT_SETTINGS.apiKeys,
+    "session"
+  );
 
   if (raw && typeof raw === "object") {
     const candidate = raw as Partial<ApiSettings> & {
@@ -105,7 +128,7 @@ export function getApiSettings(): ApiSettings {
         },
         apiKeys: {
           ...DEFAULT_SETTINGS.apiKeys,
-          gpt: candidate.apiKey || "",
+          ...sessionApiKeys,
         },
         maxTokens: {
           ...DEFAULT_SETTINGS.maxTokens,
@@ -127,7 +150,7 @@ export function getApiSettings(): ApiSettings {
       },
       apiKeys: {
         ...DEFAULT_SETTINGS.apiKeys,
-        ...(candidate.apiKeys || {}),
+        ...sessionApiKeys,
       },
       maxTokens: {
         ...DEFAULT_SETTINGS.maxTokens,
@@ -140,7 +163,12 @@ export function getApiSettings(): ApiSettings {
 }
 
 export function saveApiSettings(settings: ApiSettings) {
-  safeWrite(STORAGE_KEYS.settings, settings);
+  safeWrite(STORAGE_KEYS.settings, {
+    provider: settings.provider,
+    models: settings.models,
+    maxTokens: settings.maxTokens,
+  });
+  safeWrite(STORAGE_KEYS.sessionApiKeys, settings.apiKeys, "session");
 }
 
 export type AppLanguage = "en" | "ko";
