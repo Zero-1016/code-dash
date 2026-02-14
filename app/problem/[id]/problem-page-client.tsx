@@ -36,6 +36,7 @@ import {
   subscribeToProgressUpdates,
 } from "@/lib/local-progress";
 import { useAppLanguage } from "@/lib/use-app-language";
+import { useIsMobile } from "@/components/ui/use-mobile";
 
 interface ProblemPageClientProps {
   problem: Problem;
@@ -57,6 +58,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
   const REQUEST_TIMEOUT_MS = 20000;
   const router = useRouter();
   const { language, copy } = useAppLanguage();
+  const isMobile = useIsMobile();
   const localized = getLocalizedProblemText(problem, language);
   const localizedProblem = useMemo(
     () => ({
@@ -95,6 +97,14 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
     sync();
     return subscribeToProgressUpdates(sync);
   }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      return;
+    }
+    const viewportMax = Math.max(320, Math.min(900, window.innerWidth - 80));
+    setAssistantWidth((prev) => Math.min(prev, viewportMax));
+  }, [isMobile]);
 
   useEffect(() => {
     const draft = getDraft(problem.id);
@@ -202,6 +212,9 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
 
   const handleAssistantResizeStart = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (isMobile) {
+        return;
+      }
       event.preventDefault();
       assistantResizeStateRef.current = {
         startX: event.clientX,
@@ -211,10 +224,14 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
       document.body.style.cursor = "ew-resize";
       document.body.style.userSelect = "none";
     },
-    [assistantWidth]
+    [assistantWidth, isMobile]
   );
 
   useEffect(() => {
+    if (isMobile) {
+      return;
+    }
+
     const handleResizeMove = (event: MouseEvent) => {
       const resizeState = assistantResizeStateRef.current;
       if (!resizeState) {
@@ -250,25 +267,25 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, []);
+  }, [isMobile]);
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-[100dvh] flex-col bg-background">
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border/60 bg-background/80 px-4 backdrop-blur-xl"
+        className="flex flex-shrink-0 flex-col gap-2 border-b border-border/60 bg-background/80 px-3 py-2 backdrop-blur-xl sm:h-14 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-0"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
           <Link
             href="/"
-            className="flex items-center gap-2 rounded-[20px] px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex items-center gap-2 rounded-[20px] px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">{copy.problem.back}</span>
           </Link>
-          <div className="h-4 w-px bg-border" />
+          <div className="hidden h-4 w-px bg-border sm:block" />
           <div className="flex items-center gap-2">
             <Image
               src="/codedash-mark.svg"
@@ -278,18 +295,10 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               className="h-7 w-7 rounded-[8px]"
               priority
             />
-            <span className="text-sm font-semibold text-foreground">
+            <span className="hidden text-sm font-semibold text-foreground sm:inline">
               CodeDash
             </span>
           </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <ChallengeTimer timeLimit={3600} onTimeUpdate={handleTimeUpdate} />
-          <div className="h-4 w-px bg-border" />
-          <p className="text-sm font-medium text-muted-foreground">
-            {localizedProblem.title}
-          </p>
           <div className="relative">
             <button
               onClick={() => {
@@ -307,7 +316,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               }`}
             >
               <MessageCircle className="h-4 w-4" />
-              {copy.problem.aiMentor}
+              <span className="hidden sm:inline">{copy.problem.aiMentor}</span>
             </button>
             <AnimatePresence>
               {showHintNotification && !isAssistantOpen && isMentorConfigured && (
@@ -336,6 +345,14 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
             </AnimatePresence>
           </div>
         </div>
+
+        <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:gap-4">
+          <ChallengeTimer timeLimit={3600} onTimeUpdate={handleTimeUpdate} />
+          <div className="hidden h-4 w-px bg-border sm:block" />
+          <p className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:max-w-[320px] sm:text-sm">
+            {localizedProblem.title}
+          </p>
+        </div>
       </motion.header>
 
       <motion.div
@@ -344,14 +361,20 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
         transition={{ duration: 0.4, delay: 0.1 }}
         className="flex-1 overflow-hidden relative"
       >
-        <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={45} minSize={30}>
+        <ResizablePanelGroup direction={isMobile ? "vertical" : "horizontal"}>
+          <ResizablePanel
+            defaultSize={isMobile ? 42 : 45}
+            minSize={isMobile ? 28 : 30}
+          >
             <ProblemDescription problem={localizedProblem} />
           </ResizablePanel>
 
-          <ResizableHandle withHandle />
+          <ResizableHandle withHandle={!isMobile} />
 
-          <ResizablePanel defaultSize={55} minSize={35}>
+          <ResizablePanel
+            defaultSize={isMobile ? 58 : 55}
+            minSize={isMobile ? 32 : 35}
+          >
             <CodeEditorPanel
               problem={localizedProblem}
               code={code}
@@ -386,7 +409,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className="fixed right-0 top-0 bottom-0 z-50 w-full border-l border-border bg-background shadow-2xl flex flex-col"
-                style={{ maxWidth: `${assistantWidth}px` }}
+                style={{ maxWidth: isMobile ? "100%" : `${assistantWidth}px` }}
               >
                 <button
                   type="button"
