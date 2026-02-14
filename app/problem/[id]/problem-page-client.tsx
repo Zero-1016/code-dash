@@ -363,8 +363,8 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
       >
         <ResizablePanelGroup direction={isMobile ? "vertical" : "horizontal"}>
           <ResizablePanel
-            defaultSize={isMobile ? 42 : 45}
-            minSize={isMobile ? 28 : 30}
+            defaultSize={isMobile ? 35 : 45}
+            minSize={isMobile ? 16 : 30}
           >
             <ProblemDescription problem={localizedProblem} />
           </ResizablePanel>
@@ -372,8 +372,8 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
           <ResizableHandle withHandle={!isMobile} />
 
           <ResizablePanel
-            defaultSize={isMobile ? 58 : 55}
-            minSize={isMobile ? 32 : 35}
+            defaultSize={isMobile ? 65 : 55}
+            minSize={isMobile ? 40 : 35}
           >
             <CodeEditorPanel
               problem={localizedProblem}

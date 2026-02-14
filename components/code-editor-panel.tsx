@@ -12,6 +12,7 @@ import { getApiSettings } from "@/lib/local-progress";
 import { ResultFeedback } from "@/components/result-feedback";
 import { AddTestCaseModal } from "@/components/add-test-case-modal";
 import { useAppLanguage } from "@/lib/use-app-language";
+import { useIsMobile } from "@/components/ui/use-mobile";
 
 interface TestResult {
   passed: boolean;
@@ -181,6 +182,7 @@ export function CodeEditorPanel({
 }: CodeEditorPanelProps) {
   const REQUEST_TIMEOUT_MS = 20000;
   const { language } = useAppLanguage();
+  const isMobile = useIsMobile();
   const defaultCaseLabel = language === "ko" ? "예시" : "Test Case";
   const customCaseLabel = language === "ko" ? "커스텀 테스트" : "Custom Test";
   const router = useRouter();
@@ -433,6 +435,14 @@ export function CodeEditorPanel({
   );
 
   useEffect(() => {
+    if (isMobile) {
+      setTestPanelHeight(140);
+      return;
+    }
+    setTestPanelHeight(220);
+  }, [isMobile]);
+
+  useEffect(() => {
     const handleResizeMove = (event: MouseEvent) => {
       const resizeState = resizeStateRef.current;
       if (!resizeState) {
@@ -440,10 +450,14 @@ export function CodeEditorPanel({
       }
 
       const deltaY = resizeState.startY - event.clientY;
-      const minHeight = 140;
+      const minHeight = isMobile ? 96 : 140;
       const middleHeight = middleSectionRef.current?.clientHeight ?? 0;
       const maxHeight =
-        middleHeight > 0 ? Math.max(minHeight, Math.floor(middleHeight * 0.7)) : 420;
+        middleHeight > 0
+          ? Math.max(minHeight, Math.floor(middleHeight * (isMobile ? 0.55 : 0.7)))
+          : isMobile
+          ? 240
+          : 420;
       const nextHeight = Math.min(
         maxHeight,
         Math.max(minHeight, resizeState.startHeight + deltaY)
@@ -471,7 +485,7 @@ export function CodeEditorPanel({
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, []);
+  }, [isMobile]);
 
   return (
     <div className="relative flex h-full max-h-full flex-col bg-background overflow-hidden">
