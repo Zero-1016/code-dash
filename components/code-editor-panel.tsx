@@ -450,7 +450,8 @@ export function CodeEditorPanel({
       }
 
       const deltaY = resizeState.startY - event.clientY;
-      const minHeight = isMobile ? 96 : 140;
+      // Allow collapsing test cases down to the drag handle height.
+      const minHeight = 28;
       const middleHeight = middleSectionRef.current?.clientHeight ?? 0;
       const maxHeight =
         middleHeight > 0
