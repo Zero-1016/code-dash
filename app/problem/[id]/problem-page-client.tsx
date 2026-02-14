@@ -346,7 +346,11 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
           </div>
         </div>
 
-        <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:gap-4">
+        <div className="flex w-full justify-center sm:hidden">
+          <ChallengeTimer timeLimit={3600} onTimeUpdate={handleTimeUpdate} />
+        </div>
+
+        <div className="hidden w-full min-w-0 items-center gap-2 sm:w-auto sm:gap-4 sm:flex">
           <ChallengeTimer timeLimit={3600} onTimeUpdate={handleTimeUpdate} />
           <div className="hidden h-4 w-px bg-border sm:block" />
           <p className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:max-w-[320px] sm:text-sm">
