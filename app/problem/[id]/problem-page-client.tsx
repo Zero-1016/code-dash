@@ -277,7 +277,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="flex flex-shrink-0 flex-col gap-2 border-b border-border/60 bg-background/80 px-3 py-2 backdrop-blur-xl sm:h-14 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-0"
       >
-        <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
+        <div className="relative flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
           <Link
             href="/"
             className="flex items-center gap-2 rounded-[20px] px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3"
@@ -298,6 +298,9 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
             <span className="text-sm font-semibold text-foreground">
               CodeDash
             </span>
+          </div>
+          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 sm:hidden">
+            <ChallengeTimer timeLimit={3600} onTimeUpdate={handleTimeUpdate} />
           </div>
           <div className="relative">
             <button
@@ -344,10 +347,6 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               )}
             </AnimatePresence>
           </div>
-        </div>
-
-        <div className="flex w-full justify-center sm:hidden">
-          <ChallengeTimer timeLimit={3600} onTimeUpdate={handleTimeUpdate} />
         </div>
 
         <div className="hidden w-full min-w-0 items-center gap-2 sm:w-auto sm:gap-4 sm:flex">
