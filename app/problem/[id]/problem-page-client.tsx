@@ -286,7 +286,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
             <span className="hidden sm:inline">{copy.problem.back}</span>
           </Link>
           <div className="hidden h-4 w-px bg-border sm:block" />
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 sm:flex">
             <Image
               src="/codedash-mark.svg"
               alt="CodeDash logo"
@@ -295,7 +295,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
               className="h-7 w-7 rounded-[8px]"
               priority
             />
-            <span className="hidden text-sm font-semibold text-foreground sm:inline">
+            <span className="text-sm font-semibold text-foreground">
               CodeDash
             </span>
           </div>
