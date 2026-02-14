@@ -70,7 +70,7 @@ export function ChallengeTimer({ timeLimit, onTimeUpdate, onTimeUp }: ChallengeT
   const secondsStr = String(seconds).padStart(2, "0")
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 sm:gap-3">
       <div className="flex items-center gap-2">
         <motion.div
           animate={isCritical ? { scale: [1, 1.1, 1] } : {}}
@@ -122,7 +122,7 @@ export function ChallengeTimer({ timeLimit, onTimeUpdate, onTimeUp }: ChallengeT
       </div>
 
       {/* Progress Bar */}
-      <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+      <div className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-muted sm:block">
         <motion.div
           className={`h-full ${
             isTimeUp

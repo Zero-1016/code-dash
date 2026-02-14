@@ -12,6 +12,7 @@ import { getApiSettings } from "@/lib/local-progress";
 import { ResultFeedback } from "@/components/result-feedback";
 import { AddTestCaseModal } from "@/components/add-test-case-modal";
 import { useAppLanguage } from "@/lib/use-app-language";
+import { useIsMobile } from "@/components/ui/use-mobile";
 
 interface TestResult {
   passed: boolean;
@@ -181,6 +182,7 @@ export function CodeEditorPanel({
 }: CodeEditorPanelProps) {
   const REQUEST_TIMEOUT_MS = 20000;
   const { language } = useAppLanguage();
+  const isMobile = useIsMobile();
   const defaultCaseLabel = language === "ko" ? "예시" : "Test Case";
   const customCaseLabel = language === "ko" ? "커스텀 테스트" : "Custom Test";
   const router = useRouter();
@@ -433,6 +435,14 @@ export function CodeEditorPanel({
   );
 
   useEffect(() => {
+    if (isMobile) {
+      setTestPanelHeight(140);
+      return;
+    }
+    setTestPanelHeight(220);
+  }, [isMobile]);
+
+  useEffect(() => {
     const handleResizeMove = (event: MouseEvent) => {
       const resizeState = resizeStateRef.current;
       if (!resizeState) {
@@ -440,10 +450,15 @@ export function CodeEditorPanel({
       }
 
       const deltaY = resizeState.startY - event.clientY;
-      const minHeight = 140;
+      // Allow collapsing test cases down to the drag handle height.
+      const minHeight = 28;
       const middleHeight = middleSectionRef.current?.clientHeight ?? 0;
       const maxHeight =
-        middleHeight > 0 ? Math.max(minHeight, Math.floor(middleHeight * 0.7)) : 420;
+        middleHeight > 0
+          ? Math.max(minHeight, Math.floor(middleHeight * (isMobile ? 0.55 : 0.7)))
+          : isMobile
+          ? 240
+          : 420;
       const nextHeight = Math.min(
         maxHeight,
         Math.max(minHeight, resizeState.startHeight + deltaY)
@@ -471,7 +486,7 @@ export function CodeEditorPanel({
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, []);
+  }, [isMobile]);
 
   return (
     <div className="relative flex h-full max-h-full flex-col bg-background overflow-hidden">
@@ -757,12 +772,12 @@ export function CodeEditorPanel({
             {submitError}
           </p>
         )}
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={handleRunTests}
             disabled={isRunningTests}
-            className="flex flex-1 items-center justify-center gap-2 rounded-[20px] border-2 border-[#3182F6] bg-background px-6 py-3.5 text-sm font-bold text-[#3182F6] transition-all hover:bg-[#3182F6]/5 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-[20px] border-2 border-[#3182F6] bg-background px-6 py-3.5 text-sm font-bold text-[#3182F6] transition-all hover:bg-[#3182F6]/5 disabled:opacity-50 sm:flex-1"
           >
             {isRunningTests ? (
               <>
@@ -781,7 +796,7 @@ export function CodeEditorPanel({
             whileTap={{ scale: 0.98 }}
             onClick={handleSubmit}
             disabled={isJudging}
-            className="flex flex-1 items-center justify-center gap-2 rounded-[20px] bg-[#3182F6] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#3182F6]/30 transition-all hover:bg-[#2870d8] hover:shadow-xl hover:shadow-[#3182F6]/40 disabled:opacity-70"
+            className="flex w-full items-center justify-center gap-2 rounded-[20px] bg-[#3182F6] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#3182F6]/30 transition-all hover:bg-[#2870d8] hover:shadow-xl hover:shadow-[#3182F6]/40 disabled:opacity-70 sm:flex-1"
           >
             <AnimatePresence mode="wait">
               {isJudging ? (
