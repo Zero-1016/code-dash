@@ -1,7 +1,8 @@
 "use client"
 
 import { ChevronDown } from "lucide-react"
-import { saveLanguagePreference, type AppLanguage } from "@/lib/local-progress"
+import type { AppLanguage } from "@/lib/app-language"
+import { saveLanguagePreference } from "@/lib/local-progress"
 import { useAppLanguage } from "@/lib/use-app-language"
 
 interface LanguageSwitcherProps {

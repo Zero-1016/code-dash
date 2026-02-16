@@ -1,6 +1,8 @@
 "use client";
 
 import { getDefaultAIConfig, type AIConfigPayload } from "@/lib/ai-config";
+import type { AppLanguage } from "@/lib/app-language";
+import { resolveLanguageFromCountryCode } from "@/lib/country-language";
 import { problems } from "@/lib/problems";
 
 export interface ApiSettings extends AIConfigPayload {}
@@ -173,8 +175,6 @@ export function saveApiSettings(settings: ApiSettings) {
   safeWrite(STORAGE_KEYS.sessionApiKeys, settings.apiKeys, "session");
 }
 
-export type AppLanguage = "en" | "ko";
-
 const DEFAULT_LANGUAGE: AppLanguage = "en";
 
 function isAppLanguage(value: unknown): value is AppLanguage {
@@ -183,7 +183,20 @@ function isAppLanguage(value: unknown): value is AppLanguage {
 
 export function getLanguagePreference(): AppLanguage {
   const language = safeRead<unknown>(STORAGE_KEYS.language, DEFAULT_LANGUAGE);
-  return isAppLanguage(language) ? language : DEFAULT_LANGUAGE;
+  if (isAppLanguage(language)) {
+    return language;
+  }
+
+  if (isBrowser()) {
+    const languageCookie = readCookie("codedash.lang-default");
+    if (isAppLanguage(languageCookie)) {
+      return languageCookie;
+    }
+    const country = readCookie("codedash.country");
+    return resolveLanguageFromCountryCode(country);
+  }
+
+  return DEFAULT_LANGUAGE;
 }
 
 export function saveLanguagePreference(language: AppLanguage) {
@@ -241,6 +254,22 @@ function toDateKey(value: Date) {
   const m = String(value.getMonth() + 1).padStart(2, "0");
   const d = String(value.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+function readCookie(name: string): string | null {
+  if (!isBrowser()) {
+    return null;
+  }
+
+  const token = `${name}=`;
+  const items = document.cookie.split(";");
+  for (const item of items) {
+    const trimmed = item.trim();
+    if (trimmed.startsWith(token)) {
+      return decodeURIComponent(trimmed.slice(token.length));
+    }
+  }
+  return null;
 }
 
 function getActivityMap(): ActivityMap {
