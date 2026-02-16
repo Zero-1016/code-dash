@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { AppLanguage } from "@/lib/app-language";
 import {
   getLanguagePreference,
   subscribeToProgressUpdates,
-  type AppLanguage,
 } from "@/lib/local-progress";
 import { getLocaleCopy } from "@/lib/i18n";
 

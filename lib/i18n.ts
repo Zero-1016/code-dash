@@ -1,4 +1,4 @@
-import type { AppLanguage } from "@/lib/local-progress";
+import type { AppLanguage } from "@/lib/app-language";
 
 export const DEFAULT_LANGUAGE: AppLanguage = "en";
 
