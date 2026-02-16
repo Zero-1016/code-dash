@@ -38,8 +38,87 @@ const REVIEW_REPLY_FORMAT_RULES = `Reply format:
 - Avoid rhetorical questions and repetitive praise.
 - Keep it to one short acknowledgement + one concrete action point whenever possible.`
 
+const LOW_SIGNAL_KO_PATTERNS = [
+  "좋은 시도",
+  "좋은 접근",
+  "잘하고 있어",
+  "전반적으로",
+  "일반적으로",
+  "조금 더 개선",
+]
+
+const LOW_SIGNAL_EN_PATTERNS = [
+  "good attempt",
+  "good job",
+  "overall",
+  "generally",
+  "could be improved",
+  "looks fine",
+]
+
 function resolveResponseTokenLimit(maxOutputTokens: number): number {
   return Math.max(256, maxOutputTokens)
+}
+
+function isLowSignalReview(text: string, language: MentorLanguage): boolean {
+  const normalized = text.trim().toLowerCase()
+  if (!normalized) {
+    return true
+  }
+
+  const lineCount = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean).length
+  const hasTestReference = /(test|케이스|입력|expected|actual|pass|fail|통과|실패)/i.test(text)
+  const hasConcreteAction = /(replace|change|trace|check|use|추적|바꿔|확인|사용|적용)/i.test(text)
+
+  const matchedPattern =
+    language === "ko"
+      ? LOW_SIGNAL_KO_PATTERNS.some((pattern) => normalized.includes(pattern))
+      : LOW_SIGNAL_EN_PATTERNS.some((pattern) => normalized.includes(pattern))
+
+  if (lineCount <= 1 && !hasTestReference) {
+    return true
+  }
+  if (matchedPattern && !hasConcreteAction) {
+    return true
+  }
+  return !hasTestReference && !hasConcreteAction
+}
+
+function buildDeterministicReviewFallback(
+  language: MentorLanguage,
+  testResults: TestResult[],
+  allTestsPassed: boolean,
+  code: string
+): string {
+  const firstFailed = testResults.find((result) => !result.passed)
+  const hasNestedLoop = /for\s*\(.*\)\s*{[\s\S]*for\s*\(/.test(code)
+
+  if (language === "ko") {
+    if (!allTestsPassed && firstFailed) {
+      return `지금은 ${testResults.filter((r) => r.passed).length}/${testResults.length} 통과야. 먼저 실패한 케이스 1개부터 고치자.
+입력: ${firstFailed.input}
+기대값: ${firstFailed.expected}, 실제값: ${firstFailed.actual}
+다음 액션: 이 케이스를 기준으로 조건문 분기 순서를 위에서 아래로 한 줄씩 추적하고, 기대값과 다른 첫 분기 지점만 수정해봐.`
+    }
+
+    return hasNestedLoop
+      ? "테스트는 통과했어. 다음으로 중첩 루프를 줄일 수 있는지부터 보자. Map/Set으로 조회를 O(1)로 바꾸면 반복 스캔을 줄일 가능성이 커."
+      : "테스트는 통과했어. 다음 액션은 함수 책임을 한 단계만 분리하는 거야. 경계값 처리(빈 입력/최소 길이)를 early return으로 먼저 두면 유지보수가 쉬워져."
+  }
+
+  if (!allTestsPassed && firstFailed) {
+    return `You are at ${testResults.filter((r) => r.passed).length}/${testResults.length}. Fix one failing case first.
+Input: ${firstFailed.input}
+Expected: ${firstFailed.expected}, Actual: ${firstFailed.actual}
+Next action: trace the branch order top-down for this case and patch only the first branch where behavior diverges from expected output.`
+  }
+
+  return hasNestedLoop
+    ? "Your tests pass. Next action: reduce nested scans first. Consider replacing repeated lookups with Map/Set for O(1) access."
+    : "Your tests pass. Next action: isolate one responsibility. Put boundary checks (empty/min length) as early returns to simplify maintenance."
 }
 
 function finalizeMentorResponse(
@@ -160,6 +239,8 @@ ${!r.passed ? `  Input: ${r.input}\n  Expected: ${r.expected}\n  Got: ${r.actual
   }
 - Suggest algorithm alternatives naturally when relevant.
 - Do not dump a full solution unless explicitly requested.
+- Reference at least one concrete test detail (input/expected/actual or pass count).
+- Include exactly one next action that the learner can execute immediately.
 - ${REVIEW_REPLY_FORMAT_RULES}
 
 Provide your supportive feedback now:
@@ -192,7 +273,7 @@ async function reviewWithClaude(
     model: getLanguageModel("claude", model, apiKey),
     prompt,
     maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
-    temperature: 0.7,
+    temperature: 0.35,
   })
   return result.text
 }
@@ -223,7 +304,7 @@ async function reviewWithGPT(
       "You are a helpful coding mentor who provides constructive feedback and guides students to learn.",
     prompt,
     maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
-    temperature: 0.7,
+    temperature: 0.35,
   })
   return result.text
 }
@@ -252,7 +333,7 @@ async function reviewWithGemini(
     model: getLanguageModel("gemini", model, apiKey),
     prompt,
     maxOutputTokens: resolveResponseTokenLimit(maxOutputTokens),
-    temperature: 0.7,
+    temperature: 0.35,
   })
   return result.text
 }
@@ -337,7 +418,10 @@ export async function POST(req: NextRequest) {
       }
 
       if (resolved) {
-        feedback = finalizeMentorResponse(resolved, language, allTestsPassed)
+        const refined = isLowSignalReview(resolved, language)
+          ? buildDeterministicReviewFallback(language, testResults, allTestsPassed, code)
+          : resolved
+        feedback = finalizeMentorResponse(refined, language, allTestsPassed)
       } else {
         feedback = finalizeMentorResponse(
           generateFallbackReviewFeedback(

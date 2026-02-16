@@ -55,6 +55,10 @@ export interface LocaleCopy {
     translationReady: string;
     fallbackEnglish: string;
     mentorSetupNotice: string;
+    mentorSetupTitle: string;
+    mentorSetupDescription: string;
+    mentorSetupCancel: string;
+    mentorSetupGoToSettings: string;
   };
   problemCard: {
     solved: string;
@@ -132,6 +136,11 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       fallbackEnglish: "English (fallback)",
       mentorSetupNotice:
         "If you do not add a model, it is difficult to expect accurate mentoring.",
+      mentorSetupTitle: "AI mentor setup required",
+      mentorSetupDescription:
+        "You need to set up a model and API key to receive accurate feedback.",
+      mentorSetupCancel: "Cancel",
+      mentorSetupGoToSettings: "Go to Settings",
     },
     problemCard: {
       solved: "Solved",
@@ -205,6 +214,11 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       translationReady: "영어 + 한국어",
       fallbackEnglish: "영어 기본값 (fallback)",
       mentorSetupNotice: "모델을 추가하지 않으면 정확한 멘토링을 기대하기는 어렵습니다.",
+      mentorSetupTitle: "AI 멘토 설정 필요",
+      mentorSetupDescription:
+        "정확한 피드백을 받으려면 모델과 API Key를 설정해야 합니다.",
+      mentorSetupCancel: "취소",
+      mentorSetupGoToSettings: "설정 페이지로 이동",
     },
     problemCard: {
       solved: "해결됨",

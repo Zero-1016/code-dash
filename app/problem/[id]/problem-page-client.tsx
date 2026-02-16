@@ -508,15 +508,15 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
       <AlertDialog open={isMentorAlertOpen} onOpenChange={setIsMentorAlertOpen}>
         <AlertDialogContent overlayClassName="bg-black/45">
           <AlertDialogHeader>
-            <AlertDialogTitle>AI 멘토 설정 필요</AlertDialogTitle>
+            <AlertDialogTitle>{copy.problem.mentorSetupTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              모델을 등록해야만 정확한 피드백이 가능합니다.
+              {copy.problem.mentorSetupDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogCancel>{copy.problem.mentorSetupCancel}</AlertDialogCancel>
             <AlertDialogAction onClick={() => router.push("/settings")}>
-              설정 페이지로 이동
+              {copy.problem.mentorSetupGoToSettings}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
