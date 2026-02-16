@@ -338,6 +338,16 @@ export function CodeEditorPanel({
 
     // Trigger AI code review
     if (setIsAiGenerating && setPendingReview && setIsAssistantOpen) {
+      const aiSettings = getApiSettings();
+      const selectedProvider = aiSettings.provider;
+      const hasConfiguredModel = Boolean(aiSettings.models[selectedProvider]?.trim());
+      const hasConfiguredApiKey = Boolean(aiSettings.apiKeys[selectedProvider]?.trim());
+
+      if (!hasConfiguredModel || !hasConfiguredApiKey) {
+        setPendingReview(null);
+        return;
+      }
+
       setIsAiGenerating(true);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -356,7 +366,7 @@ export function CodeEditorPanel({
             testResults: allResults,
             allTestsPassed: allResults.every((r) => r.passed),
             language,
-            aiConfig: getApiSettings(),
+            aiConfig: aiSettings,
           }),
         });
 

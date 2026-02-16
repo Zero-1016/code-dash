@@ -56,6 +56,7 @@ interface AssistantResizeState {
 
 export function ProblemPageClient({ problem }: ProblemPageClientProps) {
   const REQUEST_TIMEOUT_MS = 20000;
+  const TIME_LIMIT_SECONDS = 3600;
   const router = useRouter();
   const { language, copy } = useAppLanguage();
   const isMobile = useIsMobile();
@@ -85,6 +86,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
   const [assistantWidth, setAssistantWidth] = useState(400);
   const [isResizingAssistant, setIsResizingAssistant] = useState(false);
   const assistantResizeStateRef = useRef<AssistantResizeState | null>(null);
+  const timerStartedAtRef = useRef<number>(Date.now());
 
   useEffect(() => {
     const sync = () => {
@@ -116,6 +118,25 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
   }, [problem.id, problem.starterCode]);
 
   useEffect(() => {
+    timerStartedAtRef.current = Date.now();
+    setElapsedSeconds(0);
+    setHasTriggered30MinHint(false);
+    setStrategicHint(null);
+    setShowHintNotification(false);
+  }, [problem.id]);
+
+  useEffect(() => {
+    const tick = () => {
+      const nextElapsed = Math.floor((Date.now() - timerStartedAtRef.current) / 1000);
+      setElapsedSeconds(nextElapsed);
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     const timeout = setTimeout(() => {
       if (code.trim() && code !== problem.starterCode) {
         saveDraft(problem.id, code);
@@ -143,72 +164,92 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
     [elapsedSeconds, problem.id]
   );
 
-  const handleTimeUpdate = useCallback(
-    async (seconds: number) => {
-      setElapsedSeconds(seconds);
+  useEffect(() => {
+    if (elapsedSeconds < 1800 || hasTriggered30MinHint || !isMentorConfigured) {
+      return;
+    }
 
-      // Trigger 30-minute strategic hint only when mentor is configured.
-      if (seconds >= 1800 && !hasTriggered30MinHint && isMentorConfigured) {
-        setHasTriggered30MinHint(true);
-        setIsAiGenerating(true);
-        setShowHintNotification(true);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let isCancelled = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-        try {
-          const response = await fetch("/api/strategic-hint", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            signal: controller.signal,
-            body: JSON.stringify({
-              problemTitle: localizedProblem.title,
-              problemDescription: localizedProblem.description,
-              code,
-              elapsedMinutes: 30,
-              language,
-              aiConfig: getApiSettings(),
-            }),
-          });
+    setHasTriggered30MinHint(true);
+    setIsAiGenerating(true);
+    setShowHintNotification(true);
 
-          if (response.ok) {
-            const data = await response.json();
-            setStrategicHint(data.hint);
-            // Don't auto-open - let the user click when ready
-          } else if (response.status === 401 || response.status === 403) {
-            setStrategicHint(null);
-            window.alert(
-              language === "ko"
-                ? "토큰이 만료되었습니다. 다시 로그인하거나 API 설정을 확인해주세요."
-                : "Your token has expired. Please sign in again or check API settings."
-            );
-          }
-        } catch (error) {
-          if (error instanceof DOMException && error.name === "AbortError") {
-            setStrategicHint(
-              language === "ko"
-                ? "응답이 지연돼 요청을 종료했어요. 다시 시도해줘."
-                : "The request timed out. Please try again."
-            );
-          } else {
-            console.error("Failed to get strategic hint:", error);
-          }
-        } finally {
-          clearTimeout(timeoutId);
+    const requestHint = async () => {
+      try {
+        const response = await fetch("/api/strategic-hint", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            problemTitle: localizedProblem.title,
+            problemDescription: localizedProblem.description,
+            code,
+            elapsedMinutes: 30,
+            language,
+            aiConfig: getApiSettings(),
+          }),
+        });
+
+        if (isCancelled) {
+          return;
+        }
+
+        if (response.ok) {
+          const data = await response.json();
+          setStrategicHint(data.hint);
+          return;
+        }
+
+        if (response.status === 401 || response.status === 403) {
+          setStrategicHint(null);
+          window.alert(
+            language === "ko"
+              ? "토큰이 만료되었습니다. 다시 로그인하거나 API 설정을 확인해주세요."
+              : "Your token has expired. Please sign in again or check API settings."
+          );
+        }
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+        if (error instanceof DOMException && error.name === "AbortError") {
+          setStrategicHint(
+            language === "ko"
+              ? "응답이 지연돼 요청을 종료했어요. 다시 시도해줘."
+              : "The request timed out. Please try again."
+          );
+        } else {
+          console.error("Failed to get strategic hint:", error);
+        }
+      } finally {
+        clearTimeout(timeoutId);
+        if (!isCancelled) {
           setIsAiGenerating(false);
         }
       }
-    },
-    [
-      hasTriggered30MinHint,
-      isMentorConfigured,
-      localizedProblem.description,
-      localizedProblem.title,
-      code,
-      language,
-    ]
-  );
+    };
+
+    void requestHint();
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [
+    elapsedSeconds,
+    hasTriggered30MinHint,
+    isMentorConfigured,
+    localizedProblem.description,
+    localizedProblem.title,
+    code,
+    language,
+  ]);
 
   const handleAssistantResizeStart = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -300,7 +341,10 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
             </span>
           </div>
           <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 sm:hidden">
-            <ChallengeTimer timeLimit={3600} onTimeUpdate={handleTimeUpdate} />
+            <ChallengeTimer
+              timeLimit={TIME_LIMIT_SECONDS}
+              elapsedSeconds={elapsedSeconds}
+            />
           </div>
           <div className="relative">
             <button
@@ -350,7 +394,10 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
         </div>
 
         <div className="hidden w-full min-w-0 items-center gap-2 sm:w-auto sm:gap-4 sm:flex">
-          <ChallengeTimer timeLimit={3600} onTimeUpdate={handleTimeUpdate} />
+          <ChallengeTimer
+            timeLimit={TIME_LIMIT_SECONDS}
+            elapsedSeconds={elapsedSeconds}
+          />
           <div className="hidden h-4 w-px bg-border sm:block" />
           <p className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:max-w-[320px] sm:text-sm">
             {localizedProblem.title}

@@ -264,6 +264,19 @@ export async function POST(req: NextRequest) {
     const language = resolveMentorLanguage(body.language, [problemTitle, problemDescription])
 
     const config = resolveAIConfig(body.aiConfig)
+    const selectedProvider = config.provider
+    const selectedApiKey = config.apiKeys[selectedProvider]?.trim()
+    const selectedModel = config.models[selectedProvider]?.trim()
+
+    if (!selectedApiKey || !selectedModel) {
+      return NextResponse.json(
+        {
+          feedback: "",
+          message: "AI mentor is not configured for the selected provider.",
+        },
+        { status: 400 }
+      )
+    }
 
     let feedback: string
 

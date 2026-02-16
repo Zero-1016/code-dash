@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Clock, AlertCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface ChallengeTimerProps {
   timeLimit: number // in seconds
+  elapsedSeconds?: number
   onTimeUpdate?: (elapsedSeconds: number) => void
   onTimeUp?: () => void
 }
@@ -31,37 +32,65 @@ function RollingDigit({ value, isUrgent }: { value: string; isUrgent: boolean })
   )
 }
 
-export function ChallengeTimer({ timeLimit, onTimeUpdate, onTimeUp }: ChallengeTimerProps) {
-  const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  const [isTimeUp, setIsTimeUp] = useState(false)
+export function ChallengeTimer({
+  timeLimit,
+  elapsedSeconds: controlledElapsedSeconds,
+  onTimeUpdate,
+  onTimeUp,
+}: ChallengeTimerProps) {
+  const [internalElapsedSeconds, setInternalElapsedSeconds] = useState(0)
+  const elapsedSeconds =
+    typeof controlledElapsedSeconds === "number"
+      ? controlledElapsedSeconds
+      : internalElapsedSeconds
+  const onTimeUpdateRef = useRef(onTimeUpdate)
+  const onTimeUpRef = useRef(onTimeUp)
+  const hasTriggeredTimeUpRef = useRef(false)
 
   useEffect(() => {
+    onTimeUpdateRef.current = onTimeUpdate
+  }, [onTimeUpdate])
+
+  useEffect(() => {
+    onTimeUpRef.current = onTimeUp
+  }, [onTimeUp])
+
+  useEffect(() => {
+    if (typeof controlledElapsedSeconds === "number") {
+      return
+    }
+
     const startTime = Date.now()
 
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
-      setElapsedSeconds(elapsed)
-
-      if (onTimeUpdate) {
-        onTimeUpdate(elapsed)
-      }
-
-      if (elapsed >= timeLimit && !isTimeUp) {
-        setIsTimeUp(true)
-        if (onTimeUp) {
-          onTimeUp()
-        }
-      }
+      setInternalElapsedSeconds(elapsed)
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [timeLimit, onTimeUpdate, onTimeUp, isTimeUp])
+  }, [controlledElapsedSeconds])
+
+  useEffect(() => {
+    onTimeUpdateRef.current?.(elapsedSeconds)
+  }, [elapsedSeconds])
+
+  useEffect(() => {
+    if (elapsedSeconds >= timeLimit && !hasTriggeredTimeUpRef.current) {
+      hasTriggeredTimeUpRef.current = true
+      onTimeUpRef.current?.()
+    }
+  }, [elapsedSeconds, timeLimit])
+
+  useEffect(() => {
+    hasTriggeredTimeUpRef.current = elapsedSeconds >= timeLimit
+  }, [timeLimit, elapsedSeconds])
 
   const remainingSeconds = Math.max(0, timeLimit - elapsedSeconds)
   const minutes = Math.floor(remainingSeconds / 60)
   const seconds = remainingSeconds % 60
 
   const progress = (elapsedSeconds / timeLimit) * 100
+  const isTimeUp = elapsedSeconds >= timeLimit
   const isWarning = remainingSeconds <= 600 && remainingSeconds > 300 // 10-5 minutes
   const isCritical = remainingSeconds <= 300 && remainingSeconds > 0 // Last 5 minutes
   const isUrgent = isWarning || isCritical || isTimeUp
