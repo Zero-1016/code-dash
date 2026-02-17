@@ -6,6 +6,7 @@ import { HeroSection } from "@/components/hero-section"
 import { VirtualizedProblemList } from "@/components/virtualized-problem-list"
 import { StreakWidget } from "@/components/streak-widget"
 import { StatsWidget } from "@/components/stats-widget"
+import { ExternalProblemFeedback } from "@/components/external-problem-feedback"
 import { PageTransition } from "@/components/page-transition"
 import { problems } from "@/lib/problems"
 import { localizeCategory } from "@/lib/problems"
@@ -130,6 +131,7 @@ export default function HomePage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
           {/* Main Content Area */}
           <div id="problems" className="min-w-0 flex-1 w-full">
+            <ExternalProblemFeedback />
             <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-lg font-bold text-foreground">
                 {selectedCategory === "ALL"
