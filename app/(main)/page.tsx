@@ -130,20 +130,6 @@ export default function HomePage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
           {/* Main Content Area */}
           <div id="problems" className="min-w-0 flex-1 w-full">
-            <div className="mb-4 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{copy.home.externalFeedbackTitle}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{copy.home.externalFeedbackDescription}</p>
-                </div>
-                <Link
-                  href="/external-feedback"
-                  className="inline-flex items-center justify-center rounded-full bg-[#3182F6] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2870d8]"
-                >
-                  {copy.home.externalFeedbackAction}
-                </Link>
-              </div>
-            </div>
             <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-lg font-bold text-foreground">
                 {selectedCategory === "ALL"
@@ -218,6 +204,16 @@ export default function HomePage() {
             <div className="sticky top-24 flex flex-col gap-4">
               <StreakWidget />
               <StatsWidget />
+              <section className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
+                <p className="text-sm font-semibold text-foreground">{copy.home.externalFeedbackTitle}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{copy.home.externalFeedbackDescription}</p>
+                <Link
+                  href="/external-feedback"
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-[#3182F6] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2870d8]"
+                >
+                  {copy.home.externalFeedbackAction}
+                </Link>
+              </section>
             </div>
           </aside>
         </div>
