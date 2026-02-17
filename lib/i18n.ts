@@ -43,6 +43,12 @@ export interface LocaleCopy {
     errorTimeout: string;
     defaultProblemTitle: string;
     mentorPrompt: string;
+    editorTitle: string;
+    editorDescription: string;
+    chatTitle: string;
+    chatDescription: string;
+    chatMissingProblem: string;
+    chatMissingProblemContext: string;
   };
   settings: {
     backHome: string;
@@ -142,6 +148,13 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       defaultProblemTitle: "External Problem",
       mentorPrompt:
         "Based on the pasted problem, give a short review with approach direction, common pitfalls, and one next action.",
+      editorTitle: "Code Editor",
+      editorDescription: "Write or paste your solution and ask the mentor to review specific parts.",
+      chatTitle: "AI Mentor Chat",
+      chatDescription: "Ask for hints, approach checks, debugging, or code review in chat form.",
+      chatMissingProblem: "Paste the problem statement first for better guidance.",
+      chatMissingProblemContext:
+        "Problem statement is not provided yet. Ask the user to paste it first, then continue with focused guidance.",
     },
     settings: {
       backHome: "Back to Home",
@@ -243,6 +256,13 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       defaultProblemTitle: "외부 문제",
       mentorPrompt:
         "붙여넣은 문제를 기준으로 접근 방향, 자주 틀리는 포인트, 다음 액션 1개를 짧게 피드백해줘.",
+      editorTitle: "코드 에디터",
+      editorDescription: "코드를 작성하거나 붙여넣고, 특정 부분에 대한 리뷰를 채팅으로 요청하세요.",
+      chatTitle: "AI 멘토 채팅",
+      chatDescription: "힌트, 접근 검토, 디버깅, 코드 리뷰를 채팅으로 바로 받을 수 있어요.",
+      chatMissingProblem: "더 정확한 도움을 위해 문제 설명을 먼저 붙여넣어 주세요.",
+      chatMissingProblemContext:
+        "문제 설명이 아직 입력되지 않았습니다. 먼저 문제 본문을 붙여넣도록 안내한 뒤에 구체적으로 도와주세요.",
     },
     settings: {
       backHome: "홈으로 돌아가기",

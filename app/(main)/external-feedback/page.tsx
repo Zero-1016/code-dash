@@ -14,7 +14,7 @@ function ExternalFeedbackPage() {
 
   return (
     <PageTransition animateOnMount={shouldAnimateOnMount}>
-      <main className="mx-auto w-full max-w-[1000px] px-4 pb-16 pt-8 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-[1400px] px-4 pb-16 pt-8 sm:px-6 lg:px-8">
         <div className="mb-4">
           <Link
             href="/"
