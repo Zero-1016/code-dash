@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { ChevronDown } from "lucide-react"
 import { HeroSection } from "@/components/hero-section"
 import { VirtualizedProblemList } from "@/components/virtualized-problem-list"
 import { StreakWidget } from "@/components/streak-widget"
 import { StatsWidget } from "@/components/stats-widget"
-import { ExternalProblemFeedback } from "@/components/external-problem-feedback"
 import { PageTransition } from "@/components/page-transition"
 import { problems } from "@/lib/problems"
 import { localizeCategory } from "@/lib/problems"
@@ -88,6 +88,13 @@ export default function HomePage() {
     language === "ko" ? "난이도 오름차순" : "Difficulty Ascending"
   const sortDifficultyDescLabel =
     language === "ko" ? "난이도 내림차순" : "Difficulty Descending"
+  const externalFeedbackTitle =
+    language === "ko" ? "외부 문제 피드백" : "External Problem Feedback"
+  const externalFeedbackDescription =
+    language === "ko"
+      ? "다른 사이트의 문제를 붙여넣고 AI 피드백을 받아보세요."
+      : "Paste problems from other sites and get AI feedback."
+  const externalFeedbackAction = language === "ko" ? "페이지 열기" : "Open Page"
 
   const difficultyRank: Record<Difficulty, number> = {
     Easy: 0,
@@ -131,7 +138,20 @@ export default function HomePage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
           {/* Main Content Area */}
           <div id="problems" className="min-w-0 flex-1 w-full">
-            <ExternalProblemFeedback />
+            <div className="mb-4 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{externalFeedbackTitle}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{externalFeedbackDescription}</p>
+                </div>
+                <Link
+                  href="/external-feedback"
+                  className="inline-flex items-center justify-center rounded-full bg-[#3182F6] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2870d8]"
+                >
+                  {externalFeedbackAction}
+                </Link>
+              </div>
+            </div>
             <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-lg font-bold text-foreground">
                 {selectedCategory === "ALL"
