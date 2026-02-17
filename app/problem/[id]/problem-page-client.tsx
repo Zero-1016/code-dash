@@ -490,6 +490,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
                     code={code}
                     problemTitle={localizedProblem.title}
                     problemDescription={localizedProblem.description}
+                    conversationId={`problem:${problem.id}`}
                     testResults={latestTestResults}
                     isAiGenerating={isAiGenerating}
                     pendingReview={pendingReview}

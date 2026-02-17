@@ -22,6 +22,7 @@ interface CodeAssistantChatProps {
   code: string;
   problemTitle: string;
   problemDescription: string;
+  conversationId?: string;
   testResults?: TestResultSummary[];
   isAiGenerating?: boolean;
   pendingReview?: string | null;
@@ -33,6 +34,7 @@ export function CodeAssistantChat({
   code,
   problemTitle,
   problemDescription,
+  conversationId,
   testResults = [],
   isAiGenerating = false,
   pendingReview = null,
@@ -40,6 +42,7 @@ export function CodeAssistantChat({
   elapsedMinutes = 0,
 }: CodeAssistantChatProps) {
   const REQUEST_TIMEOUT_MS = 20000;
+  const STORAGE_PREFIX = "codedash.chat.messages.v1";
   const { language } = useAppLanguage();
   const text =
     language === "ko"
@@ -80,6 +83,54 @@ export function CodeAssistantChat({
   const [isLoading, setIsLoading] = useState(false);
   const [showStrategicHint, setShowStrategicHint] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const storageKey = conversationId ? `${STORAGE_PREFIX}:${conversationId}` : null;
+
+  useEffect(() => {
+    if (!storageKey || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const raw = window.sessionStorage.getItem(storageKey);
+      if (!raw) {
+        setMessages([]);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) {
+        setMessages([]);
+        return;
+      }
+
+      const restored = parsed.filter((item): item is Message => {
+        if (!item || typeof item !== "object") {
+          return false;
+        }
+        const candidate = item as Partial<Message>;
+        return (
+          (candidate.role === "user" || candidate.role === "assistant") &&
+          typeof candidate.content === "string"
+        );
+      });
+
+      setMessages(restored);
+    } catch {
+      setMessages([]);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!storageKey || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.sessionStorage.setItem(storageKey, JSON.stringify(messages));
+    } catch {
+      // noop
+    }
+  }, [messages, storageKey]);
 
   // Auto-add AI review when it arrives
   useEffect(() => {

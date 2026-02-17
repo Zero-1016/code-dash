@@ -125,6 +125,7 @@ export function ExternalProblemFeedback() {
                 code={code}
                 problemTitle={normalizedProblemTitle}
                 problemDescription={normalizedProblemDescription}
+                conversationId="external-feedback"
               />
             </div>
           </div>
