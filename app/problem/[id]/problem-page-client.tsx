@@ -37,6 +37,7 @@ import {
 } from "@/lib/local-progress";
 import { useAppLanguage } from "@/lib/use-app-language";
 import { useIsMobile } from "@/components/ui/use-mobile";
+import { isMentorConfigured as resolveMentorConfigured } from "@/lib/mentor-access";
 
 interface ProblemPageClientProps {
   problem: Problem;
@@ -90,11 +91,7 @@ export function ProblemPageClient({ problem }: ProblemPageClientProps) {
 
   useEffect(() => {
     const sync = () => {
-      const settings = getApiSettings();
-      const provider = settings.provider;
-      const hasModel = Boolean(settings.models[provider]?.trim());
-      const hasApiKey = Boolean(settings.apiKeys[provider]?.trim());
-      setIsMentorConfigured(hasModel && hasApiKey);
+      setIsMentorConfigured(resolveMentorConfigured(getApiSettings()));
     };
     sync();
     return subscribeToProgressUpdates(sync);

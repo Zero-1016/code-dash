@@ -21,6 +21,34 @@ export interface LocaleCopy {
     allChallenges: string;
     challenges: string;
     problems: string;
+    externalFeedbackTitle: string;
+    externalFeedbackDescription: string;
+    externalFeedbackAction: string;
+  };
+  externalFeedback: {
+    backHome: string;
+    title: string;
+    description: string;
+    titleLabel: string;
+    titlePlaceholder: string;
+    problemLabel: string;
+    problemPlaceholder: string;
+    codeLabel: string;
+    codePlaceholder: string;
+    submit: string;
+    loading: string;
+    resultTitle: string;
+    errorRequired: string;
+    errorGeneric: string;
+    errorTimeout: string;
+    defaultProblemTitle: string;
+    mentorPrompt: string;
+    editorTitle: string;
+    editorDescription: string;
+    chatTitle: string;
+    chatDescription: string;
+    chatMissingProblem: string;
+    chatMissingProblemContext: string;
   };
   settings: {
     backHome: string;
@@ -99,6 +127,38 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       allChallenges: "All Challenges",
       challenges: "Challenges",
       problems: "problems",
+      externalFeedbackTitle: "Practice More Problems",
+      externalFeedbackDescription:
+        "Paste problems from any source and solve them with AI mentor chat.",
+      externalFeedbackAction: "Open Page",
+    },
+    externalFeedback: {
+      backHome: "Back to Home",
+      title: "Practice More Problems",
+      description:
+        "Paste any problem statement and solve with code + always-on AI mentor chat.",
+      titleLabel: "Problem title (optional)",
+      titlePlaceholder: "e.g. Longest Substring Without Repeating Characters",
+      problemLabel: "Problem statement",
+      problemPlaceholder: "Paste full statement, input/output format, and constraints.",
+      codeLabel: "Your code (optional)",
+      codePlaceholder: "Paste your current solution if you want code-level feedback.",
+      submit: "Get Feedback",
+      loading: "Analyzing...",
+      resultTitle: "AI Feedback",
+      errorRequired: "Paste the problem statement first.",
+      errorGeneric: "Failed to request feedback. Please try again.",
+      errorTimeout: "The request timed out. Please try again.",
+      defaultProblemTitle: "External Problem",
+      mentorPrompt:
+        "Based on the pasted problem, give a short review with approach direction, common pitfalls, and one next action.",
+      editorTitle: "Code Editor",
+      editorDescription: "Write or paste your solution and ask the mentor to review specific parts.",
+      chatTitle: "AI Mentor Chat",
+      chatDescription: "Ask for hints, approach checks, debugging, or code review in chat form.",
+      chatMissingProblem: "Paste the problem statement first for better guidance.",
+      chatMissingProblemContext:
+        "Problem statement is not provided yet. Ask the user to paste it first, then continue with focused guidance.",
     },
     settings: {
       backHome: "Back to Home",
@@ -179,6 +239,39 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       allChallenges: "전체 챌린지",
       challenges: "챌린지",
       problems: "문제",
+      externalFeedbackTitle: "다양한 문제 풀어보기",
+      externalFeedbackDescription:
+        "원하는 문제를 붙여넣고 AI 멘토와 함께 해결해보세요.",
+      externalFeedbackAction: "페이지 열기",
+    },
+    externalFeedback: {
+      backHome: "홈으로 돌아가기",
+      title: "다양한 문제 풀어보기",
+      description:
+        "원하는 문제를 붙여넣고 코드 작성과 AI 멘토 채팅으로 바로 풀어보세요.",
+      titleLabel: "문제 제목 (선택)",
+      titlePlaceholder: "예: Longest Substring Without Repeating Characters",
+      problemLabel: "문제 설명",
+      problemPlaceholder:
+        "문제 본문, 입력/출력 형식, 제약사항을 그대로 붙여넣어 주세요.",
+      codeLabel: "내 코드 (선택)",
+      codePlaceholder: "작성한 코드가 있다면 함께 붙여넣어 주세요.",
+      submit: "피드백 받기",
+      loading: "분석 중...",
+      resultTitle: "AI 피드백",
+      errorRequired: "문제 설명을 먼저 붙여넣어 주세요.",
+      errorGeneric: "피드백 요청에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+      errorTimeout: "요청 시간이 초과되었습니다. 다시 시도해 주세요.",
+      defaultProblemTitle: "외부 문제",
+      mentorPrompt:
+        "붙여넣은 문제를 기준으로 접근 방향, 자주 틀리는 포인트, 다음 액션 1개를 짧게 피드백해줘.",
+      editorTitle: "코드 에디터",
+      editorDescription: "코드를 작성하거나 붙여넣고, 특정 부분에 대한 리뷰를 채팅으로 요청하세요.",
+      chatTitle: "AI 멘토 채팅",
+      chatDescription: "힌트, 접근 검토, 디버깅, 코드 리뷰를 채팅으로 바로 받을 수 있어요.",
+      chatMissingProblem: "더 정확한 도움을 위해 문제 설명을 먼저 붙여넣어 주세요.",
+      chatMissingProblemContext:
+        "문제 설명이 아직 입력되지 않았습니다. 먼저 문제 본문을 붙여넣도록 안내한 뒤에 구체적으로 도와주세요.",
     },
     settings: {
       backHome: "홈으로 돌아가기",
