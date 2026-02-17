@@ -1,20 +1,32 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ChevronDown } from "lucide-react"
 import { HeroSection } from "@/components/hero-section"
 import { VirtualizedProblemList } from "@/components/virtualized-problem-list"
 import { StreakWidget } from "@/components/streak-widget"
 import { StatsWidget } from "@/components/stats-widget"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { PageTransition } from "@/components/page-transition"
 import { problems } from "@/lib/problems"
 import { localizeCategory } from "@/lib/problems"
 import type { Difficulty, Problem } from "@/lib/problems"
 import {
+  getApiSettings,
   getSolvedProblemIds,
   subscribeToProgressUpdates,
 } from "@/lib/local-progress"
+import { isMentorConfigured as resolveMentorConfigured } from "@/lib/mentor-access"
 import { useAppLanguage } from "@/lib/use-app-language"
 import { usePageEntryAnimation } from "@/lib/use-page-entry-animation"
 import { useRestoreScroll } from "@/lib/use-restore-scroll"
@@ -50,6 +62,7 @@ function parseHomeViewState(value: unknown): HomeViewState | null {
 }
 
 export default function HomePage() {
+  const router = useRouter()
   const { language, copy } = useAppLanguage()
   const shouldAnimateOnMount = usePageEntryAnimation()
   const [viewState, setViewState] = useRestoreScroll<HomeViewState>({
@@ -63,9 +76,19 @@ export default function HomePage() {
   })
   const { selectedCategory, selectedDifficulty, sortBy } = viewState
   const [solvedIds, setSolvedIds] = useState<Set<string>>(new Set())
+  const [isMentorReady, setIsMentorReady] = useState(false)
+  const [isMentorAlertOpen, setIsMentorAlertOpen] = useState(false)
 
   useEffect(() => {
     const sync = () => setSolvedIds(getSolvedProblemIds())
+    sync()
+    return subscribeToProgressUpdates(sync)
+  }, [])
+
+  useEffect(() => {
+    const sync = () => {
+      setIsMentorReady(resolveMentorConfigured(getApiSettings()))
+    }
     sync()
     return subscribeToProgressUpdates(sync)
   }, [])
@@ -121,6 +144,14 @@ export default function HomePage() {
       return source.length
     }
     return source.filter((problem) => problem.difficulty === difficulty).length
+  }
+
+  const handleExternalFeedbackOpen = () => {
+    if (!isMentorReady) {
+      setIsMentorAlertOpen(true)
+      return
+    }
+    router.push("/external-feedback")
   }
 
   return (
@@ -207,17 +238,34 @@ export default function HomePage() {
               <section className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
                 <p className="text-sm font-semibold text-foreground">{copy.home.externalFeedbackTitle}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{copy.home.externalFeedbackDescription}</p>
-                <Link
-                  href="/external-feedback"
+                <button
+                  type="button"
+                  onClick={handleExternalFeedbackOpen}
                   className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-[#3182F6] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#2870d8]"
                 >
                   {copy.home.externalFeedbackAction}
-                </Link>
+                </button>
               </section>
             </div>
           </aside>
         </div>
       </main>
+      <AlertDialog open={isMentorAlertOpen} onOpenChange={setIsMentorAlertOpen}>
+        <AlertDialogContent overlayClassName="bg-black/45">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{copy.problem.mentorSetupTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {copy.problem.mentorSetupDescription}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{copy.problem.mentorSetupCancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.push("/settings")}>
+              {copy.problem.mentorSetupGoToSettings}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageTransition>
   )
 }
