@@ -3,11 +3,12 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { ExternalProblemFeedback } from "@/components/external-problem-feedback"
+import { withMentorAccessGuard } from "@/components/with-mentor-access-guard"
 import { PageTransition } from "@/components/page-transition"
 import { useAppLanguage } from "@/lib/use-app-language"
 import { usePageEntryAnimation } from "@/lib/use-page-entry-animation"
 
-export default function ExternalFeedbackPage() {
+function ExternalFeedbackPage() {
   const { copy } = useAppLanguage()
   const shouldAnimateOnMount = usePageEntryAnimation()
 
@@ -28,3 +29,7 @@ export default function ExternalFeedbackPage() {
     </PageTransition>
   )
 }
+
+export default withMentorAccessGuard(ExternalFeedbackPage, {
+  fallbackPath: "/",
+})
