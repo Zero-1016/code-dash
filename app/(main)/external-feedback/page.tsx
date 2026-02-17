@@ -8,9 +8,8 @@ import { useAppLanguage } from "@/lib/use-app-language"
 import { usePageEntryAnimation } from "@/lib/use-page-entry-animation"
 
 export default function ExternalFeedbackPage() {
-  const { language } = useAppLanguage()
+  const { copy } = useAppLanguage()
   const shouldAnimateOnMount = usePageEntryAnimation()
-  const backLabel = language === "ko" ? "홈으로 돌아가기" : "Back to Home"
 
   return (
     <PageTransition animateOnMount={shouldAnimateOnMount}>
@@ -21,7 +20,7 @@ export default function ExternalFeedbackPage() {
             className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            {backLabel}
+            {copy.externalFeedback.backHome}
           </Link>
         </div>
         <ExternalProblemFeedback />

@@ -21,6 +21,28 @@ export interface LocaleCopy {
     allChallenges: string;
     challenges: string;
     problems: string;
+    externalFeedbackTitle: string;
+    externalFeedbackDescription: string;
+    externalFeedbackAction: string;
+  };
+  externalFeedback: {
+    backHome: string;
+    title: string;
+    description: string;
+    titleLabel: string;
+    titlePlaceholder: string;
+    problemLabel: string;
+    problemPlaceholder: string;
+    codeLabel: string;
+    codePlaceholder: string;
+    submit: string;
+    loading: string;
+    resultTitle: string;
+    errorRequired: string;
+    errorGeneric: string;
+    errorTimeout: string;
+    defaultProblemTitle: string;
+    mentorPrompt: string;
   };
   settings: {
     backHome: string;
@@ -95,6 +117,31 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       allChallenges: "All Challenges",
       challenges: "Challenges",
       problems: "problems",
+      externalFeedbackTitle: "External Problem Feedback",
+      externalFeedbackDescription:
+        "Paste problems from other sites and get AI feedback.",
+      externalFeedbackAction: "Open Page",
+    },
+    externalFeedback: {
+      backHome: "Back to Home",
+      title: "Paste External Problem",
+      description:
+        "Paste a problem from another site and get quick feedback on approach and improvements.",
+      titleLabel: "Problem title (optional)",
+      titlePlaceholder: "e.g. Longest Substring Without Repeating Characters",
+      problemLabel: "Problem statement",
+      problemPlaceholder: "Paste full statement, input/output format, and constraints.",
+      codeLabel: "Your code (optional)",
+      codePlaceholder: "Paste your current solution if you want code-level feedback.",
+      submit: "Get Feedback",
+      loading: "Analyzing...",
+      resultTitle: "AI Feedback",
+      errorRequired: "Paste the problem statement first.",
+      errorGeneric: "Failed to request feedback. Please try again.",
+      errorTimeout: "The request timed out. Please try again.",
+      defaultProblemTitle: "External Problem",
+      mentorPrompt:
+        "Based on the pasted problem, give a short review with approach direction, common pitfalls, and one next action.",
     },
     settings: {
       backHome: "Back to Home",
@@ -170,6 +217,32 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       allChallenges: "전체 챌린지",
       challenges: "챌린지",
       problems: "문제",
+      externalFeedbackTitle: "외부 문제 피드백",
+      externalFeedbackDescription:
+        "다른 사이트의 문제를 붙여넣고 AI 피드백을 받아보세요.",
+      externalFeedbackAction: "페이지 열기",
+    },
+    externalFeedback: {
+      backHome: "홈으로 돌아가기",
+      title: "외부 문제 붙여넣기 피드백",
+      description:
+        "다른 사이트 문제를 그대로 붙여넣고, 접근 방향과 개선 포인트를 바로 받아보세요.",
+      titleLabel: "문제 제목 (선택)",
+      titlePlaceholder: "예: Longest Substring Without Repeating Characters",
+      problemLabel: "문제 설명",
+      problemPlaceholder:
+        "문제 본문, 입력/출력 형식, 제약사항을 그대로 붙여넣어 주세요.",
+      codeLabel: "내 코드 (선택)",
+      codePlaceholder: "작성한 코드가 있다면 함께 붙여넣어 주세요.",
+      submit: "피드백 받기",
+      loading: "분석 중...",
+      resultTitle: "AI 피드백",
+      errorRequired: "문제 설명을 먼저 붙여넣어 주세요.",
+      errorGeneric: "피드백 요청에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+      errorTimeout: "요청 시간이 초과되었습니다. 다시 시도해 주세요.",
+      defaultProblemTitle: "외부 문제",
+      mentorPrompt:
+        "붙여넣은 문제를 기준으로 접근 방향, 자주 틀리는 포인트, 다음 액션 1개를 짧게 피드백해줘.",
     },
     settings: {
       backHome: "홈으로 돌아가기",
