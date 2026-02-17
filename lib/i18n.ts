@@ -127,16 +127,16 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       allChallenges: "All Challenges",
       challenges: "Challenges",
       problems: "problems",
-      externalFeedbackTitle: "External Problem Feedback",
+      externalFeedbackTitle: "Practice More Problems",
       externalFeedbackDescription:
-        "Paste problems from other sites and get AI feedback.",
+        "Paste problems from any source and solve them with AI mentor chat.",
       externalFeedbackAction: "Open Page",
     },
     externalFeedback: {
       backHome: "Back to Home",
-      title: "Paste External Problem",
+      title: "Practice More Problems",
       description:
-        "Paste a problem from another site and get quick feedback on approach and improvements.",
+        "Paste any problem statement and solve with code + always-on AI mentor chat.",
       titleLabel: "Problem title (optional)",
       titlePlaceholder: "e.g. Longest Substring Without Repeating Characters",
       problemLabel: "Problem statement",
@@ -239,16 +239,16 @@ const localeCopy: Record<AppLanguage, LocaleCopy> = {
       allChallenges: "전체 챌린지",
       challenges: "챌린지",
       problems: "문제",
-      externalFeedbackTitle: "외부 문제 피드백",
+      externalFeedbackTitle: "다양한 문제 풀어보기",
       externalFeedbackDescription:
-        "다른 사이트의 문제를 붙여넣고 AI 피드백을 받아보세요.",
+        "원하는 문제를 붙여넣고 AI 멘토와 함께 해결해보세요.",
       externalFeedbackAction: "페이지 열기",
     },
     externalFeedback: {
       backHome: "홈으로 돌아가기",
-      title: "외부 문제 붙여넣기 피드백",
+      title: "다양한 문제 풀어보기",
       description:
-        "다른 사이트 문제를 그대로 붙여넣고, 접근 방향과 개선 포인트를 바로 받아보세요.",
+        "원하는 문제를 붙여넣고 코드 작성과 AI 멘토 채팅으로 바로 풀어보세요.",
       titleLabel: "문제 제목 (선택)",
       titlePlaceholder: "예: Longest Substring Without Repeating Characters",
       problemLabel: "문제 설명",
