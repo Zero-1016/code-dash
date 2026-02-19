@@ -12,7 +12,6 @@ export interface Problem {
   category: string
   categoryIcon: string
   difficulty: Difficulty
-  successRate: number
   description: string
   examples: { input: string; output: string; explanation?: string }[]
   constraints: string[]
@@ -36,7 +35,6 @@ const baseProblems: Problem[] = [
     category: "Hash",
     categoryIcon: "Hash",
     difficulty: "Easy",
-    successRate: 72,
     description: `Given an array of integers \`nums\` and an integer \`target\`, return indices of the two numbers such that they add up to \`target\`.
 
 You may assume that each input would have **exactly one solution**, and you may not use the same element twice.
@@ -79,7 +77,6 @@ You can return the answer in any order.`,
     category: "Stack",
     categoryIcon: "Layers",
     difficulty: "Easy",
-    successRate: 65,
     description: `Given a string \`s\` containing just the characters \`'('\`, \`')'\`, \`'{'\`, \`'}'\`, \`'['\` and \`']'\`, determine if the input string is valid.
 
 An input string is valid if:
@@ -129,7 +126,6 @@ An input string is valid if:
     category: "Linked List",
     categoryIcon: "Link",
     difficulty: "Easy",
-    successRate: 78,
     description: `Given the \`head\` of a singly linked list, reverse the list, and return the reversed list.
 
 Implement the solution iteratively.`,
@@ -167,7 +163,6 @@ Implement the solution iteratively.`,
     category: "Dynamic Programming",
     categoryIcon: "TrendingUp",
     difficulty: "Medium",
-    successRate: 49,
     description: `Given an integer array \`nums\`, find the subarray with the largest sum, and return its sum.
 
 A **subarray** is a contiguous non-empty sequence of elements within an array.`,
@@ -205,7 +200,6 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     category: "Arrays",
     categoryIcon: "LayoutGrid",
     difficulty: "Medium",
-    successRate: 45,
     description: `Given an array of \`intervals\` where \`intervals[i] = [start_i, end_i]\`, merge all overlapping intervals, and return an array of the non-overlapping intervals that cover all the intervals in the input.`,
     examples: [
       {
@@ -244,7 +238,6 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     category: "Sliding Window",
     categoryIcon: "ScanLine",
     difficulty: "Medium",
-    successRate: 38,
     description: `Given a string \`s\`, find the length of the **longest substring** without repeating characters.`,
     examples: [
       {
@@ -281,7 +274,6 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     category: "Trees",
     categoryIcon: "GitBranch",
     difficulty: "Hard",
-    successRate: 32,
     description: `Given the \`root\` of a binary tree, return the level order traversal of its nodes' values. (i.e., from left to right, level by level).`,
     examples: [
       {
@@ -320,7 +312,6 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     category: "Two Pointers",
     categoryIcon: "Droplets",
     difficulty: "Hard",
-    successRate: 28,
     description: `Given \`n\` non-negative integers representing an elevation map where the width of each bar is \`1\`, compute how much water it can trap after raining.`,
     examples: [
       {
@@ -357,7 +348,6 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     category: "Stack",
     categoryIcon: "Layers",
     difficulty: "Medium",
-    successRate: 52,
     description: `Given an integer array \`prices\` where \`prices[i]\` is the stock price at second \`i\`, return an array where each element is how many seconds pass before the price drops.
 
 If the price never drops afterward, count until the last second.`,
@@ -396,7 +386,6 @@ If the price never drops afterward, count until the last second.`,
     category: "Stack",
     categoryIcon: "Layers",
     difficulty: "Medium",
-    successRate: 49,
     description: `Towers are placed from left to right, and each tower sends a signal to the left.
 
 For each tower, find the index (1-based) of the first taller tower to its left that receives the signal. If none exists, return 0 for that tower.`,
@@ -1902,7 +1891,6 @@ function createGeneratedProblem(seed: Problem, index: number): Problem {
     id: generatedId,
     title: generatedTitle,
     difficulty: generatedDifficulty,
-    successRate: Math.max(20, seed.successRate - ((index * 3) % 20)),
     description: buildGeneratedDescription(seed.id, generatedTitle),
     constraints: buildGeneratedConstraints(seed.id),
     starterCode: seed.starterCode.replace(functionNameRegex, generatedFunctionName),
