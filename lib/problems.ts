@@ -351,6 +351,84 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     ],
     functionName: "trap",
   },
+  {
+    id: "stock-prices",
+    title: "Stock Prices",
+    category: "Stack",
+    categoryIcon: "Layers",
+    difficulty: "Medium",
+    successRate: 52,
+    description: `Given an integer array \`prices\` where \`prices[i]\` is the stock price at second \`i\`, return an array where each element is how many seconds pass before the price drops.
+
+If the price never drops afterward, count until the last second.`,
+    examples: [
+      {
+        input: "prices = [1,2,3,2,3]",
+        output: "[4,3,1,1,0]",
+        explanation:
+          "At index 2 (price 3), the first lower price appears at index 3 (price 2), so its duration is 1.",
+      },
+      {
+        input: "prices = [5,4,3,2,1]",
+        output: "[1,1,1,1,0]",
+        explanation:
+          "Each price drops immediately at the next second, except the last one which has no later price.",
+      },
+    ],
+    constraints: [
+      "1 <= prices.length <= 100000",
+      "1 <= prices[i] <= 10000",
+    ],
+    starterCode: `function stockPrices(prices) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: [[1, 2, 3, 2, 3]], expected: [4, 3, 1, 1, 0] },
+      { input: [[5, 4, 3, 2, 1]], expected: [1, 1, 1, 1, 0] },
+      { input: [[1, 2, 3, 4, 5]], expected: [4, 3, 2, 1, 0] },
+    ],
+    functionName: "stockPrices",
+  },
+  {
+    id: "tower-signal",
+    title: "Signal Receiver (Towers)",
+    category: "Stack",
+    categoryIcon: "Layers",
+    difficulty: "Medium",
+    successRate: 49,
+    description: `Towers are placed from left to right, and each tower sends a signal to the left.
+
+For each tower, find the index (1-based) of the first taller tower to its left that receives the signal. If none exists, return 0 for that tower.`,
+    examples: [
+      {
+        input: "heights = [6,9,5,7,4]",
+        output: "[0,0,2,2,4]",
+        explanation:
+          "Tower 4 (height 7) skips tower 3 (height 5) and is received by tower 2 (height 9).",
+      },
+      {
+        input: "heights = [4,3,2,1]",
+        output: "[0,1,2,3]",
+        explanation:
+          "Each tower (except the first) is received by the immediate left tower because it is taller.",
+      },
+    ],
+    constraints: [
+      "1 <= heights.length <= 100000",
+      "1 <= heights[i] <= 100000000",
+    ],
+    starterCode: `function towerSignal(heights) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: [[6, 9, 5, 7, 4]], expected: [0, 0, 2, 2, 4] },
+      { input: [[4, 3, 2, 1]], expected: [0, 1, 2, 3] },
+      { input: [[1, 2, 3, 4]], expected: [0, 0, 0, 0] },
+    ],
+    functionName: "towerSignal",
+  },
 ]
 
 const ADDITIONAL_PROBLEMS_PER_CATEGORY: Record<Problem["id"], number> = {
@@ -362,6 +440,8 @@ const ADDITIONAL_PROBLEMS_PER_CATEGORY: Record<Problem["id"], number> = {
   "longest-substring": 4,
   "binary-tree-level-order": 6,
   "trapping-rain-water": 5,
+  "stock-prices": 4,
+  "tower-signal": 4,
 }
 const BASE_PROBLEMS_PER_CATEGORY = 20
 
@@ -458,6 +538,47 @@ function trapRainWaterValue(height: number[]): number {
   return water
 }
 
+function stockPriceDurationValue(prices: number[]): number[] {
+  const result = Array.from({ length: prices.length }, () => 0)
+  const stack: number[] = []
+
+  for (let i = 0; i < prices.length; i += 1) {
+    while (stack.length > 0 && prices[i] < prices[stack[stack.length - 1]]) {
+      const idx = stack.pop()
+      if (idx === undefined) {
+        break
+      }
+      result[idx] = i - idx
+    }
+    stack.push(i)
+  }
+
+  while (stack.length > 0) {
+    const idx = stack.pop()
+    if (idx === undefined) {
+      break
+    }
+    result[idx] = prices.length - 1 - idx
+  }
+
+  return result
+}
+
+function towerSignalValue(heights: number[]): number[] {
+  const receivers = Array.from({ length: heights.length }, () => 0)
+  const stack: Array<{ index: number; height: number }> = []
+
+  for (let i = 0; i < heights.length; i += 1) {
+    while (stack.length > 0 && stack[stack.length - 1].height <= heights[i]) {
+      stack.pop()
+    }
+    receivers[i] = stack.length > 0 ? stack[stack.length - 1].index + 1 : 0
+    stack.push({ index: i, height: heights[i] })
+  }
+
+  return receivers
+}
+
 function buildTestCases(seedId: Problem["id"], index: number): TestCase[] {
   const n = index + 2
   switch (seedId) {
@@ -538,6 +659,22 @@ function buildTestCases(seedId: Problem["id"], index: number): TestCase[] {
       return [
         { input: [heightsA], expected: trapRainWaterValue(heightsA) },
         { input: [heightsB], expected: trapRainWaterValue(heightsB) },
+      ]
+    }
+    case "stock-prices": {
+      const pricesA = [1, 2 + (index % 2), 3 + (index % 3), 2, 3]
+      const pricesB = [5 + (index % 3), 4 + (index % 2), 3, 2, 1]
+      return [
+        { input: [pricesA], expected: stockPriceDurationValue(pricesA) },
+        { input: [pricesB], expected: stockPriceDurationValue(pricesB) },
+      ]
+    }
+    case "tower-signal": {
+      const heightsA = [6 + (index % 2), 9 + (index % 3), 5, 7 + (index % 2), 4]
+      const heightsB = [4 + (index % 3), 3, 2, 1]
+      return [
+        { input: [heightsA], expected: towerSignalValue(heightsA) },
+        { input: [heightsB], expected: towerSignalValue(heightsB) },
       ]
     }
     default:
@@ -729,6 +866,26 @@ const generatedTitlePool: Record<Problem["id"], string[]> = {
     "Platform Water Storage",
     "Puddle Capacity Scan",
   ],
+  "stock-prices": [
+    "Stock Price Duration",
+    "Price Drop Timer",
+    "Quote Stability Window",
+    "Market Tick Duration",
+    "Price Hold Counter",
+    "Second-by-Second Price Guard",
+    "Price Fall Watcher",
+    "Trade Price Lifespan",
+  ],
+  "tower-signal": [
+    "Left Signal Receiver",
+    "Tower Laser Receiver",
+    "Skyline Signal Match",
+    "Antenna Left Catch",
+    "Receiver Tower Index",
+    "Signal Block and Receive",
+    "Taller Left Tower Search",
+    "Line of Towers Signal",
+  ],
 }
 
 const generatedTitlePoolKo: Record<Problem["id"], string[]> = {
@@ -908,6 +1065,26 @@ const generatedTitlePoolKo: Record<Problem["id"], string[]> = {
     "플랫폼 물 저장량",
     "웅덩이 용량 스캔",
   ],
+  "stock-prices": [
+    "주식 가격 유지시간",
+    "가격 하락 타이머",
+    "시세 안정 구간",
+    "시장 틱 지속시간",
+    "가격 유지 카운터",
+    "초 단위 가격 감시",
+    "가격 하락 감지기",
+    "거래가 지속시간",
+  ],
+  "tower-signal": [
+    "왼쪽 신호 수신",
+    "탑 레이저 수신",
+    "스카이라인 신호 매칭",
+    "안테나 왼쪽 수신",
+    "수신 탑 인덱스",
+    "신호 차단과 수신",
+    "왼쪽 높은 탑 탐색",
+    "일렬 탑 신호",
+  ],
 }
 
 const generatedTitleSuffixPool: Record<Problem["id"], string[]> = {
@@ -990,6 +1167,18 @@ const generatedTitleSuffixPool: Record<Problem["id"], string[]> = {
     "Subway Tunnel Edition",
     "Dam Safety Edition",
     "Bridge Deck Edition",
+  ],
+  "stock-prices": [
+    "Volatility Edition",
+    "Real-Time Quote Edition",
+    "Trading Floor Edition",
+    "Risk Monitor Edition",
+  ],
+  "tower-signal": [
+    "Radio Tower Edition",
+    "City Skyline Edition",
+    "Antenna Network Edition",
+    "Control Center Edition",
   ],
 }
 
@@ -1074,6 +1263,18 @@ const generatedTitleSuffixPoolKo: Record<Problem["id"], string[]> = {
     "댐 안전 편",
     "교량 상판 편",
   ],
+  "stock-prices": [
+    "변동성 편",
+    "실시간 시세 편",
+    "트레이딩 플로어 편",
+    "리스크 모니터 편",
+  ],
+  "tower-signal": [
+    "무선 타워 편",
+    "도시 스카이라인 편",
+    "안테나 네트워크 편",
+    "관제센터 편",
+  ],
 }
 
 function buildGeneratedDescription(seed: Problem["id"], title: string): string {
@@ -1108,6 +1309,14 @@ Return node values grouped by depth from top to bottom and left to right.`
       return `In "${title}", each number is the height of a wall with width 1.
 
 Compute how many total units of rainwater are trapped after rainfall.`
+    case "stock-prices":
+      return `In "${title}", each index is a timestamp and each value is the stock price at that time.
+
+For each timestamp, compute how many seconds pass before the price becomes lower.`
+    case "tower-signal":
+      return `In "${title}", towers are arranged left to right and each tower sends a signal to the left.
+
+Return the 1-based index of the first taller tower to the left that receives each signal, or 0 if none exists.`
     default:
       return "Solve the problem using an efficient algorithm."
   }
@@ -1149,6 +1358,14 @@ function buildGeneratedDescriptionKo(seed: Problem["id"], title: string): string
       return `"${title}" 문제입니다. 각 칸의 막대 높이를 나타내는 배열이 주어집니다.
 
 비가 온 뒤 막대 사이에 고일 수 있는 빗물의 총량을 계산해 반환하세요.`
+    case "stock-prices":
+      return `"${title}" 문제입니다. 배열의 각 원소는 해당 초의 주식 가격을 의미합니다.
+
+각 시점마다 가격이 처음으로 하락하기 전까지 몇 초가 유지되는지 배열로 반환하세요.`
+    case "tower-signal":
+      return `"${title}" 문제입니다. 탑이 왼쪽에서 오른쪽으로 배치되어 있고, 각 탑은 왼쪽으로 신호를 보냅니다.
+
+각 탑마다 왼쪽에서 처음 만나는 더 높은 탑의 1-based 인덱스를 반환하고, 없으면 0을 반환하세요.`
     default:
       return "효율적인 알고리즘으로 문제를 해결하세요."
   }
@@ -1199,6 +1416,16 @@ function buildGeneratedConstraints(seed: Problem["id"]): string[] {
         "1 <= height.length <= 2 * 10^4",
         "0 <= height[i] <= 10^5",
       ]
+    case "stock-prices":
+      return [
+        "1 <= prices.length <= 10^5",
+        "1 <= prices[i] <= 10^4",
+      ]
+    case "tower-signal":
+      return [
+        "1 <= heights.length <= 10^5",
+        "1 <= heights[i] <= 10^8",
+      ]
     default:
       return []
   }
@@ -1248,6 +1475,16 @@ function buildGeneratedConstraintsKo(seed: Problem["id"]): string[] {
       return [
         "1 <= height.length <= 2 * 10^4",
         "0 <= height[i] <= 10^5",
+      ]
+    case "stock-prices":
+      return [
+        "1 <= prices.length <= 10^5",
+        "1 <= prices[i] <= 10^4",
+      ]
+    case "tower-signal":
+      return [
+        "1 <= heights.length <= 10^5",
+        "1 <= heights[i] <= 10^8",
       ]
     default:
       return []
@@ -1332,6 +1569,12 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
     if (seed === "binary-tree-level-order") {
       return `nodes are grouped by depth from top to bottom, yielding ${JSON.stringify(testCase.expected)}.`
     }
+    if (seed === "stock-prices") {
+      return `for each timestamp, count seconds until the first lower price appears, which gives ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "tower-signal") {
+      return `each tower is received by the first taller tower to its left, so the result is ${JSON.stringify(testCase.expected)}.`
+    }
     return `summing trapped water over each position gives ${JSON.stringify(testCase.expected)}.`
   }
 
@@ -1392,6 +1635,24 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
     }
     if (seed === "binary-tree-level-order") {
       const inputText = `root = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "stock-prices") {
+      const inputText = `prices = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "tower-signal") {
+      const inputText = `heights = ${JSON.stringify(testCase.input[0])}`
       const outputText = JSON.stringify(testCase.expected)
       return {
         input: inputText,
@@ -1487,6 +1748,12 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
     if (seed === "binary-tree-level-order") {
       return "노드를 깊이(레벨)별로 묶어 순서대로 나열할 수 있습니다."
     }
+    if (seed === "stock-prices") {
+      return `각 시점에서 처음 가격이 하락하는 시점까지의 초를 계산할 수 있습니다.`
+    }
+    if (seed === "tower-signal") {
+      return `각 탑은 왼쪽에서 처음 만나는 더 높은 탑이 신호를 수신합니다.`
+    }
     return "각 위치에 고이는 물의 양을 모두 합산할 수 있습니다."
   }
 
@@ -1547,6 +1814,24 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
     }
     if (seed === "binary-tree-level-order") {
       const inputText = `root = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
+    if (seed === "stock-prices") {
+      const inputText = `prices = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
+    if (seed === "tower-signal") {
+      const inputText = `heights = ${JSON.stringify(testCase.input[0])}`
       const outputText = JSON.stringify(testCase.expected)
       return {
         input: inputText,
@@ -1896,6 +2181,58 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
         "n == height.length",
         "1 <= n <= 2 * 10^4",
         "0 <= height[i] <= 10^5",
+      ],
+    },
+  },
+  "stock-prices": {
+    ko: {
+      title: "주식 가격",
+      category: "스택",
+      description: `배열 \`prices\`가 주어질 때, \`prices[i]\`는 i초 시점의 주식 가격을 의미합니다.
+
+각 시점마다 가격이 처음으로 떨어지기 전까지 몇 초 동안 유지되는지 배열로 반환하세요.
+끝까지 떨어지지 않으면 마지막 시점까지의 시간을 계산합니다.`,
+      examples: [
+        {
+          input: "prices = [1,2,3,2,3]",
+          output: "[4,3,1,1,0]",
+          explanation: "3초 시점의 가격 3은 다음 시점에 2로 하락하므로 유지 시간은 1초입니다.",
+        },
+        {
+          input: "prices = [5,4,3,2,1]",
+          output: "[1,1,1,1,0]",
+          explanation: "마지막 원소를 제외한 모든 시점에서 다음 초에 바로 가격이 하락합니다.",
+        },
+      ],
+      constraints: [
+        "1 <= prices.length <= 100000",
+        "1 <= prices[i] <= 10000",
+      ],
+    },
+  },
+  "tower-signal": {
+    ko: {
+      title: "신호 수신 (탑)",
+      category: "스택",
+      description: `탑들이 왼쪽에서 오른쪽으로 일렬로 배치되어 있습니다. 각 탑은 왼쪽으로 신호를 발사합니다.
+
+각 탑에 대해 왼쪽에서 처음 만나는 더 높은 탑(엄격히 큼)의 1-based 인덱스를 반환하세요.
+수신 탑이 없으면 0을 반환합니다.`,
+      examples: [
+        {
+          input: "heights = [6,9,5,7,4]",
+          output: "[0,0,2,2,4]",
+          explanation: "4번 탑(7)은 3번 탑(5)을 지나 2번 탑(9)에서 신호가 수신됩니다.",
+        },
+        {
+          input: "heights = [4,3,2,1]",
+          output: "[0,1,2,3]",
+          explanation: "첫 탑을 제외하고는 바로 왼쪽 탑이 항상 더 높아 신호를 수신합니다.",
+        },
+      ],
+      constraints: [
+        "1 <= heights.length <= 100000",
+        "1 <= heights[i] <= 100000000",
       ],
     },
   },
