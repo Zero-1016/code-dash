@@ -461,6 +461,129 @@ Given \`priorities\` and \`location\`, return the execution order (1-based) of t
     ],
     functionName: "processScheduler",
   },
+  {
+    id: "remove-aws",
+    title: "Remove AWS",
+    category: "Strings",
+    categoryIcon: "Type",
+    difficulty: "Easy",
+    description: `Given a string \`s\`, repeatedly remove every occurrence of the substring \`"AWS"\` until no such substring remains.
+
+Return the final string. If the final string is empty, return \`-1\`.`,
+    examples: [
+      {
+        input: 's = "AAWSWS"',
+        output: "-1",
+        explanation:
+          '"AAWSWS" -> "AWS" -> "" after repeated removals, so return -1.',
+      },
+      {
+        input: 's = "BAWSA"',
+        output: '"BA"',
+        explanation:
+          'Remove "AWS" once: "BAWSA" -> "BA", and no more "AWS" remains.',
+      },
+    ],
+    constraints: [
+      "1 <= s.length <= 100000",
+      "s consists of uppercase English letters.",
+    ],
+    starterCode: `function removeAWS(s) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: ["AAWSWS"], expected: -1 },
+      { input: ["BAWSA"], expected: "BA" },
+      { input: ["AWSAWSB"], expected: "B" },
+      { input: ["HELLO"], expected: "HELLO" },
+    ],
+    functionName: "removeAWS",
+  },
+  {
+    id: "max-digit-range",
+    title: "Max Digit Range",
+    category: "Greedy",
+    categoryIcon: "TrendingUp",
+    difficulty: "Medium",
+    description: `Given an integer \`num\`, create:
+
+1. the largest possible number by replacing all occurrences of one chosen digit with another digit
+2. the smallest possible number by replacing all occurrences of one chosen digit with another digit
+
+For each transformation, all occurrences of the chosen source digit must be replaced together.
+
+Return \`maxValue - minValue\`.`,
+    examples: [
+      {
+        input: "num = 808",
+        output: "808",
+        explanation:
+          "Max: 808 -> 909 (replace 8 with 9), Min: 808 -> 101 (replace 8 with 1), difference is 808.",
+      },
+      {
+        input: "num = 909",
+        output: "898",
+        explanation:
+          "Max stays 999? No, only one source digit can be replaced: 909 -> 999, Min: 909 -> 101, difference is 898.",
+      },
+    ],
+    constraints: [
+      "1 <= num <= 10^8",
+      "num has no leading zeros.",
+    ],
+    starterCode: `function maxDigitRange(num) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: [808], expected: 808 },
+      { input: [909], expected: 898 },
+      { input: [123456], expected: 820000 },
+      { input: [10000], expected: 80000 },
+    ],
+    functionName: "maxDigitRange",
+  },
+  {
+    id: "max-subarray-length-under-k",
+    title: "Max Subarray Length Under K",
+    category: "Sliding Window",
+    categoryIcon: "ScanLine",
+    difficulty: "Medium",
+    description: `Given an array \`a\` of positive integers and an integer \`k\`, find the maximum length of a contiguous subarray whose sum is less than or equal to \`k\`.
+
+Return that maximum length.`,
+    examples: [
+      {
+        input: "a = [3,1,2,1], k = 4",
+        output: "3",
+        explanation:
+          "The subarray [1,2,1] has sum 4 and length 3, which is the maximum.",
+      },
+      {
+        input: "a = [1,2,3], k = 4",
+        output: "2",
+        explanation:
+          "The longest valid subarray is [1,2] with length 2.",
+      },
+    ],
+    constraints: [
+      "1 <= a.length <= 100000",
+      "1 <= a[i] <= 100000",
+      "1 <= k <= 10^9",
+    ],
+    starterCode: `function maxLengthUnderK(a, k) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: [[3, 1, 2, 1], 4], expected: 3 },
+      { input: [[1, 2, 3], 4], expected: 2 },
+      { input: [[5, 1, 1, 1, 1], 5], expected: 4 },
+      { input: [[2, 2, 2], 1], expected: 0 },
+    ],
+    functionName: "maxLengthUnderK",
+  },
 ]
 
 const ADDITIONAL_PROBLEMS_PER_CATEGORY: Record<Problem["id"], number> = {
@@ -475,6 +598,9 @@ const ADDITIONAL_PROBLEMS_PER_CATEGORY: Record<Problem["id"], number> = {
   "stock-prices": 4,
   "tower-signal": 4,
   "process-scheduler": 4,
+  "remove-aws": 4,
+  "max-digit-range": 4,
+  "max-subarray-length-under-k": 4,
 }
 const BASE_PROBLEMS_PER_CATEGORY = 20
 
@@ -635,6 +761,75 @@ function processSchedulerValue(priorities: number[], location: number): number {
   return order
 }
 
+function removeAWSValue(s: string): string | number {
+  const stack: string[] = []
+  for (const ch of s) {
+    stack.push(ch)
+    const n = stack.length
+    if (n >= 3 && stack[n - 3] === "A" && stack[n - 2] === "W" && stack[n - 1] === "S") {
+      stack.pop()
+      stack.pop()
+      stack.pop()
+    }
+  }
+  const result = stack.join("")
+  return result.length === 0 ? -1 : result
+}
+
+function maxDigitRangeValue(num: number): number {
+  const digits = String(num).split("")
+
+  const maxDigits = [...digits]
+  const maxTarget = maxDigits.find((d) => d !== "9")
+  if (maxTarget) {
+    for (let i = 0; i < maxDigits.length; i += 1) {
+      if (maxDigits[i] === maxTarget) {
+        maxDigits[i] = "9"
+      }
+    }
+  }
+
+  const minDigits = [...digits]
+  if (minDigits[0] !== "1") {
+    const target = minDigits[0]
+    for (let i = 0; i < minDigits.length; i += 1) {
+      if (minDigits[i] === target) {
+        minDigits[i] = "1"
+      }
+    }
+  } else {
+    const target = minDigits.find((d) => d !== "0" && d !== "1")
+    if (target) {
+      for (let i = 0; i < minDigits.length; i += 1) {
+        if (minDigits[i] === target) {
+          minDigits[i] = "0"
+        }
+      }
+    }
+  }
+
+  const maxValue = Number(maxDigits.join(""))
+  const minValue = Number(minDigits.join(""))
+  return maxValue - minValue
+}
+
+function maxLengthUnderKValue(a: readonly number[], k: number): number {
+  let left = 0
+  let sum = 0
+  let best = 0
+
+  for (let right = 0; right < a.length; right += 1) {
+    sum += a[right]
+    while (sum > k && left <= right) {
+      sum -= a[left]
+      left += 1
+    }
+    best = Math.max(best, right - left + 1)
+  }
+
+  return best
+}
+
 function buildTestCases(seedId: Problem["id"], index: number): TestCase[] {
   const n = index + 2
   switch (seedId) {
@@ -739,6 +934,39 @@ function buildTestCases(seedId: Problem["id"], index: number): TestCase[] {
       return [
         { input: [prioritiesA, 2], expected: processSchedulerValue(prioritiesA, 2) },
         { input: [prioritiesB, index % prioritiesB.length], expected: processSchedulerValue(prioritiesB, index % prioritiesB.length) },
+      ]
+    }
+    case "remove-aws": {
+      const samples = ["AAWSWS", "BAWSA", "AWSAWSB", "HELLOAWSAWS", "AWS"]
+      const a = samples[index % samples.length]
+      const b = samples[(index + 2) % samples.length]
+      return [
+        { input: [a], expected: removeAWSValue(a) },
+        { input: [b], expected: removeAWSValue(b) },
+      ]
+    }
+    case "max-digit-range": {
+      const samples = [808, 909, 123456, 10000, 111, 987654]
+      const a = samples[index % samples.length]
+      const b = samples[(index + 3) % samples.length]
+      return [
+        { input: [a], expected: maxDigitRangeValue(a) },
+        { input: [b], expected: maxDigitRangeValue(b) },
+      ]
+    }
+    case "max-subarray-length-under-k": {
+      const arrays = [
+        [[3, 1, 2, 1], 4],
+        [[1, 2, 3], 4],
+        [[5, 1, 1, 1, 1], 5],
+        [[2, 2, 2], 1],
+        [[1, 1, 1, 1, 1], 3],
+      ] as const
+      const aCase = arrays[index % arrays.length]
+      const bCase = arrays[(index + 2) % arrays.length]
+      return [
+        { input: [aCase[0], aCase[1]], expected: maxLengthUnderKValue(aCase[0], aCase[1]) },
+        { input: [bCase[0], bCase[1]], expected: maxLengthUnderKValue(bCase[0], bCase[1]) },
       ]
     }
     default:
@@ -960,6 +1188,36 @@ const generatedTitlePool: Record<Problem["id"], string[]> = {
     "Process Queue Simulator",
     "High Priority First Run",
   ],
+  "remove-aws": [
+    "AWS Stream Cleanup",
+    "Log Token Eraser",
+    "Keyword Chain Removal",
+    "Pattern Collapse AWS",
+    "Message Noise Cleanup",
+    "Repeated AWS Deletion",
+    "Substring Burst Removal",
+    "Signal Text Cleaner",
+  ],
+  "max-digit-range": [
+    "Maximum Digit Gap",
+    "Digit Replacement Range",
+    "Max Min Number Delta",
+    "One Digit Global Swap",
+    "Numeric Range Optimizer",
+    "Largest Smallest Diff",
+    "Digit Remap Spread",
+    "Number Morph Distance",
+  ],
+  "max-subarray-length-under-k": [
+    "Longest Budget Segment",
+    "Max Window Under Limit",
+    "Bounded Sum Subarray",
+    "Longest K-Limited Window",
+    "Segment Length by Cap",
+    "Capacity-Constrained Slice",
+    "Longest Valid Sum Window",
+    "Subarray Length Tracker",
+  ],
 }
 
 const generatedTitlePoolKo: Record<Problem["id"], string[]> = {
@@ -1169,6 +1427,36 @@ const generatedTitlePoolKo: Record<Problem["id"], string[]> = {
     "프로세스 큐 시뮬레이터",
     "높은 우선순위 선실행",
   ],
+  "remove-aws": [
+    "AWS 문자열 정리",
+    "로그 토큰 삭제",
+    "키워드 연쇄 제거",
+    "패턴 붕괴 AWS",
+    "메시지 노이즈 정리",
+    "반복 AWS 삭제",
+    "부분문자열 연속 제거",
+    "신호 텍스트 정제",
+  ],
+  "max-digit-range": [
+    "최대 숫자 차이",
+    "자리수 치환 범위",
+    "최대 최소 수 차이",
+    "단일 숫자 전체 교체",
+    "숫자 범위 최적화",
+    "가장 큰 수 최소 수 차",
+    "자리수 리매핑 폭",
+    "숫자 변형 거리",
+  ],
+  "max-subarray-length-under-k": [
+    "최장 예산 구간",
+    "제한 이하 최대 윈도우",
+    "합 제한 부분배열",
+    "K 제한 최장 윈도우",
+    "상한 기반 구간 길이",
+    "용량 제한 슬라이스",
+    "최장 유효 합 윈도우",
+    "부분배열 길이 추적",
+  ],
 }
 
 const generatedTitleSuffixPool: Record<Problem["id"], string[]> = {
@@ -1269,6 +1557,24 @@ const generatedTitleSuffixPool: Record<Problem["id"], string[]> = {
     "Operating System Edition",
     "Dispatch Queue Edition",
     "Task Manager Edition",
+  ],
+  "remove-aws": [
+    "Stream Parser Edition",
+    "Cleanup Worker Edition",
+    "Telemetry Log Edition",
+    "Message Filter Edition",
+  ],
+  "max-digit-range": [
+    "Digit Swap Edition",
+    "Range Optimizer Edition",
+    "Numeric Delta Edition",
+    "Value Remap Edition",
+  ],
+  "max-subarray-length-under-k": [
+    "Budget Guard Edition",
+    "Window Limit Edition",
+    "Capacity Planner Edition",
+    "Threshold Tracker Edition",
   ],
 }
 
@@ -1371,6 +1677,24 @@ const generatedTitleSuffixPoolKo: Record<Problem["id"], string[]> = {
     "디스패치 큐 편",
     "태스크 매니저 편",
   ],
+  "remove-aws": [
+    "스트림 파서 편",
+    "정리 워커 편",
+    "텔레메트리 로그 편",
+    "메시지 필터 편",
+  ],
+  "max-digit-range": [
+    "자리수 교체 편",
+    "범위 최적화 편",
+    "숫자 차이 편",
+    "값 리매핑 편",
+  ],
+  "max-subarray-length-under-k": [
+    "예산 가드 편",
+    "윈도우 제한 편",
+    "용량 플래너 편",
+    "임계값 추적 편",
+  ],
 }
 
 function buildGeneratedDescription(seed: Problem["id"], title: string): string {
@@ -1410,6 +1734,18 @@ Compute how many total units of rainwater are trapped after rainfall.`
 
 At each step, if a higher-priority process exists, move the current process to the back; otherwise execute it.
 Return when the target process is executed.`
+    case "remove-aws":
+      return `In "${title}", repeatedly remove every occurrence of the substring "AWS" from the input string.
+
+Continue until no "AWS" remains, then return the resulting string (or -1 if empty).`
+    case "max-digit-range":
+      return `In "${title}", transform one digit globally to maximize the number, and transform one digit globally to minimize it.
+
+Return the difference between the maximum and minimum transformed values.`
+    case "max-subarray-length-under-k":
+      return `In "${title}", find the longest contiguous subarray whose sum is at most k.
+
+Return that maximum length.`
     case "stock-prices":
       return `In "${title}", each index is a timestamp and each value is the stock price at that time.
 
@@ -1464,6 +1800,16 @@ function buildGeneratedDescriptionKo(seed: Problem["id"], title: string): string
 
 매 단계마다 현재 프로세스보다 우선순위가 높은 프로세스가 남아 있으면 뒤로 보내고, 그렇지 않으면 실행합니다.
 target 위치의 프로세스가 몇 번째로 실행되는지 반환하세요.`
+    case "remove-aws":
+      return `"${title}" 문제입니다. 문자열에서 부분 문자열 "AWS"를 더 이상 없을 때까지 반복해서 제거합니다.
+
+최종 문자열을 반환하고, 최종 문자열이 비어 있으면 -1을 반환하세요.`
+    case "max-digit-range":
+      return `"${title}" 문제입니다. 하나의 숫자를 골라 해당 숫자가 등장한 모든 자리를 같은 숫자로 바꿔 최대값을 만들고,
+또 다른 규칙으로 최소값을 만든 뒤 두 값의 차이를 구하세요.`
+    case "max-subarray-length-under-k":
+      return `"${title}" 문제입니다. 양의 정수 배열 a와 정수 k가 주어질 때,
+합이 k 이하인 연속 부분배열의 최대 길이를 구해 반환하세요.`
     case "stock-prices":
       return `"${title}" 문제입니다. 배열의 각 원소는 해당 초의 주식 가격을 의미합니다.
 
@@ -1527,6 +1873,22 @@ function buildGeneratedConstraints(seed: Problem["id"]): string[] {
         "1 <= priorities.length <= 100",
         "1 <= priorities[i] <= 9",
         "0 <= location < priorities.length",
+      ]
+    case "remove-aws":
+      return [
+        "1 <= s.length <= 10^5",
+        "s consists of uppercase English letters.",
+      ]
+    case "max-digit-range":
+      return [
+        "1 <= num <= 10^8",
+        "num has no leading zeros.",
+      ]
+    case "max-subarray-length-under-k":
+      return [
+        "1 <= a.length <= 10^5",
+        "1 <= a[i] <= 10^5",
+        "1 <= k <= 10^9",
       ]
     case "stock-prices":
       return [
@@ -1593,6 +1955,22 @@ function buildGeneratedConstraintsKo(seed: Problem["id"]): string[] {
         "1 <= priorities.length <= 100",
         "1 <= priorities[i] <= 9",
         "0 <= location < priorities.length",
+      ]
+    case "remove-aws":
+      return [
+        "1 <= s.length <= 10^5",
+        "s는 대문자 알파벳으로만 구성됩니다.",
+      ]
+    case "max-digit-range":
+      return [
+        "1 <= num <= 10^8",
+        "num은 선행 0이 없습니다.",
+      ]
+    case "max-subarray-length-under-k":
+      return [
+        "1 <= a.length <= 10^5",
+        "1 <= a[i] <= 10^5",
+        "1 <= k <= 10^9",
       ]
     case "stock-prices":
       return [
@@ -1690,6 +2068,15 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
     if (seed === "process-scheduler") {
       return `processes are executed by priority rotation, and the target process completes at order ${JSON.stringify(testCase.expected)}.`
     }
+    if (seed === "remove-aws") {
+      return `removing all "AWS" substrings repeatedly results in ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "max-digit-range") {
+      return `the difference between the maximum and minimum remapped values is ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "max-subarray-length-under-k") {
+      return `the longest contiguous subarray with sum <= k has length ${JSON.stringify(testCase.expected)}.`
+    }
     if (seed === "stock-prices") {
       return `for each timestamp, count seconds until the first lower price appears, which gives ${JSON.stringify(testCase.expected)}.`
     }
@@ -1765,6 +2152,33 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
     }
     if (seed === "process-scheduler") {
       const inputText = `priorities = ${JSON.stringify(testCase.input[0])}, location = ${JSON.stringify(testCase.input[1])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "remove-aws") {
+      const inputText = `s = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "max-digit-range") {
+      const inputText = `num = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "max-subarray-length-under-k") {
+      const inputText = `a = ${JSON.stringify(testCase.input[0])}, k = ${JSON.stringify(testCase.input[1])}`
       const outputText = JSON.stringify(testCase.expected)
       return {
         input: inputText,
@@ -1881,6 +2295,15 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
     if (seed === "process-scheduler") {
       return `우선순위 규칙으로 큐를 회전시키며 실행할 때, 대상 프로세스의 실행 순번을 계산할 수 있습니다.`
     }
+    if (seed === "remove-aws") {
+      return `"AWS" 부분 문자열을 반복 제거한 최종 결과를 계산할 수 있습니다.`
+    }
+    if (seed === "max-digit-range") {
+      return `자리수 치환으로 만들 수 있는 최대값과 최소값의 차이를 계산할 수 있습니다.`
+    }
+    if (seed === "max-subarray-length-under-k") {
+      return `합이 k 이하인 연속 부분배열 중 최장 길이를 계산할 수 있습니다.`
+    }
     if (seed === "stock-prices") {
       return `각 시점에서 처음 가격이 하락하는 시점까지의 초를 계산할 수 있습니다.`
     }
@@ -1963,6 +2386,33 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
         explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
       }
     }
+    if (seed === "remove-aws") {
+      const inputText = `s = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
+    if (seed === "max-digit-range") {
+      const inputText = `num = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
+    if (seed === "max-subarray-length-under-k") {
+      const inputText = `a = ${JSON.stringify(testCase.input[0])}, k = ${JSON.stringify(testCase.input[1])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
     if (seed === "stock-prices") {
       const inputText = `prices = ${JSON.stringify(testCase.input[0])}`
       const outputText = JSON.stringify(testCase.expected)
@@ -2024,6 +2474,9 @@ function buildGeneratedDifficulty(seedId: Problem["id"], index: number, fallback
     "binary-tree-level-order": ["Medium", "Hard", "Medium", "Easy", "Hard"],
     "trapping-rain-water": ["Medium", "Hard", "Easy", "Medium", "Hard"],
     "process-scheduler": ["Medium", "Hard", "Easy", "Medium", "Hard"],
+    "remove-aws": ["Easy", "Medium", "Easy", "Medium", "Hard"],
+    "max-digit-range": ["Medium", "Hard", "Easy", "Medium", "Hard"],
+    "max-subarray-length-under-k": ["Medium", "Hard", "Medium", "Easy", "Hard"],
   }
   const cycle = difficultyCycles[seedId]
   if (!cycle || cycle.length === 0) {
@@ -2408,6 +2861,82 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
       ],
     },
   },
+  "remove-aws": {
+    ko: {
+      title: "AWS 제거",
+      category: "문자열",
+      description: `문자열 \`s\`에서 부분 문자열 \`"AWS"\`를 더 이상 없을 때까지 반복 제거하세요.
+
+최종 문자열을 반환하고, 최종 문자열이 비어 있으면 \`-1\`을 반환하세요.`,
+      examples: [
+        {
+          input: 's = "AAWSWS"',
+          output: "-1",
+          explanation: '"AAWSWS" -> "AWS" -> "" 이므로 최종 결과는 -1입니다.',
+        },
+        {
+          input: 's = "BAWSA"',
+          output: '"BA"',
+          explanation: '"BAWSA"에서 "AWS"를 한 번 제거하면 "BA"가 됩니다.',
+        },
+      ],
+      constraints: [
+        "1 <= s.length <= 100000",
+        "s는 대문자 알파벳으로만 구성됩니다.",
+      ],
+    },
+  },
+  "max-digit-range": {
+    ko: {
+      title: "최대 숫자 범위",
+      category: "그리디",
+      description: `정수 \`num\`이 주어집니다.
+
+한 숫자를 골라 해당 숫자가 등장한 모든 자리를 같은 숫자로 바꿔 최대값을 만들고,
+다른 규칙으로 최소값을 만들어 두 값의 차이(\`maxValue - minValue\`)를 반환하세요.`,
+      examples: [
+        {
+          input: "num = 808",
+          output: "808",
+          explanation: "최대값 909, 최소값 101이므로 차이는 808입니다.",
+        },
+        {
+          input: "num = 909",
+          output: "898",
+          explanation: "최대값 999, 최소값 101이므로 차이는 898입니다.",
+        },
+      ],
+      constraints: [
+        "1 <= num <= 10^8",
+        "num은 선행 0이 없습니다.",
+      ],
+    },
+  },
+  "max-subarray-length-under-k": {
+    ko: {
+      title: "K 이하 최대 부분배열 길이",
+      category: "슬라이딩 윈도우",
+      description: `양의 정수 배열 \`a\`와 정수 \`k\`가 주어질 때,
+합이 \`k\` 이하인 연속 부분배열의 최대 길이를 반환하세요.`,
+      examples: [
+        {
+          input: "a = [3,1,2,1], k = 4",
+          output: "3",
+          explanation: "부분배열 [1,2,1]의 합이 4이고 길이는 3으로 최대입니다.",
+        },
+        {
+          input: "a = [1,2,3], k = 4",
+          output: "2",
+          explanation: "부분배열 [1,2]가 조건을 만족하는 최장 길이 2입니다.",
+        },
+      ],
+      constraints: [
+        "1 <= a.length <= 100000",
+        "1 <= a[i] <= 100000",
+        "1 <= k <= 10^9",
+      ],
+    },
+  },
 }
 
 const localizedCategories: Record<string, Partial<Record<ProblemLanguage, string>>> = {
@@ -2420,6 +2949,8 @@ const localizedCategories: Record<string, Partial<Record<ProblemLanguage, string
   Trees: { ko: "트리" },
   "Two Pointers": { ko: "투 포인터" },
   Queue: { ko: "큐" },
+  Strings: { ko: "문자열" },
+  Greedy: { ko: "그리디" },
 }
 
 export function localizeCategory(category: string, language: ProblemLanguage): string {
