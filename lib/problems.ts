@@ -11,8 +11,8 @@ export interface Problem {
   title: string
   category: string
   categoryIcon: string
+  tags?: string[]
   difficulty: Difficulty
-  successRate: number
   description: string
   examples: { input: string; output: string; explanation?: string }[]
   constraints: string[]
@@ -36,7 +36,6 @@ const baseProblems: Problem[] = [
     category: "Hash",
     categoryIcon: "Hash",
     difficulty: "Easy",
-    successRate: 72,
     description: `Given an array of integers \`nums\` and an integer \`target\`, return indices of the two numbers such that they add up to \`target\`.
 
 You may assume that each input would have **exactly one solution**, and you may not use the same element twice.
@@ -79,7 +78,6 @@ You can return the answer in any order.`,
     category: "Stack",
     categoryIcon: "Layers",
     difficulty: "Easy",
-    successRate: 65,
     description: `Given a string \`s\` containing just the characters \`'('\`, \`')'\`, \`'{'\`, \`'}'\`, \`'['\` and \`']'\`, determine if the input string is valid.
 
 An input string is valid if:
@@ -129,7 +127,6 @@ An input string is valid if:
     category: "Linked List",
     categoryIcon: "Link",
     difficulty: "Easy",
-    successRate: 78,
     description: `Given the \`head\` of a singly linked list, reverse the list, and return the reversed list.
 
 Implement the solution iteratively.`,
@@ -167,7 +164,6 @@ Implement the solution iteratively.`,
     category: "Dynamic Programming",
     categoryIcon: "TrendingUp",
     difficulty: "Medium",
-    successRate: 49,
     description: `Given an integer array \`nums\`, find the subarray with the largest sum, and return its sum.
 
 A **subarray** is a contiguous non-empty sequence of elements within an array.`,
@@ -205,7 +201,6 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     category: "Arrays",
     categoryIcon: "LayoutGrid",
     difficulty: "Medium",
-    successRate: 45,
     description: `Given an array of \`intervals\` where \`intervals[i] = [start_i, end_i]\`, merge all overlapping intervals, and return an array of the non-overlapping intervals that cover all the intervals in the input.`,
     examples: [
       {
@@ -244,7 +239,6 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     category: "Sliding Window",
     categoryIcon: "ScanLine",
     difficulty: "Medium",
-    successRate: 38,
     description: `Given a string \`s\`, find the length of the **longest substring** without repeating characters.`,
     examples: [
       {
@@ -281,7 +275,6 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     category: "Trees",
     categoryIcon: "GitBranch",
     difficulty: "Hard",
-    successRate: 32,
     description: `Given the \`root\` of a binary tree, return the level order traversal of its nodes' values. (i.e., from left to right, level by level).`,
     examples: [
       {
@@ -320,7 +313,6 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     category: "Two Pointers",
     categoryIcon: "Droplets",
     difficulty: "Hard",
-    successRate: 28,
     description: `Given \`n\` non-negative integers representing an elevation map where the width of each bar is \`1\`, compute how much water it can trap after raining.`,
     examples: [
       {
@@ -351,6 +343,254 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     ],
     functionName: "trap",
   },
+  {
+    id: "stock-prices",
+    title: "Stock Prices",
+    category: "Stack",
+    categoryIcon: "Layers",
+    tags: ["NEW"],
+    difficulty: "Medium",
+    description: `Given an integer array \`prices\` where \`prices[i]\` is the stock price at second \`i\`, return an array where each element is how many seconds pass before the price drops.
+
+If the price never drops afterward, count until the last second.`,
+    examples: [
+      {
+        input: "prices = [1,2,3,2,3]",
+        output: "[4,3,1,1,0]",
+        explanation:
+          "At index 2 (price 3), the first lower price appears at index 3 (price 2), so its duration is 1.",
+      },
+      {
+        input: "prices = [5,4,3,2,1]",
+        output: "[1,1,1,1,0]",
+        explanation:
+          "Each price drops immediately at the next second, except the last one which has no later price.",
+      },
+    ],
+    constraints: [
+      "1 <= prices.length <= 100000",
+      "1 <= prices[i] <= 10000",
+    ],
+    starterCode: `function stockPrices(prices) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: [[1, 2, 3, 2, 3]], expected: [4, 3, 1, 1, 0] },
+      { input: [[5, 4, 3, 2, 1]], expected: [1, 1, 1, 1, 0] },
+      { input: [[1, 2, 3, 4, 5]], expected: [4, 3, 2, 1, 0] },
+    ],
+    functionName: "stockPrices",
+  },
+  {
+    id: "tower-signal",
+    title: "Signal Receiver (Towers)",
+    category: "Stack",
+    categoryIcon: "Layers",
+    tags: ["NEW"],
+    difficulty: "Medium",
+    description: `Towers are placed from left to right, and each tower sends a signal to the left.
+
+For each tower, find the index (1-based) of the first taller tower to its left that receives the signal. If none exists, return 0 for that tower.`,
+    examples: [
+      {
+        input: "heights = [6,9,5,7,4]",
+        output: "[0,0,2,2,4]",
+        explanation:
+          "Tower 4 (height 7) skips tower 3 (height 5) and is received by tower 2 (height 9).",
+      },
+      {
+        input: "heights = [4,3,2,1]",
+        output: "[0,1,2,3]",
+        explanation:
+          "Each tower (except the first) is received by the immediate left tower because it is taller.",
+      },
+    ],
+    constraints: [
+      "1 <= heights.length <= 100000",
+      "1 <= heights[i] <= 100000000",
+    ],
+    starterCode: `function towerSignal(heights) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: [[6, 9, 5, 7, 4]], expected: [0, 0, 2, 2, 4] },
+      { input: [[4, 3, 2, 1]], expected: [0, 1, 2, 3] },
+      { input: [[1, 2, 3, 4]], expected: [0, 0, 0, 0] },
+    ],
+    functionName: "towerSignal",
+  },
+  {
+    id: "process-scheduler",
+    title: "Process Scheduler",
+    category: "Queue",
+    categoryIcon: "Layers",
+    tags: ["NEW"],
+    difficulty: "Medium",
+    description: `The operating system manages processes with the following rules:
+
+1. Pop one process from the front of the waiting queue.
+2. If there is any process in the queue with a higher priority, push the popped process to the back.
+3. Otherwise, execute and terminate the popped process.
+
+Given \`priorities\` and \`location\`, return the execution order (1-based) of the process at \`location\`.`,
+    examples: [
+      {
+        input: "priorities = [2,1,3,2], location = 2",
+        output: "1",
+        explanation:
+          "The process at index 2 has the highest priority (3), so it is executed first.",
+      },
+      {
+        input: "priorities = [1,1,9,1,1,1], location = 0",
+        output: "5",
+        explanation:
+          "Priority 9 executes first, and the process at index 0 is executed as the 5th process.",
+      },
+    ],
+    constraints: [
+      "1 <= priorities.length <= 100",
+      "1 <= priorities[i] <= 9",
+      "0 <= location < priorities.length",
+    ],
+    starterCode: `function processScheduler(priorities, location) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: [[2, 1, 3, 2], 2], expected: 1 },
+      { input: [[1, 1, 9, 1, 1, 1], 0], expected: 5 },
+      { input: [[1, 2, 3, 4], 1], expected: 3 },
+    ],
+    functionName: "processScheduler",
+  },
+  {
+    id: "remove-aws",
+    title: "Remove AWS",
+    category: "Strings",
+    categoryIcon: "Type",
+    tags: ["NEW"],
+    difficulty: "Easy",
+    description: `Given a string \`s\`, repeatedly remove every occurrence of the substring \`"AWS"\` until no such substring remains.
+
+Return the final string. If the final string is empty, return \`-1\`.`,
+    examples: [
+      {
+        input: 's = "AAWSWS"',
+        output: "-1",
+        explanation:
+          '"AAWSWS" -> "AWS" -> "" after repeated removals, so return -1.',
+      },
+      {
+        input: 's = "BAWSA"',
+        output: '"BA"',
+        explanation:
+          'Remove "AWS" once: "BAWSA" -> "BA", and no more "AWS" remains.',
+      },
+    ],
+    constraints: [
+      "1 <= s.length <= 100000",
+      "s consists of uppercase English letters.",
+    ],
+    starterCode: `function removeAWS(s) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: ["AAWSWS"], expected: -1 },
+      { input: ["BAWSA"], expected: "BA" },
+      { input: ["AWSAWSB"], expected: "B" },
+      { input: ["HELLO"], expected: "HELLO" },
+    ],
+    functionName: "removeAWS",
+  },
+  {
+    id: "max-digit-range",
+    title: "Max Digit Range",
+    category: "Greedy",
+    categoryIcon: "TrendingUp",
+    tags: ["NEW"],
+    difficulty: "Medium",
+    description: `Given an integer \`num\`, create:
+
+1. the largest possible number by replacing all occurrences of one chosen digit with another digit
+2. the smallest possible number by replacing all occurrences of one chosen digit with another digit
+
+For each transformation, all occurrences of the chosen source digit must be replaced together.
+
+Return \`maxValue - minValue\`.`,
+    examples: [
+      {
+        input: "num = 808",
+        output: "808",
+        explanation:
+          "Max: 808 -> 909 (replace 8 with 9), Min: 808 -> 101 (replace 8 with 1), difference is 808.",
+      },
+      {
+        input: "num = 909",
+        output: "898",
+        explanation:
+          "Max stays 999? No, only one source digit can be replaced: 909 -> 999, Min: 909 -> 101, difference is 898.",
+      },
+    ],
+    constraints: [
+      "1 <= num <= 10^8",
+      "num has no leading zeros.",
+    ],
+    starterCode: `function maxDigitRange(num) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: [808], expected: 808 },
+      { input: [909], expected: 898 },
+      { input: [123456], expected: 820000 },
+      { input: [10000], expected: 80000 },
+    ],
+    functionName: "maxDigitRange",
+  },
+  {
+    id: "max-subarray-length-under-k",
+    title: "Max Subarray Length Under K",
+    category: "Sliding Window",
+    categoryIcon: "ScanLine",
+    tags: ["NEW"],
+    difficulty: "Medium",
+    description: `Given an array \`a\` of positive integers and an integer \`k\`, find the maximum length of a contiguous subarray whose sum is less than or equal to \`k\`.
+
+Return that maximum length.`,
+    examples: [
+      {
+        input: "a = [3,1,2,1], k = 4",
+        output: "3",
+        explanation:
+          "The subarray [1,2,1] has sum 4 and length 3, which is the maximum.",
+      },
+      {
+        input: "a = [1,2,3], k = 4",
+        output: "2",
+        explanation:
+          "The longest valid subarray is [1,2] with length 2.",
+      },
+    ],
+    constraints: [
+      "1 <= a.length <= 100000",
+      "1 <= a[i] <= 100000",
+      "1 <= k <= 10^9",
+    ],
+    starterCode: `function maxLengthUnderK(a, k) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: [[3, 1, 2, 1], 4], expected: 3 },
+      { input: [[1, 2, 3], 4], expected: 2 },
+      { input: [[5, 1, 1, 1, 1], 5], expected: 4 },
+      { input: [[2, 2, 2], 1], expected: 0 },
+    ],
+    functionName: "maxLengthUnderK",
+  },
 ]
 
 const ADDITIONAL_PROBLEMS_PER_CATEGORY: Record<Problem["id"], number> = {
@@ -362,6 +602,12 @@ const ADDITIONAL_PROBLEMS_PER_CATEGORY: Record<Problem["id"], number> = {
   "longest-substring": 4,
   "binary-tree-level-order": 6,
   "trapping-rain-water": 5,
+  "stock-prices": 4,
+  "tower-signal": 4,
+  "process-scheduler": 4,
+  "remove-aws": 4,
+  "max-digit-range": 4,
+  "max-subarray-length-under-k": 4,
 }
 const BASE_PROBLEMS_PER_CATEGORY = 20
 
@@ -458,6 +704,139 @@ function trapRainWaterValue(height: number[]): number {
   return water
 }
 
+function stockPriceDurationValue(prices: number[]): number[] {
+  const result = Array.from({ length: prices.length }, () => 0)
+  const stack: number[] = []
+
+  for (let i = 0; i < prices.length; i += 1) {
+    while (stack.length > 0 && prices[i] < prices[stack[stack.length - 1]]) {
+      const idx = stack.pop()
+      if (idx === undefined) {
+        break
+      }
+      result[idx] = i - idx
+    }
+    stack.push(i)
+  }
+
+  while (stack.length > 0) {
+    const idx = stack.pop()
+    if (idx === undefined) {
+      break
+    }
+    result[idx] = prices.length - 1 - idx
+  }
+
+  return result
+}
+
+function towerSignalValue(heights: number[]): number[] {
+  const receivers = Array.from({ length: heights.length }, () => 0)
+  const stack: Array<{ index: number; height: number }> = []
+
+  for (let i = 0; i < heights.length; i += 1) {
+    while (stack.length > 0 && stack[stack.length - 1].height <= heights[i]) {
+      stack.pop()
+    }
+    receivers[i] = stack.length > 0 ? stack[stack.length - 1].index + 1 : 0
+    stack.push({ index: i, height: heights[i] })
+  }
+
+  return receivers
+}
+
+function processSchedulerValue(priorities: number[], location: number): number {
+  const queue = priorities.map((priority, index) => ({ priority, index }))
+  let order = 0
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (!current) {
+      break
+    }
+    const hasHigher = queue.some((item) => item.priority > current.priority)
+    if (hasHigher) {
+      queue.push(current)
+      continue
+    }
+    order += 1
+    if (current.index === location) {
+      return order
+    }
+  }
+
+  return order
+}
+
+function removeAWSValue(s: string): string | number {
+  const stack: string[] = []
+  for (const ch of s) {
+    stack.push(ch)
+    const n = stack.length
+    if (n >= 3 && stack[n - 3] === "A" && stack[n - 2] === "W" && stack[n - 1] === "S") {
+      stack.pop()
+      stack.pop()
+      stack.pop()
+    }
+  }
+  const result = stack.join("")
+  return result.length === 0 ? -1 : result
+}
+
+function maxDigitRangeValue(num: number): number {
+  const digits = String(num).split("")
+
+  const maxDigits = [...digits]
+  const maxTarget = maxDigits.find((d) => d !== "9")
+  if (maxTarget) {
+    for (let i = 0; i < maxDigits.length; i += 1) {
+      if (maxDigits[i] === maxTarget) {
+        maxDigits[i] = "9"
+      }
+    }
+  }
+
+  const minDigits = [...digits]
+  if (minDigits[0] !== "1") {
+    const target = minDigits[0]
+    for (let i = 0; i < minDigits.length; i += 1) {
+      if (minDigits[i] === target) {
+        minDigits[i] = "1"
+      }
+    }
+  } else {
+    const target = minDigits.find((d) => d !== "0" && d !== "1")
+    if (target) {
+      for (let i = 0; i < minDigits.length; i += 1) {
+        if (minDigits[i] === target) {
+          minDigits[i] = "0"
+        }
+      }
+    }
+  }
+
+  const maxValue = Number(maxDigits.join(""))
+  const minValue = Number(minDigits.join(""))
+  return maxValue - minValue
+}
+
+function maxLengthUnderKValue(a: readonly number[], k: number): number {
+  let left = 0
+  let sum = 0
+  let best = 0
+
+  for (let right = 0; right < a.length; right += 1) {
+    sum += a[right]
+    while (sum > k && left <= right) {
+      sum -= a[left]
+      left += 1
+    }
+    best = Math.max(best, right - left + 1)
+  }
+
+  return best
+}
+
 function buildTestCases(seedId: Problem["id"], index: number): TestCase[] {
   const n = index + 2
   switch (seedId) {
@@ -538,6 +917,63 @@ function buildTestCases(seedId: Problem["id"], index: number): TestCase[] {
       return [
         { input: [heightsA], expected: trapRainWaterValue(heightsA) },
         { input: [heightsB], expected: trapRainWaterValue(heightsB) },
+      ]
+    }
+    case "stock-prices": {
+      const pricesA = [1, 2 + (index % 2), 3 + (index % 3), 2, 3]
+      const pricesB = [5 + (index % 3), 4 + (index % 2), 3, 2, 1]
+      return [
+        { input: [pricesA], expected: stockPriceDurationValue(pricesA) },
+        { input: [pricesB], expected: stockPriceDurationValue(pricesB) },
+      ]
+    }
+    case "tower-signal": {
+      const heightsA = [6 + (index % 2), 9 + (index % 3), 5, 7 + (index % 2), 4]
+      const heightsB = [4 + (index % 3), 3, 2, 1]
+      return [
+        { input: [heightsA], expected: towerSignalValue(heightsA) },
+        { input: [heightsB], expected: towerSignalValue(heightsB) },
+      ]
+    }
+    case "process-scheduler": {
+      const prioritiesA = [2, 1 + (index % 2), 3 + (index % 3), 2]
+      const prioritiesB = [1, 1, 9, 1, 1, 1]
+      return [
+        { input: [prioritiesA, 2], expected: processSchedulerValue(prioritiesA, 2) },
+        { input: [prioritiesB, index % prioritiesB.length], expected: processSchedulerValue(prioritiesB, index % prioritiesB.length) },
+      ]
+    }
+    case "remove-aws": {
+      const samples = ["AAWSWS", "BAWSA", "AWSAWSB", "HELLOAWSAWS", "AWS"]
+      const a = samples[index % samples.length]
+      const b = samples[(index + 2) % samples.length]
+      return [
+        { input: [a], expected: removeAWSValue(a) },
+        { input: [b], expected: removeAWSValue(b) },
+      ]
+    }
+    case "max-digit-range": {
+      const samples = [808, 909, 123456, 10000, 111, 987654]
+      const a = samples[index % samples.length]
+      const b = samples[(index + 3) % samples.length]
+      return [
+        { input: [a], expected: maxDigitRangeValue(a) },
+        { input: [b], expected: maxDigitRangeValue(b) },
+      ]
+    }
+    case "max-subarray-length-under-k": {
+      const arrays = [
+        [[3, 1, 2, 1], 4],
+        [[1, 2, 3], 4],
+        [[5, 1, 1, 1, 1], 5],
+        [[2, 2, 2], 1],
+        [[1, 1, 1, 1, 1], 3],
+      ] as const
+      const aCase = arrays[index % arrays.length]
+      const bCase = arrays[(index + 2) % arrays.length]
+      return [
+        { input: [aCase[0], aCase[1]], expected: maxLengthUnderKValue(aCase[0], aCase[1]) },
+        { input: [bCase[0], bCase[1]], expected: maxLengthUnderKValue(bCase[0], bCase[1]) },
       ]
     }
     default:
@@ -729,6 +1165,66 @@ const generatedTitlePool: Record<Problem["id"], string[]> = {
     "Platform Water Storage",
     "Puddle Capacity Scan",
   ],
+  "stock-prices": [
+    "Stock Price Duration",
+    "Price Drop Timer",
+    "Quote Stability Window",
+    "Market Tick Duration",
+    "Price Hold Counter",
+    "Second-by-Second Price Guard",
+    "Price Fall Watcher",
+    "Trade Price Lifespan",
+  ],
+  "tower-signal": [
+    "Left Signal Receiver",
+    "Tower Laser Receiver",
+    "Skyline Signal Match",
+    "Antenna Left Catch",
+    "Receiver Tower Index",
+    "Signal Block and Receive",
+    "Taller Left Tower Search",
+    "Line of Towers Signal",
+  ],
+  "process-scheduler": [
+    "Printer Queue Scheduler",
+    "CPU Priority Dispatch",
+    "Task Queue Execution Order",
+    "Priority Rotation Queue",
+    "Job Dispatch Sequence",
+    "Execution Rank by Priority",
+    "Process Queue Simulator",
+    "High Priority First Run",
+  ],
+  "remove-aws": [
+    "AWS Stream Cleanup",
+    "Log Token Eraser",
+    "Keyword Chain Removal",
+    "Pattern Collapse AWS",
+    "Message Noise Cleanup",
+    "Repeated AWS Deletion",
+    "Substring Burst Removal",
+    "Signal Text Cleaner",
+  ],
+  "max-digit-range": [
+    "Maximum Digit Gap",
+    "Digit Replacement Range",
+    "Max Min Number Delta",
+    "One Digit Global Swap",
+    "Numeric Range Optimizer",
+    "Largest Smallest Diff",
+    "Digit Remap Spread",
+    "Number Morph Distance",
+  ],
+  "max-subarray-length-under-k": [
+    "Longest Budget Segment",
+    "Max Window Under Limit",
+    "Bounded Sum Subarray",
+    "Longest K-Limited Window",
+    "Segment Length by Cap",
+    "Capacity-Constrained Slice",
+    "Longest Valid Sum Window",
+    "Subarray Length Tracker",
+  ],
 }
 
 const generatedTitlePoolKo: Record<Problem["id"], string[]> = {
@@ -908,6 +1404,66 @@ const generatedTitlePoolKo: Record<Problem["id"], string[]> = {
     "플랫폼 물 저장량",
     "웅덩이 용량 스캔",
   ],
+  "stock-prices": [
+    "주식 가격 유지시간",
+    "가격 하락 타이머",
+    "시세 안정 구간",
+    "시장 틱 지속시간",
+    "가격 유지 카운터",
+    "초 단위 가격 감시",
+    "가격 하락 감지기",
+    "거래가 지속시간",
+  ],
+  "tower-signal": [
+    "왼쪽 신호 수신",
+    "탑 레이저 수신",
+    "스카이라인 신호 매칭",
+    "안테나 왼쪽 수신",
+    "수신 탑 인덱스",
+    "신호 차단과 수신",
+    "왼쪽 높은 탑 탐색",
+    "일렬 탑 신호",
+  ],
+  "process-scheduler": [
+    "프린터 큐 스케줄러",
+    "CPU 우선순위 디스패치",
+    "작업 큐 실행 순서",
+    "우선순위 회전 큐",
+    "작업 디스패치 순서",
+    "우선순위 실행 순번",
+    "프로세스 큐 시뮬레이터",
+    "높은 우선순위 선실행",
+  ],
+  "remove-aws": [
+    "AWS 문자열 정리",
+    "로그 토큰 삭제",
+    "키워드 연쇄 제거",
+    "패턴 붕괴 AWS",
+    "메시지 노이즈 정리",
+    "반복 AWS 삭제",
+    "부분문자열 연속 제거",
+    "신호 텍스트 정제",
+  ],
+  "max-digit-range": [
+    "최대 숫자 차이",
+    "자리수 치환 범위",
+    "최대 최소 수 차이",
+    "단일 숫자 전체 교체",
+    "숫자 범위 최적화",
+    "가장 큰 수 최소 수 차",
+    "자리수 리매핑 폭",
+    "숫자 변형 거리",
+  ],
+  "max-subarray-length-under-k": [
+    "최장 예산 구간",
+    "제한 이하 최대 윈도우",
+    "합 제한 부분배열",
+    "K 제한 최장 윈도우",
+    "상한 기반 구간 길이",
+    "용량 제한 슬라이스",
+    "최장 유효 합 윈도우",
+    "부분배열 길이 추적",
+  ],
 }
 
 const generatedTitleSuffixPool: Record<Problem["id"], string[]> = {
@@ -990,6 +1546,42 @@ const generatedTitleSuffixPool: Record<Problem["id"], string[]> = {
     "Subway Tunnel Edition",
     "Dam Safety Edition",
     "Bridge Deck Edition",
+  ],
+  "stock-prices": [
+    "Volatility Edition",
+    "Real-Time Quote Edition",
+    "Trading Floor Edition",
+    "Risk Monitor Edition",
+  ],
+  "tower-signal": [
+    "Radio Tower Edition",
+    "City Skyline Edition",
+    "Antenna Network Edition",
+    "Control Center Edition",
+  ],
+  "process-scheduler": [
+    "Printer Center Edition",
+    "Operating System Edition",
+    "Dispatch Queue Edition",
+    "Task Manager Edition",
+  ],
+  "remove-aws": [
+    "Stream Parser Edition",
+    "Cleanup Worker Edition",
+    "Telemetry Log Edition",
+    "Message Filter Edition",
+  ],
+  "max-digit-range": [
+    "Digit Swap Edition",
+    "Range Optimizer Edition",
+    "Numeric Delta Edition",
+    "Value Remap Edition",
+  ],
+  "max-subarray-length-under-k": [
+    "Budget Guard Edition",
+    "Window Limit Edition",
+    "Capacity Planner Edition",
+    "Threshold Tracker Edition",
   ],
 }
 
@@ -1074,6 +1666,42 @@ const generatedTitleSuffixPoolKo: Record<Problem["id"], string[]> = {
     "댐 안전 편",
     "교량 상판 편",
   ],
+  "stock-prices": [
+    "변동성 편",
+    "실시간 시세 편",
+    "트레이딩 플로어 편",
+    "리스크 모니터 편",
+  ],
+  "tower-signal": [
+    "무선 타워 편",
+    "도시 스카이라인 편",
+    "안테나 네트워크 편",
+    "관제센터 편",
+  ],
+  "process-scheduler": [
+    "프린터 센터 편",
+    "운영체제 편",
+    "디스패치 큐 편",
+    "태스크 매니저 편",
+  ],
+  "remove-aws": [
+    "스트림 파서 편",
+    "정리 워커 편",
+    "텔레메트리 로그 편",
+    "메시지 필터 편",
+  ],
+  "max-digit-range": [
+    "자리수 교체 편",
+    "범위 최적화 편",
+    "숫자 차이 편",
+    "값 리매핑 편",
+  ],
+  "max-subarray-length-under-k": [
+    "예산 가드 편",
+    "윈도우 제한 편",
+    "용량 플래너 편",
+    "임계값 추적 편",
+  ],
 }
 
 function buildGeneratedDescription(seed: Problem["id"], title: string): string {
@@ -1108,6 +1736,31 @@ Return node values grouped by depth from top to bottom and left to right.`
       return `In "${title}", each number is the height of a wall with width 1.
 
 Compute how many total units of rainwater are trapped after rainfall.`
+    case "process-scheduler":
+      return `In "${title}", processes are executed from a queue with priority rules.
+
+At each step, if a higher-priority process exists, move the current process to the back; otherwise execute it.
+Return when the target process is executed.`
+    case "remove-aws":
+      return `In "${title}", repeatedly remove every occurrence of the substring "AWS" from the input string.
+
+Continue until no "AWS" remains, then return the resulting string (or -1 if empty).`
+    case "max-digit-range":
+      return `In "${title}", transform one digit globally to maximize the number, and transform one digit globally to minimize it.
+
+Return the difference between the maximum and minimum transformed values.`
+    case "max-subarray-length-under-k":
+      return `In "${title}", find the longest contiguous subarray whose sum is at most k.
+
+Return that maximum length.`
+    case "stock-prices":
+      return `In "${title}", each index is a timestamp and each value is the stock price at that time.
+
+For each timestamp, compute how many seconds pass before the price becomes lower.`
+    case "tower-signal":
+      return `In "${title}", towers are arranged left to right and each tower sends a signal to the left.
+
+Return the 1-based index of the first taller tower to the left that receives each signal, or 0 if none exists.`
     default:
       return "Solve the problem using an efficient algorithm."
   }
@@ -1149,6 +1802,29 @@ function buildGeneratedDescriptionKo(seed: Problem["id"], title: string): string
       return `"${title}" 문제입니다. 각 칸의 막대 높이를 나타내는 배열이 주어집니다.
 
 비가 온 뒤 막대 사이에 고일 수 있는 빗물의 총량을 계산해 반환하세요.`
+    case "process-scheduler":
+      return `"${title}" 문제입니다. 프로세스가 우선순위 규칙에 따라 큐에서 실행됩니다.
+
+매 단계마다 현재 프로세스보다 우선순위가 높은 프로세스가 남아 있으면 뒤로 보내고, 그렇지 않으면 실행합니다.
+target 위치의 프로세스가 몇 번째로 실행되는지 반환하세요.`
+    case "remove-aws":
+      return `"${title}" 문제입니다. 문자열에서 부분 문자열 "AWS"를 더 이상 없을 때까지 반복해서 제거합니다.
+
+최종 문자열을 반환하고, 최종 문자열이 비어 있으면 -1을 반환하세요.`
+    case "max-digit-range":
+      return `"${title}" 문제입니다. 하나의 숫자를 골라 해당 숫자가 등장한 모든 자리를 같은 숫자로 바꿔 최대값을 만들고,
+또 다른 규칙으로 최소값을 만든 뒤 두 값의 차이를 구하세요.`
+    case "max-subarray-length-under-k":
+      return `"${title}" 문제입니다. 양의 정수 배열 a와 정수 k가 주어질 때,
+합이 k 이하인 연속 부분배열의 최대 길이를 구해 반환하세요.`
+    case "stock-prices":
+      return `"${title}" 문제입니다. 배열의 각 원소는 해당 초의 주식 가격을 의미합니다.
+
+각 시점마다 가격이 처음으로 하락하기 전까지 몇 초가 유지되는지 배열로 반환하세요.`
+    case "tower-signal":
+      return `"${title}" 문제입니다. 탑이 왼쪽에서 오른쪽으로 배치되어 있고, 각 탑은 왼쪽으로 신호를 보냅니다.
+
+각 탑마다 왼쪽에서 처음 만나는 더 높은 탑의 1-based 인덱스를 반환하고, 없으면 0을 반환하세요.`
     default:
       return "효율적인 알고리즘으로 문제를 해결하세요."
   }
@@ -1199,6 +1875,38 @@ function buildGeneratedConstraints(seed: Problem["id"]): string[] {
         "1 <= height.length <= 2 * 10^4",
         "0 <= height[i] <= 10^5",
       ]
+    case "process-scheduler":
+      return [
+        "1 <= priorities.length <= 100",
+        "1 <= priorities[i] <= 9",
+        "0 <= location < priorities.length",
+      ]
+    case "remove-aws":
+      return [
+        "1 <= s.length <= 10^5",
+        "s consists of uppercase English letters.",
+      ]
+    case "max-digit-range":
+      return [
+        "1 <= num <= 10^8",
+        "num has no leading zeros.",
+      ]
+    case "max-subarray-length-under-k":
+      return [
+        "1 <= a.length <= 10^5",
+        "1 <= a[i] <= 10^5",
+        "1 <= k <= 10^9",
+      ]
+    case "stock-prices":
+      return [
+        "1 <= prices.length <= 10^5",
+        "1 <= prices[i] <= 10^4",
+      ]
+    case "tower-signal":
+      return [
+        "1 <= heights.length <= 10^5",
+        "1 <= heights[i] <= 10^8",
+      ]
     default:
       return []
   }
@@ -1248,6 +1956,38 @@ function buildGeneratedConstraintsKo(seed: Problem["id"]): string[] {
       return [
         "1 <= height.length <= 2 * 10^4",
         "0 <= height[i] <= 10^5",
+      ]
+    case "process-scheduler":
+      return [
+        "1 <= priorities.length <= 100",
+        "1 <= priorities[i] <= 9",
+        "0 <= location < priorities.length",
+      ]
+    case "remove-aws":
+      return [
+        "1 <= s.length <= 10^5",
+        "s는 대문자 알파벳으로만 구성됩니다.",
+      ]
+    case "max-digit-range":
+      return [
+        "1 <= num <= 10^8",
+        "num은 선행 0이 없습니다.",
+      ]
+    case "max-subarray-length-under-k":
+      return [
+        "1 <= a.length <= 10^5",
+        "1 <= a[i] <= 10^5",
+        "1 <= k <= 10^9",
+      ]
+    case "stock-prices":
+      return [
+        "1 <= prices.length <= 10^5",
+        "1 <= prices[i] <= 10^4",
+      ]
+    case "tower-signal":
+      return [
+        "1 <= heights.length <= 10^5",
+        "1 <= heights[i] <= 10^8",
       ]
     default:
       return []
@@ -1332,6 +2072,24 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
     if (seed === "binary-tree-level-order") {
       return `nodes are grouped by depth from top to bottom, yielding ${JSON.stringify(testCase.expected)}.`
     }
+    if (seed === "process-scheduler") {
+      return `processes are executed by priority rotation, and the target process completes at order ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "remove-aws") {
+      return `removing all "AWS" substrings repeatedly results in ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "max-digit-range") {
+      return `the difference between the maximum and minimum remapped values is ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "max-subarray-length-under-k") {
+      return `the longest contiguous subarray with sum <= k has length ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "stock-prices") {
+      return `for each timestamp, count seconds until the first lower price appears, which gives ${JSON.stringify(testCase.expected)}.`
+    }
+    if (seed === "tower-signal") {
+      return `each tower is received by the first taller tower to its left, so the result is ${JSON.stringify(testCase.expected)}.`
+    }
     return `summing trapped water over each position gives ${JSON.stringify(testCase.expected)}.`
   }
 
@@ -1392,6 +2150,60 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
     }
     if (seed === "binary-tree-level-order") {
       const inputText = `root = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "process-scheduler") {
+      const inputText = `priorities = ${JSON.stringify(testCase.input[0])}, location = ${JSON.stringify(testCase.input[1])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "remove-aws") {
+      const inputText = `s = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "max-digit-range") {
+      const inputText = `num = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "max-subarray-length-under-k") {
+      const inputText = `a = ${JSON.stringify(testCase.input[0])}, k = ${JSON.stringify(testCase.input[1])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "stock-prices") {
+      const inputText = `prices = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "tower-signal") {
+      const inputText = `heights = ${JSON.stringify(testCase.input[0])}`
       const outputText = JSON.stringify(testCase.expected)
       return {
         input: inputText,
@@ -1487,6 +2299,24 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
     if (seed === "binary-tree-level-order") {
       return "노드를 깊이(레벨)별로 묶어 순서대로 나열할 수 있습니다."
     }
+    if (seed === "process-scheduler") {
+      return `우선순위 규칙으로 큐를 회전시키며 실행할 때, 대상 프로세스의 실행 순번을 계산할 수 있습니다.`
+    }
+    if (seed === "remove-aws") {
+      return `"AWS" 부분 문자열을 반복 제거한 최종 결과를 계산할 수 있습니다.`
+    }
+    if (seed === "max-digit-range") {
+      return `자리수 치환으로 만들 수 있는 최대값과 최소값의 차이를 계산할 수 있습니다.`
+    }
+    if (seed === "max-subarray-length-under-k") {
+      return `합이 k 이하인 연속 부분배열 중 최장 길이를 계산할 수 있습니다.`
+    }
+    if (seed === "stock-prices") {
+      return `각 시점에서 처음 가격이 하락하는 시점까지의 초를 계산할 수 있습니다.`
+    }
+    if (seed === "tower-signal") {
+      return `각 탑은 왼쪽에서 처음 만나는 더 높은 탑이 신호를 수신합니다.`
+    }
     return "각 위치에 고이는 물의 양을 모두 합산할 수 있습니다."
   }
 
@@ -1554,6 +2384,60 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
         explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
       }
     }
+    if (seed === "process-scheduler") {
+      const inputText = `priorities = ${JSON.stringify(testCase.input[0])}, location = ${JSON.stringify(testCase.input[1])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
+    if (seed === "remove-aws") {
+      const inputText = `s = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
+    if (seed === "max-digit-range") {
+      const inputText = `num = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
+    if (seed === "max-subarray-length-under-k") {
+      const inputText = `a = ${JSON.stringify(testCase.input[0])}, k = ${JSON.stringify(testCase.input[1])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
+    if (seed === "stock-prices") {
+      const inputText = `prices = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
+    if (seed === "tower-signal") {
+      const inputText = `heights = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
     const inputText = `height = ${JSON.stringify(testCase.input[0])}`
     const outputText = JSON.stringify(testCase.expected)
     return {
@@ -1596,6 +2480,10 @@ function buildGeneratedDifficulty(seedId: Problem["id"], index: number, fallback
     "longest-substring": ["Medium", "Hard", "Easy", "Medium", "Hard"],
     "binary-tree-level-order": ["Medium", "Hard", "Medium", "Easy", "Hard"],
     "trapping-rain-water": ["Medium", "Hard", "Easy", "Medium", "Hard"],
+    "process-scheduler": ["Medium", "Hard", "Easy", "Medium", "Hard"],
+    "remove-aws": ["Easy", "Medium", "Easy", "Medium", "Hard"],
+    "max-digit-range": ["Medium", "Hard", "Easy", "Medium", "Hard"],
+    "max-subarray-length-under-k": ["Medium", "Hard", "Medium", "Easy", "Hard"],
   }
   const cycle = difficultyCycles[seedId]
   if (!cycle || cycle.length === 0) {
@@ -1617,7 +2505,7 @@ function createGeneratedProblem(seed: Problem, index: number): Problem {
     id: generatedId,
     title: generatedTitle,
     difficulty: generatedDifficulty,
-    successRate: Math.max(20, seed.successRate - ((index * 3) % 20)),
+    tags: (seed.tags ?? []).filter((tag) => tag !== "NEW"),
     description: buildGeneratedDescription(seed.id, generatedTitle),
     constraints: buildGeneratedConstraints(seed.id),
     starterCode: seed.starterCode.replace(functionNameRegex, generatedFunctionName),
@@ -1899,6 +2787,164 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
       ],
     },
   },
+  "stock-prices": {
+    ko: {
+      title: "주식 가격",
+      category: "스택",
+      description: `배열 \`prices\`가 주어질 때, \`prices[i]\`는 i초 시점의 주식 가격을 의미합니다.
+
+각 시점마다 가격이 처음으로 떨어지기 전까지 몇 초 동안 유지되는지 배열로 반환하세요.
+끝까지 떨어지지 않으면 마지막 시점까지의 시간을 계산합니다.`,
+      examples: [
+        {
+          input: "prices = [1,2,3,2,3]",
+          output: "[4,3,1,1,0]",
+          explanation: "3초 시점의 가격 3은 다음 시점에 2로 하락하므로 유지 시간은 1초입니다.",
+        },
+        {
+          input: "prices = [5,4,3,2,1]",
+          output: "[1,1,1,1,0]",
+          explanation: "마지막 원소를 제외한 모든 시점에서 다음 초에 바로 가격이 하락합니다.",
+        },
+      ],
+      constraints: [
+        "1 <= prices.length <= 100000",
+        "1 <= prices[i] <= 10000",
+      ],
+    },
+  },
+  "tower-signal": {
+    ko: {
+      title: "신호 수신 (탑)",
+      category: "스택",
+      description: `탑들이 왼쪽에서 오른쪽으로 일렬로 배치되어 있습니다. 각 탑은 왼쪽으로 신호를 발사합니다.
+
+각 탑에 대해 왼쪽에서 처음 만나는 더 높은 탑(엄격히 큼)의 1-based 인덱스를 반환하세요.
+수신 탑이 없으면 0을 반환합니다.`,
+      examples: [
+        {
+          input: "heights = [6,9,5,7,4]",
+          output: "[0,0,2,2,4]",
+          explanation: "4번 탑(7)은 3번 탑(5)을 지나 2번 탑(9)에서 신호가 수신됩니다.",
+        },
+        {
+          input: "heights = [4,3,2,1]",
+          output: "[0,1,2,3]",
+          explanation: "첫 탑을 제외하고는 바로 왼쪽 탑이 항상 더 높아 신호를 수신합니다.",
+        },
+      ],
+      constraints: [
+        "1 <= heights.length <= 100000",
+        "1 <= heights[i] <= 100000000",
+      ],
+    },
+  },
+  "process-scheduler": {
+    ko: {
+      title: "프로세스 스케줄러",
+      category: "큐",
+      description: `운영체제가 프로세스를 다음 규칙으로 실행합니다.
+
+1) 큐의 앞에서 프로세스를 꺼냅니다.
+2) 큐 안에 더 높은 우선순위가 하나라도 있으면, 꺼낸 프로세스를 큐 뒤로 보냅니다.
+3) 그렇지 않으면 해당 프로세스를 실행하고 종료합니다.
+
+\`priorities\`와 \`location\`이 주어질 때, \`location\`의 프로세스가 몇 번째로 실행되는지 반환하세요.`,
+      examples: [
+        {
+          input: "priorities = [2,1,3,2], location = 2",
+          output: "1",
+          explanation: "인덱스 2의 우선순위 3이 가장 높으므로 첫 번째로 실행됩니다.",
+        },
+        {
+          input: "priorities = [1,1,9,1,1,1], location = 0",
+          output: "5",
+          explanation: "우선순위 9가 먼저 실행된 뒤, 인덱스 0 프로세스는 다섯 번째에 실행됩니다.",
+        },
+      ],
+      constraints: [
+        "1 <= priorities.length <= 100",
+        "1 <= priorities[i] <= 9",
+        "0 <= location < priorities.length",
+      ],
+    },
+  },
+  "remove-aws": {
+    ko: {
+      title: "AWS 제거",
+      category: "문자열",
+      description: `문자열 \`s\`에서 부분 문자열 \`"AWS"\`를 더 이상 없을 때까지 반복 제거하세요.
+
+최종 문자열을 반환하고, 최종 문자열이 비어 있으면 \`-1\`을 반환하세요.`,
+      examples: [
+        {
+          input: 's = "AAWSWS"',
+          output: "-1",
+          explanation: '"AAWSWS" -> "AWS" -> "" 이므로 최종 결과는 -1입니다.',
+        },
+        {
+          input: 's = "BAWSA"',
+          output: '"BA"',
+          explanation: '"BAWSA"에서 "AWS"를 한 번 제거하면 "BA"가 됩니다.',
+        },
+      ],
+      constraints: [
+        "1 <= s.length <= 100000",
+        "s는 대문자 알파벳으로만 구성됩니다.",
+      ],
+    },
+  },
+  "max-digit-range": {
+    ko: {
+      title: "최대 숫자 범위",
+      category: "그리디",
+      description: `정수 \`num\`이 주어집니다.
+
+한 숫자를 골라 해당 숫자가 등장한 모든 자리를 같은 숫자로 바꿔 최대값을 만들고,
+다른 규칙으로 최소값을 만들어 두 값의 차이(\`maxValue - minValue\`)를 반환하세요.`,
+      examples: [
+        {
+          input: "num = 808",
+          output: "808",
+          explanation: "최대값 909, 최소값 101이므로 차이는 808입니다.",
+        },
+        {
+          input: "num = 909",
+          output: "898",
+          explanation: "최대값 999, 최소값 101이므로 차이는 898입니다.",
+        },
+      ],
+      constraints: [
+        "1 <= num <= 10^8",
+        "num은 선행 0이 없습니다.",
+      ],
+    },
+  },
+  "max-subarray-length-under-k": {
+    ko: {
+      title: "K 이하 최대 부분배열 길이",
+      category: "슬라이딩 윈도우",
+      description: `양의 정수 배열 \`a\`와 정수 \`k\`가 주어질 때,
+합이 \`k\` 이하인 연속 부분배열의 최대 길이를 반환하세요.`,
+      examples: [
+        {
+          input: "a = [3,1,2,1], k = 4",
+          output: "3",
+          explanation: "부분배열 [1,2,1]의 합이 4이고 길이는 3으로 최대입니다.",
+        },
+        {
+          input: "a = [1,2,3], k = 4",
+          output: "2",
+          explanation: "부분배열 [1,2]가 조건을 만족하는 최장 길이 2입니다.",
+        },
+      ],
+      constraints: [
+        "1 <= a.length <= 100000",
+        "1 <= a[i] <= 100000",
+        "1 <= k <= 10^9",
+      ],
+    },
+  },
 }
 
 const localizedCategories: Record<string, Partial<Record<ProblemLanguage, string>>> = {
@@ -1910,6 +2956,9 @@ const localizedCategories: Record<string, Partial<Record<ProblemLanguage, string
   "Sliding Window": { ko: "슬라이딩 윈도우" },
   Trees: { ko: "트리" },
   "Two Pointers": { ko: "투 포인터" },
+  Queue: { ko: "큐" },
+  Strings: { ko: "문자열" },
+  Greedy: { ko: "그리디" },
 }
 
 export function localizeCategory(category: string, language: ProblemLanguage): string {

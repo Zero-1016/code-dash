@@ -13,7 +13,6 @@ Required fields:
 - `category`
 - `categoryIcon`
 - `difficulty`
-- `successRate`
 - `description`
 - `examples`
 - `constraints`
@@ -67,7 +66,7 @@ Done when:
 
 ### Module 3: Difficulty Calibration
 Use when:
-- Difficulty (`Easy`/`Medium`/`Hard`) or `successRate` is uncertain.
+- Difficulty (`Easy`/`Medium`/`Hard`) is uncertain.
 
 Inputs:
 - Constraints
@@ -76,11 +75,9 @@ Inputs:
 
 Outputs:
 - Final `difficulty`
-- Initial `successRate` estimate
 
 Done when:
 - Difficulty and constraints are aligned.
-- `successRate` is plausible for the selected difficulty.
 
 ### Module 4: Example Crafting
 Use when:
@@ -133,5 +130,5 @@ Stop after the smallest sufficient set of modules is complete.
 - [ ] `functionName` matches `starterCode`
 - [ ] `examples` and `testCases` are consistent
 - [ ] Boundary behavior is explicit
-- [ ] Difficulty and `successRate` are coherent
+- [ ] Difficulty is coherent
 - [ ] EN/KO are semantically aligned (if KO exists)
