@@ -72,6 +72,7 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
   const { language, copy } = useAppLanguage()
   const diffStyle = difficultyConfig[problem.difficulty]
   const localized = getLocalizedProblemText(problem, language)
+  const isNew = (problem.tags ?? []).includes("NEW")
 
   return (
     <ScrollArea className="h-full">
@@ -85,6 +86,14 @@ export function ProblemDescription({ problem }: ProblemDescriptionProps) {
             <h1 className="text-xl font-bold text-foreground lg:text-2xl">
               {localized.text.title}
             </h1>
+            {isNew && (
+              <Badge
+                variant="secondary"
+                className="border-0 text-xs font-semibold bg-[#fff4e5] text-[#b85a00]"
+              >
+                NEW
+              </Badge>
+            )}
             {localized.isFallback && (
               <Badge
                 variant="secondary"

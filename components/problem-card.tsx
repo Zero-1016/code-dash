@@ -68,6 +68,7 @@ export function ProblemCard({
   const Icon = iconMap[problem.categoryIcon] || Hash
   const diffStyle = difficultyConfig[problem.difficulty]
   const localized = getLocalizedProblemText(problem, language)
+  const isNew = (problem.tags ?? []).includes("NEW")
 
   return (
     <motion.div
@@ -103,6 +104,14 @@ export function ProblemCard({
               <h3 className="truncate text-sm font-semibold text-foreground lg:text-base">
                 {localized.text.title}
               </h3>
+              {isNew && (
+                <Badge
+                  variant="secondary"
+                  className="border-0 text-[10px] font-semibold bg-[#fff4e5] text-[#b85a00]"
+                >
+                  NEW
+                </Badge>
+              )}
               {localized.isFallback && (
                 <Badge
                   variant="secondary"

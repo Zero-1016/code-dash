@@ -11,6 +11,7 @@ export interface Problem {
   title: string
   category: string
   categoryIcon: string
+  tags?: string[]
   difficulty: Difficulty
   description: string
   examples: { input: string; output: string; explanation?: string }[]
@@ -347,6 +348,7 @@ A **subarray** is a contiguous non-empty sequence of elements within an array.`,
     title: "Stock Prices",
     category: "Stack",
     categoryIcon: "Layers",
+    tags: ["NEW"],
     difficulty: "Medium",
     description: `Given an integer array \`prices\` where \`prices[i]\` is the stock price at second \`i\`, return an array where each element is how many seconds pass before the price drops.
 
@@ -385,6 +387,7 @@ If the price never drops afterward, count until the last second.`,
     title: "Signal Receiver (Towers)",
     category: "Stack",
     categoryIcon: "Layers",
+    tags: ["NEW"],
     difficulty: "Medium",
     description: `Towers are placed from left to right, and each tower sends a signal to the left.
 
@@ -423,6 +426,7 @@ For each tower, find the index (1-based) of the first taller tower to its left t
     title: "Process Scheduler",
     category: "Queue",
     categoryIcon: "Layers",
+    tags: ["NEW"],
     difficulty: "Medium",
     description: `The operating system manages processes with the following rules:
 
@@ -466,6 +470,7 @@ Given \`priorities\` and \`location\`, return the execution order (1-based) of t
     title: "Remove AWS",
     category: "Strings",
     categoryIcon: "Type",
+    tags: ["NEW"],
     difficulty: "Easy",
     description: `Given a string \`s\`, repeatedly remove every occurrence of the substring \`"AWS"\` until no such substring remains.
 
@@ -505,6 +510,7 @@ Return the final string. If the final string is empty, return \`-1\`.`,
     title: "Max Digit Range",
     category: "Greedy",
     categoryIcon: "TrendingUp",
+    tags: ["NEW"],
     difficulty: "Medium",
     description: `Given an integer \`num\`, create:
 
@@ -549,6 +555,7 @@ Return \`maxValue - minValue\`.`,
     title: "Max Subarray Length Under K",
     category: "Sliding Window",
     categoryIcon: "ScanLine",
+    tags: ["NEW"],
     difficulty: "Medium",
     description: `Given an array \`a\` of positive integers and an integer \`k\`, find the maximum length of a contiguous subarray whose sum is less than or equal to \`k\`.
 
@@ -2498,6 +2505,7 @@ function createGeneratedProblem(seed: Problem, index: number): Problem {
     id: generatedId,
     title: generatedTitle,
     difficulty: generatedDifficulty,
+    tags: (seed.tags ?? []).filter((tag) => tag !== "NEW"),
     description: buildGeneratedDescription(seed.id, generatedTitle),
     constraints: buildGeneratedConstraints(seed.id),
     starterCode: seed.starterCode.replace(functionNameRegex, generatedFunctionName),
