@@ -418,6 +418,49 @@ For each tower, find the index (1-based) of the first taller tower to its left t
     ],
     functionName: "towerSignal",
   },
+  {
+    id: "process-scheduler",
+    title: "Process Scheduler",
+    category: "Queue",
+    categoryIcon: "Layers",
+    difficulty: "Medium",
+    description: `The operating system manages processes with the following rules:
+
+1. Pop one process from the front of the waiting queue.
+2. If there is any process in the queue with a higher priority, push the popped process to the back.
+3. Otherwise, execute and terminate the popped process.
+
+Given \`priorities\` and \`location\`, return the execution order (1-based) of the process at \`location\`.`,
+    examples: [
+      {
+        input: "priorities = [2,1,3,2], location = 2",
+        output: "1",
+        explanation:
+          "The process at index 2 has the highest priority (3), so it is executed first.",
+      },
+      {
+        input: "priorities = [1,1,9,1,1,1], location = 0",
+        output: "5",
+        explanation:
+          "Priority 9 executes first, and the process at index 0 is executed as the 5th process.",
+      },
+    ],
+    constraints: [
+      "1 <= priorities.length <= 100",
+      "1 <= priorities[i] <= 9",
+      "0 <= location < priorities.length",
+    ],
+    starterCode: `function processScheduler(priorities, location) {
+  // Write your solution here
+  
+}`,
+    testCases: [
+      { input: [[2, 1, 3, 2], 2], expected: 1 },
+      { input: [[1, 1, 9, 1, 1, 1], 0], expected: 5 },
+      { input: [[1, 2, 3, 4], 1], expected: 3 },
+    ],
+    functionName: "processScheduler",
+  },
 ]
 
 const ADDITIONAL_PROBLEMS_PER_CATEGORY: Record<Problem["id"], number> = {
@@ -431,6 +474,7 @@ const ADDITIONAL_PROBLEMS_PER_CATEGORY: Record<Problem["id"], number> = {
   "trapping-rain-water": 5,
   "stock-prices": 4,
   "tower-signal": 4,
+  "process-scheduler": 4,
 }
 const BASE_PROBLEMS_PER_CATEGORY = 20
 
@@ -568,6 +612,29 @@ function towerSignalValue(heights: number[]): number[] {
   return receivers
 }
 
+function processSchedulerValue(priorities: number[], location: number): number {
+  const queue = priorities.map((priority, index) => ({ priority, index }))
+  let order = 0
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (!current) {
+      break
+    }
+    const hasHigher = queue.some((item) => item.priority > current.priority)
+    if (hasHigher) {
+      queue.push(current)
+      continue
+    }
+    order += 1
+    if (current.index === location) {
+      return order
+    }
+  }
+
+  return order
+}
+
 function buildTestCases(seedId: Problem["id"], index: number): TestCase[] {
   const n = index + 2
   switch (seedId) {
@@ -664,6 +731,14 @@ function buildTestCases(seedId: Problem["id"], index: number): TestCase[] {
       return [
         { input: [heightsA], expected: towerSignalValue(heightsA) },
         { input: [heightsB], expected: towerSignalValue(heightsB) },
+      ]
+    }
+    case "process-scheduler": {
+      const prioritiesA = [2, 1 + (index % 2), 3 + (index % 3), 2]
+      const prioritiesB = [1, 1, 9, 1, 1, 1]
+      return [
+        { input: [prioritiesA, 2], expected: processSchedulerValue(prioritiesA, 2) },
+        { input: [prioritiesB, index % prioritiesB.length], expected: processSchedulerValue(prioritiesB, index % prioritiesB.length) },
       ]
     }
     default:
@@ -875,6 +950,16 @@ const generatedTitlePool: Record<Problem["id"], string[]> = {
     "Taller Left Tower Search",
     "Line of Towers Signal",
   ],
+  "process-scheduler": [
+    "Printer Queue Scheduler",
+    "CPU Priority Dispatch",
+    "Task Queue Execution Order",
+    "Priority Rotation Queue",
+    "Job Dispatch Sequence",
+    "Execution Rank by Priority",
+    "Process Queue Simulator",
+    "High Priority First Run",
+  ],
 }
 
 const generatedTitlePoolKo: Record<Problem["id"], string[]> = {
@@ -1074,6 +1159,16 @@ const generatedTitlePoolKo: Record<Problem["id"], string[]> = {
     "왼쪽 높은 탑 탐색",
     "일렬 탑 신호",
   ],
+  "process-scheduler": [
+    "프린터 큐 스케줄러",
+    "CPU 우선순위 디스패치",
+    "작업 큐 실행 순서",
+    "우선순위 회전 큐",
+    "작업 디스패치 순서",
+    "우선순위 실행 순번",
+    "프로세스 큐 시뮬레이터",
+    "높은 우선순위 선실행",
+  ],
 }
 
 const generatedTitleSuffixPool: Record<Problem["id"], string[]> = {
@@ -1168,6 +1263,12 @@ const generatedTitleSuffixPool: Record<Problem["id"], string[]> = {
     "City Skyline Edition",
     "Antenna Network Edition",
     "Control Center Edition",
+  ],
+  "process-scheduler": [
+    "Printer Center Edition",
+    "Operating System Edition",
+    "Dispatch Queue Edition",
+    "Task Manager Edition",
   ],
 }
 
@@ -1264,6 +1365,12 @@ const generatedTitleSuffixPoolKo: Record<Problem["id"], string[]> = {
     "안테나 네트워크 편",
     "관제센터 편",
   ],
+  "process-scheduler": [
+    "프린터 센터 편",
+    "운영체제 편",
+    "디스패치 큐 편",
+    "태스크 매니저 편",
+  ],
 }
 
 function buildGeneratedDescription(seed: Problem["id"], title: string): string {
@@ -1298,6 +1405,11 @@ Return node values grouped by depth from top to bottom and left to right.`
       return `In "${title}", each number is the height of a wall with width 1.
 
 Compute how many total units of rainwater are trapped after rainfall.`
+    case "process-scheduler":
+      return `In "${title}", processes are executed from a queue with priority rules.
+
+At each step, if a higher-priority process exists, move the current process to the back; otherwise execute it.
+Return when the target process is executed.`
     case "stock-prices":
       return `In "${title}", each index is a timestamp and each value is the stock price at that time.
 
@@ -1347,6 +1459,11 @@ function buildGeneratedDescriptionKo(seed: Problem["id"], title: string): string
       return `"${title}" 문제입니다. 각 칸의 막대 높이를 나타내는 배열이 주어집니다.
 
 비가 온 뒤 막대 사이에 고일 수 있는 빗물의 총량을 계산해 반환하세요.`
+    case "process-scheduler":
+      return `"${title}" 문제입니다. 프로세스가 우선순위 규칙에 따라 큐에서 실행됩니다.
+
+매 단계마다 현재 프로세스보다 우선순위가 높은 프로세스가 남아 있으면 뒤로 보내고, 그렇지 않으면 실행합니다.
+target 위치의 프로세스가 몇 번째로 실행되는지 반환하세요.`
     case "stock-prices":
       return `"${title}" 문제입니다. 배열의 각 원소는 해당 초의 주식 가격을 의미합니다.
 
@@ -1404,6 +1521,12 @@ function buildGeneratedConstraints(seed: Problem["id"]): string[] {
       return [
         "1 <= height.length <= 2 * 10^4",
         "0 <= height[i] <= 10^5",
+      ]
+    case "process-scheduler":
+      return [
+        "1 <= priorities.length <= 100",
+        "1 <= priorities[i] <= 9",
+        "0 <= location < priorities.length",
       ]
     case "stock-prices":
       return [
@@ -1464,6 +1587,12 @@ function buildGeneratedConstraintsKo(seed: Problem["id"]): string[] {
       return [
         "1 <= height.length <= 2 * 10^4",
         "0 <= height[i] <= 10^5",
+      ]
+    case "process-scheduler":
+      return [
+        "1 <= priorities.length <= 100",
+        "1 <= priorities[i] <= 9",
+        "0 <= location < priorities.length",
       ]
     case "stock-prices":
       return [
@@ -1558,6 +1687,9 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
     if (seed === "binary-tree-level-order") {
       return `nodes are grouped by depth from top to bottom, yielding ${JSON.stringify(testCase.expected)}.`
     }
+    if (seed === "process-scheduler") {
+      return `processes are executed by priority rotation, and the target process completes at order ${JSON.stringify(testCase.expected)}.`
+    }
     if (seed === "stock-prices") {
       return `for each timestamp, count seconds until the first lower price appears, which gives ${JSON.stringify(testCase.expected)}.`
     }
@@ -1624,6 +1756,15 @@ function buildExamplesForSeed(seed: Problem["id"], testCases: TestCase[]): Probl
     }
     if (seed === "binary-tree-level-order") {
       const inputText = `root = ${JSON.stringify(testCase.input[0])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `For input ${inputText}, ${buildExplanationEn(testCase)} Therefore, return ${outputText}.`,
+      }
+    }
+    if (seed === "process-scheduler") {
+      const inputText = `priorities = ${JSON.stringify(testCase.input[0])}, location = ${JSON.stringify(testCase.input[1])}`
       const outputText = JSON.stringify(testCase.expected)
       return {
         input: inputText,
@@ -1737,6 +1878,9 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
     if (seed === "binary-tree-level-order") {
       return "노드를 깊이(레벨)별로 묶어 순서대로 나열할 수 있습니다."
     }
+    if (seed === "process-scheduler") {
+      return `우선순위 규칙으로 큐를 회전시키며 실행할 때, 대상 프로세스의 실행 순번을 계산할 수 있습니다.`
+    }
     if (seed === "stock-prices") {
       return `각 시점에서 처음 가격이 하락하는 시점까지의 초를 계산할 수 있습니다.`
     }
@@ -1810,6 +1954,15 @@ function buildExamplesForSeedKo(seed: Problem["id"], testCases: TestCase[]): Pro
         explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
       }
     }
+    if (seed === "process-scheduler") {
+      const inputText = `priorities = ${JSON.stringify(testCase.input[0])}, location = ${JSON.stringify(testCase.input[1])}`
+      const outputText = JSON.stringify(testCase.expected)
+      return {
+        input: inputText,
+        output: outputText,
+        explanation: `입력 ${inputText} 에서 ${buildExplanationKo(testCase)} 따라서 결과는 ${outputText} 입니다.`,
+      }
+    }
     if (seed === "stock-prices") {
       const inputText = `prices = ${JSON.stringify(testCase.input[0])}`
       const outputText = JSON.stringify(testCase.expected)
@@ -1870,6 +2023,7 @@ function buildGeneratedDifficulty(seedId: Problem["id"], index: number, fallback
     "longest-substring": ["Medium", "Hard", "Easy", "Medium", "Hard"],
     "binary-tree-level-order": ["Medium", "Hard", "Medium", "Easy", "Hard"],
     "trapping-rain-water": ["Medium", "Hard", "Easy", "Medium", "Hard"],
+    "process-scheduler": ["Medium", "Hard", "Easy", "Medium", "Hard"],
   }
   const cycle = difficultyCycles[seedId]
   if (!cycle || cycle.length === 0) {
@@ -2224,6 +2378,36 @@ const problemTranslations: Partial<Record<Problem["id"], Partial<Record<ProblemL
       ],
     },
   },
+  "process-scheduler": {
+    ko: {
+      title: "프로세스 스케줄러",
+      category: "큐",
+      description: `운영체제가 프로세스를 다음 규칙으로 실행합니다.
+
+1) 큐의 앞에서 프로세스를 꺼냅니다.
+2) 큐 안에 더 높은 우선순위가 하나라도 있으면, 꺼낸 프로세스를 큐 뒤로 보냅니다.
+3) 그렇지 않으면 해당 프로세스를 실행하고 종료합니다.
+
+\`priorities\`와 \`location\`이 주어질 때, \`location\`의 프로세스가 몇 번째로 실행되는지 반환하세요.`,
+      examples: [
+        {
+          input: "priorities = [2,1,3,2], location = 2",
+          output: "1",
+          explanation: "인덱스 2의 우선순위 3이 가장 높으므로 첫 번째로 실행됩니다.",
+        },
+        {
+          input: "priorities = [1,1,9,1,1,1], location = 0",
+          output: "5",
+          explanation: "우선순위 9가 먼저 실행된 뒤, 인덱스 0 프로세스는 다섯 번째에 실행됩니다.",
+        },
+      ],
+      constraints: [
+        "1 <= priorities.length <= 100",
+        "1 <= priorities[i] <= 9",
+        "0 <= location < priorities.length",
+      ],
+    },
+  },
 }
 
 const localizedCategories: Record<string, Partial<Record<ProblemLanguage, string>>> = {
@@ -2235,6 +2419,7 @@ const localizedCategories: Record<string, Partial<Record<ProblemLanguage, string
   "Sliding Window": { ko: "슬라이딩 윈도우" },
   Trees: { ko: "트리" },
   "Two Pointers": { ko: "투 포인터" },
+  Queue: { ko: "큐" },
 }
 
 export function localizeCategory(category: string, language: ProblemLanguage): string {
